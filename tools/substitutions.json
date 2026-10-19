@@ -206,6 +206,12 @@
     },
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",
+      "pattern": "Before each spawn, start from the role's line or default and pick the reasoning level and speed the job needs.",
+      "replacement": "Before each spawn, start from the role's line or default and pick the reasoning level the job needs.",
+      "rationale": "#613 per-job effort: choose the reasoning level per job; speed stays standard (design.md, Speed)"
+    },
+    {
+      "files": "^skills/poteto-mode/SKILL\\.md$",
       "pattern": "Use fast mode only when the job is urgent, meaning CI or trunk is red or a person is blocked on the result right now. Otherwise use standard speed, the same slug without `-fast`.",
       "replacement": "Every dispatch sets each speed option its model lists to its standard value (`fastMode=false` on Claude and `cursor`, `serviceTier=default` on Codex), as the defaults in [Models](#models) do. This router never uses fast mode, urgent or not, and `t3-sheet.mjs` rejects a fast entry.",
       "rationale": "#613 per-job effort: a T3 entry carries its reasoning and speed as options, not as slug suffixes (The sheet); never fast (design.md, Speed)"
@@ -225,8 +231,8 @@
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",
       "pattern": "If the family has no slug at that level and speed, use its nearest slug.",
-      "replacement": "If the model has no value at that level, or no speed option, use its nearest one in `orchestrator_capabilities`.",
-      "rationale": "#613 per-job effort: a T3 entry carries its reasoning and speed as options, not as slug suffixes (The sheet)"
+      "replacement": "If the model has no value at that reasoning level, use its nearest one in `orchestrator_capabilities`. Omit a speed option the model does not list.",
+      "rationale": "#613 per-job effort: choose a listed reasoning value and omit speed options the catalog does not list (The sheet)"
     },
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",

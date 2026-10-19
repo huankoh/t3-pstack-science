@@ -108,6 +108,10 @@ describe("applySubstitutions", () => {
     expect(text).toContain("Every dispatch sets each speed option its model lists to its standard value (`fastMode=false` on Claude and `cursor`, `serviceTier=default` on Codex), as the defaults in [Models](#models) do. This router never uses fast mode, urgent or not, and `t3-sheet.mjs` rejects a fast entry.");
     expect(text).not.toContain("only when the job is urgent");
     expect(text).not.toContain("fastMode=true");
+    expect(text).not.toContain("and speed the job needs");
+    expect(text).not.toContain("or no speed option");
+    expect(text).toContain("pick the reasoning level the job needs.");
+    expect(text).toContain("If the model has no value at that reasoning level, use its nearest one in `orchestrator_capabilities`. Omit a speed option the model does not list.");
     expect(text).toContain("Change only the entry's reasoning option (`effort` on Claude, `reasoningEffort` on Codex, `reasoning_effort` on `cursor` targets),");
   });
 
@@ -130,6 +134,16 @@ describe("applySubstitutions", () => {
 
   // Upstream's own sentences at the pin, and the one form the port writes for each.
   test.each([
+    [
+      "skills/poteto-mode/SKILL.md",
+      "Before each spawn, start from the role's line or default and pick the reasoning level and speed the job needs.",
+      "Before each spawn, start from the role's line or default and pick the reasoning level the job needs.",
+    ],
+    [
+      "skills/poteto-mode/SKILL.md",
+      "If the family has no slug at that level and speed, use its nearest slug.",
+      "If the model has no value at that reasoning level, use its nearest one in `orchestrator_capabilities`. Omit a speed option the model does not list.",
+    ],
     [
       "skills/how/SKILL.md",
       "Every spawn is a Task subagent with `subagent_type: generalPurpose` and `readonly: true`.",
