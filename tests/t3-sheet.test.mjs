@@ -10,15 +10,13 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { loadModels } from "../tools/generate.mjs";
-import * as sheetApi from "../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
-import { checkSheet, family, parseEntry, parseSheet } from "../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
+import { DOMAINS, GENERAL, SCIENCE, SHEET_DIR, checkSheet, family, parseEntry, parseSheet, seats, speedProblems } from "../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const script = join(root, "plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs");
 const catalogPath = join(root, "tests/fixtures/t3-catalog.json");
 const catalog = JSON.parse(readFileSync(catalogPath, "utf8"));
 const models = loadModels();
-const { roles } = models;
 const check = (text, over = catalog) => checkSheet(parseSheet(text), { models, catalog: over });
 const PANEL = "interrogate reviewers";
 
@@ -264,21 +262,17 @@ describe("the T3 session-start context", () => {
 
 describe("seats", () => {
   test("exports the router's fixed domain pair", () => {
-    expect([sheetApi.GENERAL, sheetApi.SCIENCE, sheetApi.DOMAINS]).toEqual(["general", "science", ["general", "science"]]);
-    try {
-      expect(() => sheetApi.DOMAINS.push("extra")).toThrow(TypeError);
-    } finally {
-      if (sheetApi.DOMAINS.at(-1) === "extra") sheetApi.DOMAINS.pop();
-    }
+    expect([GENERAL, SCIENCE, DOMAINS]).toEqual(["general", "science", ["general", "science"]]);
+    expect(() => DOMAINS.push("extra")).toThrow(TypeError);
   });
 
   test("lists 17 general seats then 17 science seats in role order", () => {
-    const keys = sheetApi.seats(models).map((s) => s.key);
+    const keys = seats(models).map((s) => s.key);
     expect(keys).toHaveLength(34);
     expect(keys.slice(0, 3)).toEqual(["feature, refactoring", "bug-fix", "perf-issue"]);
     expect(keys[17]).toBe("science feature, refactoring");
     expect(keys.at(-1)).toBe("science interrogate reviewers");
-    expect(sheetApi.seats(models).find((s) => s.key === "science bug-fix")).toEqual({
+    expect(seats(models).find((s) => s.key === "science bug-fix")).toEqual({
       key: "science bug-fix", alias: null, domain: "science", role: "bug-fix", skill: "poteto-mode", panel: false,
       defaults: [{ entry: "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false", termFree: false }],
     });
@@ -286,7 +280,7 @@ describe("seats", () => {
 
   test("a null tier omits that seat, and aliases exist only in general", () => {
     const policy = { domains: { general: { tiers: { code: null } }, science: { termReaders: ["gpt"], tiers: { code: "a/claude-a" } } }, roles: [{ role: "code unit", alias: "old code", tier: "code", skill: "how" }] };
-    expect(sheetApi.seats(policy)).toEqual([{ key: "science code unit", alias: null, domain: "science", role: "code unit", skill: "how", panel: false, defaults: [{ entry: "a/claude-a", termFree: true }] }]);
+    expect(seats(policy)).toEqual([{ key: "science code unit", alias: null, domain: "science", role: "code unit", skill: "how", panel: false, defaults: [{ entry: "a/claude-a", termFree: true }] }]);
     expect(checkSheet(parseSheet("code unit: a/claude-a"), { models: policy, catalog: null })).toEqual(['"code unit" has no general seat; write "science code unit"']);
   });
 });
@@ -357,7 +351,7 @@ describe("standard speed", () => {
   });
 
   test("speed validation reports every nonstandard option without catalog duplicates", () => {
-    expect(sheetApi.speedProblems(parseEntry("a/gpt-a fastMode=true serviceTier=priority"))).toEqual([
+    expect(speedProblems(parseEntry("a/gpt-a fastMode=true serviceTier=priority"))).toEqual([
       "fastMode=true is not standard speed, and this router never runs fast; write fastMode=false",
       "serviceTier=priority is not standard speed, and this router never runs fast; write serviceTier=default",
     ]);
@@ -394,5 +388,5 @@ describe("standard speed", () => {
 });
 
 test("the session hook reads the sheet directory the installer writes", () => {
-  expect(readFileSync(join(root, "plugins/pstack/hooks/session-start.sh"), "utf8")).toContain(`/${sheetApi.SHEET_DIR}/models.md`);
+  expect(readFileSync(join(root, "plugins/pstack/hooks/session-start.sh"), "utf8")).toContain(`/${SHEET_DIR}/models.md`);
 });

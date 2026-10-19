@@ -95,7 +95,8 @@ export function modelsSection(models, roles) {
   const header = `| Role | ${DOMAINS.join(" | ")} |\n| --- |${" --- |".repeat(DOMAINS.length)}`;
   const rows = roles.map((role) => {
     const label = role.role + (role.alias ? ` (a \`${role.alias}\` line counts as this role)` : "");
-    return `| ${label} | ${DOMAINS.map((domain) => cell(byRole.get(role.role)?.find((s) => s.domain === domain))).join(" | ")} |`;
+    const columns = DOMAINS.map((domain) => cell(byRole.get(role.role).find((s) => s.domain === domain)));
+    return `| ${label} | ${columns.join(" | ")} |`;
   });
   return `Role defaults on T3, stamped from \`plugins/pstack/models.json\`, one column per domain. ${sheetProse}\n\n${header}\n${rows.join("\n")}`;
 }
