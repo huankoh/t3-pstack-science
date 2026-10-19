@@ -26,7 +26,7 @@ t3-pstack is a port of [pstack](https://github.com/cursor/plugins/tree/main/psta
 
 ## Port-authored files
 
-- `plugins/pstack/.claude-plugin/plugin.json`, `plugins/pstack/.codex-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.agents/plugins/marketplace.json`
+- `plugins/pstack/.claude-plugin/plugin.json`, `plugins/pstack/.codex-plugin/plugin.json`, `plugins/pstack/.cursor-plugin/`, `.claude-plugin/marketplace.json`, `.agents/plugins/marketplace.json`
 - `plugins/pstack/hooks/hooks.json`, `plugins/pstack/hooks/codex-hooks.json`, and `plugins/pstack/hooks/session-start-context.md` (each host's session-start hook and its routing text)
 - `plugins/pstack/models.json`, `plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs`, `plugins/pstack/skills/poteto-mode/scripts/watch-pr/settle.ts`, `tools/derive-t3.mjs`
 - `NOTICE.md` (this file), `NOTICE-skills.md`, `README.md`, `CHANGES.md`
