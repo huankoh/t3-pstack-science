@@ -401,7 +401,7 @@ describe("plan, changes, apply", () => {
   };
   const repoCopy = () => {
     const dir = scratch("pstack-generate-");
-    for (const entry of readdirSync(repoRoot).filter((name) => ![".git", "node_modules"].includes(name))) {
+    for (const entry of readdirSync(repoRoot).filter((name) => ![".git", "node_modules", ".audit"].includes(name))) {
       cpSync(join(repoRoot, entry), join(dir, entry), { recursive: true, filter: (src) => basename(src) !== "node_modules" });
     }
     symlinkSync(join(repoRoot, "node_modules"), join(dir, "node_modules"));
@@ -558,15 +558,13 @@ describe("plan, changes, apply", () => {
     expect(readFileSync(join(root, "out/sub/a.md"), "utf8")).toBe("A");
   });
 
-  test("a pre-release VERSION stamps every manifest", () => {
+  test.each(["9.0.0-rc.2", "2.0.0-rc.11-science.1"])("pre-release VERSION %s stamps every manifest", (version) => {
     const root = repoCopy();
-    writeFileSync(join(root, "VERSION"), "9.0.0-rc.2\n");
-    append(root, "CHANGES.md", "");
-    const changelog = readFileSync(join(root, "CHANGES.md"), "utf8");
-    writeFileSync(join(root, "CHANGES.md"), changelog.replace(/^## \S+ - /m, "## 9.0.0-rc.2 - next\n\n$&"));
+    writeFileSync(join(root, "VERSION"), `${version}\n`);
+    writeFileSync(join(root, "CHANGES.md"), `# CHANGES\n\n## ${version} - test\n`);
     const { files } = plan(root);
     for (const manifest of [".claude-plugin/marketplace.json", "plugins/pstack/.claude-plugin/plugin.json", "plugins/pstack/.codex-plugin/plugin.json", "package.json"]) {
-      expect(files[manifest]).toContain('"version": "9.0.0-rc.2"');
+      expect(files[manifest]).toContain(`"version": "${version}"`);
     }
   });
 

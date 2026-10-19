@@ -70,7 +70,7 @@ export const PORTABLE_ASSETS = [
 export const OWNED_DIRS = [LICENSES];
 
 // A release version, with an optional pre-release suffix such as -rc.1.
-const VERSION_RE = /\d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?/;
+const VERSION_RE = /\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?/;
 const VERSION_LINE = new RegExp(`^${VERSION_RE.source}$`);
 
 // Replace the manifest's single "version" value, preserving all formatting.
