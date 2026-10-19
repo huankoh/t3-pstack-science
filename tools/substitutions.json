@@ -1,6 +1,42 @@
 {
   "substitutions": [
     {
+      "files": "^skills/poteto-mode/SKILL\\.md$",
+      "pattern": "Open a todolist whose first items are the matched playbook's steps, copied in verbatim, before any task-specific todos.",
+      "replacement": "Open a todolist whose first items are the matched playbook's steps, copied in verbatim, before any task-specific todos. The first task-specific todo is the domain gate, `domain: science` or `domain: general`, picked per [Models](#models) before the first `delegate_task`.",
+      "rationale": "router: the domain gate records the column every role resolves from"
+    },
+    {
+      "files": "^skills/poteto-mode/SKILL\\.md$",
+      "pattern": "Prose and judgment read `judgment and prose`.",
+      "replacement": "Prose and judgment read `judgment and prose`. Each line is the one in the todolist's `domain:` column ([Models](#models)). In `science`, the hardest changes still read `hardest tasks`, trivial mechanical edits read `mechanical code`, and the rest read their playbook's line.",
+      "rationale": "router: every role follows its column and keeps the playbook difficulty tiering"
+    },
+    {
+      "files": "^skills/poteto-mode/SKILL\\.md$",
+      "pattern": "Nothing gets armed before an independent per-PR verdict, and only the contiguous verified run from the root lands.",
+      "replacement": "Nothing gets armed before an independent per-PR verdict, and only the contiguous verified run from the root lands. That verdict, and the **show-me-your-work** handback review, run on the `final review` line. Other verification stays on `swarm workers`.",
+      "rationale": "router: final review owns the independent verdict and handback review"
+    },
+    {
+      "files": "^skills/poteto-mode/playbooks/shipping\\.md$",
+      "pattern": "Only a verdict from an agent that did not write the code counts, because an author checks what it meant to build.",
+      "replacement": "Only a verdict from an agent that did not write the code counts, because an author checks what it meant to build. That verifier runs on the `final review` line (default in poteto-mode's [Models](../SKILL.md#models)) and still performs this step's prescribed verification. Other verification stays on `swarm workers`.",
+      "rationale": "router: final review owns the independent verdict and keeps its prescribed verification"
+    },
+    {
+      "files": "^skills/show-me-your-work/SKILL\\.md$",
+      "pattern": "Before handing back, spawn a subagent on a different model family from the one that did the work.",
+      "replacement": "Before handing back, spawn a subagent on a different model family from the one that did the work. It runs on the `final review` line (default in poteto-mode's [Models](../poteto-mode/SKILL.md#models)). When that line's family did the work, record `BLOCKED: independent review` and keep the handback closed. Do not substitute another reviewer.",
+      "rationale": "router: final review owns handback and preserves the different-family requirement"
+    },
+    {
+      "files": "^skills/poteto-mode/SKILL\\.md$",
+      "pattern": "Trivial mechanical edits go to your fast code model.",
+      "replacement": "Trivial mechanical edits go to the `mechanical code` line.",
+      "rationale": "T3 routing names the mechanical code sheet line explicitly"
+    },
+    {
       "pattern": "and mention once that a Custom Mode keeps it on.",
       "replacement": "and mention once that starting each task with `/poteto-mode` keeps it on.",
       "rationale": "Custom Modes are Cursor UI (t3-tools Per-skill notes: poteto-help)",

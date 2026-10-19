@@ -1,8 +1,7 @@
 // The T3 form of an upstream file, as tools/sync.mjs derives it after the
 // substitutions and tools/generate.mjs stamps it: the port's frontmatter, then
-// the regions rendered from plugins/pstack/models.json. The T3 dispatch rules
-// themselves live in the text, as substitutions, so nothing here stamps a
-// runtime preamble.
+// the regions rendered from plugins/pstack/models.json. Models sections carry
+// the column gate and term rule. Anchored dispatch hooks live in substitutions.
 
 import { DOMAINS, GENERAL, SCIENCE, SHEET_DIR, seats } from "../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
 import { code } from "./plugin.mjs";
@@ -87,6 +86,30 @@ const sheetProse =
   "`<provider>/<model>`, is written whole after it. Option IDs differ per provider, so take them from " +
   "`orchestrator_capabilities`. `inherit-parent` or `auto` omits `target`.";
 
+function routerProse(models) {
+  const { covers, termReaders } = models.domains[SCIENCE];
+  const translator = seats(models).find((s) => s.key === `${SCIENCE} how explorer`);
+  if (!translator || translator.defaults.length !== 1 || translator.defaults[0].termFree) {
+    throw new Error(`models.json: "${SCIENCE} how explorer" needs a default that reads the domain terms`);
+  }
+  const families = new Intl.ListFormat("en", { style: "long", type: "conjunction" }).format(termReaders.map(code));
+  const gate =
+    `Before the first dispatch, the chat that runs the playbook picks the task's column and records it in the todolist as \`domain: ${SCIENCE}\` when the task is ${covers}, else as \`domain: ${GENERAL}\`. ` +
+    "A thread that already records one keeps it. The chat is the orchestrator only. It picks the column, writes each brief, and dispatches. " +
+    `Every role resolves from that column, so wherever a skill names a role's line, read \`<role>:\` under \`domain: ${GENERAL}\` and \`${SCIENCE} <role>:\` under \`domain: ${SCIENCE}\`. ` +
+    "The column picks only the target. The reasoning level follows the **poteto-mode** skill's Subagents section in every column, up to `max` and never a level above it, such as Codex's `ultra`.";
+  const terms =
+    `In \`${SCIENCE}\`, only ${families} models read the domain's terms. A \`${SCIENCE}\` dispatch to any other family carries a term-free brief. ` +
+    "Resolve an `inherit-parent` or `auto` seat's family from `orchestrator_capabilities`' `inheritedModel` before choosing its brief; an unknown family gets a term-free brief. " +
+    `A term-free brief states inputs, outputs, data shapes, invariants, formulas, and acceptance tests in plain math and code, with no vocabulary of ${covers}. ` +
+    "Write it to a file and run `node <plugin root>/skills/setup-pstack/scripts/term-free.mjs <file>`, adding `--term <word>` for each domain word the task itself uses. " +
+    "It exits 1 and lists each term it finds; send the brief only once it exits 0. " +
+    "Stage neutral copies of the code, data, and diffs that seat needs in its own directory, check each text input with the same command, and never point the seat at the original scientific files, papers, transcripts, or diffs. " +
+    `When the work cannot be stated without the terms, have a research delegate on the \`${translator.key}\` line translate it first (its default reads the terms). ` +
+    "If that seat's family does not read the terms, the translation stays blocked; never route raw context to it. A default marked (term-free brief) is such a seat.";
+  return `${gate}\n\n${terms}\n\n${sheetProse}`;
+}
+
 const defaultCell = (value) => value ? `${code(value.entry)}${value.termFree ? " (term-free brief)" : ""}` : "none";
 const cell = (seat) => seat ? seat.defaults.map(defaultCell).join(", ") : "none";
 
@@ -98,7 +121,7 @@ export function modelsSection(models, roles) {
     const columns = DOMAINS.map((domain) => cell(byRole.get(role.role).find((s) => s.domain === domain)));
     return `| ${label} | ${columns.join(" | ")} |`;
   });
-  return `Role defaults on T3, stamped from \`plugins/pstack/models.json\`, one column per domain. ${sheetProse}\n\n${header}\n${rows.join("\n")}`;
+  return `Role defaults on T3, stamped from \`plugins/pstack/models.json\`, one column per domain. ${routerProse(models)}\n\n${header}\n${rows.join("\n")}`;
 }
 
 export function reviewerRows(models) {

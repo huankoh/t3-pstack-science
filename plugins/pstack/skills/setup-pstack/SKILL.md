@@ -51,6 +51,8 @@ perf-issue: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
 hillclimb: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
 judgment and prose: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
 hardest tasks: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
+mechanical code: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+final review: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
 how explorer: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
 how explainer: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
 why investigators: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
@@ -68,11 +70,13 @@ science perf-issue: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
 science hillclimb: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
 science judgment and prose: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
 science hardest tasks: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
-science how explorer: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+science mechanical code: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+science final review: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
+science how explorer: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
 science how explainer: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
-science why investigators: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+science why investigators: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
 science why synthesizer: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
-science reflect tooling: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+science reflect tooling: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
 science reflect judgment, divergent, synthesizer: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
 science arena runners: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
 science arena cross-judge pool: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false

@@ -84,23 +84,66 @@ describe("regions", () => {
     expect(applyRegions(file, "## Models\n", models)).toContain("| bug-fix | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` |");
   });
 
-  test("the setup sheet lists 17 general seats then 17 science seats", () => {
+  test("the setup sheet lists 19 general seats then 19 science seats", () => {
     const block = sheetBlock(models);
     expect(block[0]).toBe("# pstack model configuration (T3). One line per role and column. Delete a line to fall back to the skill default.");
     expect(block[1]).toBe("# `<role>:` sets the general column, as in every sheet before domains. `science <role>:` sets the science column.");
     expect(block[4]).toBe("feature, refactoring: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false");
-    expect(block[21]).toBe("science feature, refactoring: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false");
-    expect(block).toContain("science how explorer: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default");
-    expect(block).toContain("science why investigators: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default");
-    expect(block).toContain("science reflect tooling: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default");
+    expect(block[23]).toBe("science feature, refactoring: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false");
+    expect(block).toContain("science how explorer: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false");
+    expect(block).toContain("science why investigators: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false");
+    expect(block).toContain("science reflect tooling: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false");
     expect(block.at(-1)).toBe("session hook: on");
-    expect(block).toHaveLength(39);
+    expect(block).toHaveLength(43);
+  });
+
+  test("every model-consuming skill carries the gate, term rule, and sheet paragraph", () => {
+    for (const skill of new Set(models.roles.map((r) => r.skill))) {
+      const out = applyRegions(`plugins/pstack/skills/${skill}/SKILL.md`, "## Models\n", models);
+      expect(out).toContain("records it in the todolist as `domain: science` when the task is biology or other scientific work, else as `domain: general`.");
+      expect(out).toContain("A thread that already records one keeps it.");
+      expect(out).toContain("The chat is the orchestrator only.");
+      expect(out).toContain("read `<role>:` under `domain: general` and `science <role>:` under `domain: science`.");
+      expect(out).toContain("The column picks only the target.");
+      expect(out).toContain("up to `max` and never a level above it, such as Codex's `ultra`.");
+      expect(out).toContain("In `science`, only `gpt` and `grok` models read the domain's terms.");
+      expect(out).toContain("Resolve an `inherit-parent` or `auto` seat's family from `orchestrator_capabilities`' `inheritedModel` before choosing its brief; an unknown family gets a term-free brief.");
+      expect(out).toContain("no vocabulary of biology or other scientific work.");
+      expect(out).toContain("`node <plugin root>/skills/setup-pstack/scripts/term-free.mjs <file>`");
+      expect(out).toContain("adding `--term <word>` for each domain word the task itself uses.");
+      expect(out).toContain("send the brief only once it exits 0.");
+      expect(out).toContain("Stage neutral copies of the code, data, and diffs that seat needs in its own directory, check each text input with the same command, and never point the seat at the original scientific files, papers, transcripts, or diffs.");
+      expect(out).toContain("have a research delegate on the `science how explorer` line translate it first (its default reads the terms).");
+      expect(out).toContain("If that seat's family does not read the terms, the translation stays blocked; never route raw context to it.");
+      expect(out).toContain("`~/.config/t3-pstack/models.md`");
+    }
+  });
+
+  test("the gate's task class and term families come from policy data", () => {
+    const policy = structuredClone(models);
+    policy.domains.science.covers = "custom numerical work";
+    policy.domains.science.termReaders = ["grok", "custom"];
+    policy.domains.science.tiers.explore = "p/custom-reader";
+    const out = applyRegions("plugins/pstack/skills/how/SKILL.md", "## Models\n", policy);
+    expect(out).toContain("when the task is custom numerical work, else as `domain: general`.");
+    expect(out).toContain("only `grok` and `custom` models read the domain's terms.");
+    expect(out).toContain("no vocabulary of custom numerical work.");
+    expect(out).not.toContain("biology or other scientific work");
+  });
+
+  test.each(["missing", "renamed", "no seat", "non-reader"])("rendering rejects a %s science how explorer translator", (change) => {
+    const policy = structuredClone(models);
+    if (change === "missing") policy.roles = policy.roles.filter((r) => r.role !== "how explorer");
+    if (change === "renamed") policy.roles.find((r) => r.role === "how explorer").role = "explorer";
+    if (change === "no seat") policy.domains.science.tiers.explore = null;
+    if (change === "non-reader") policy.domains.science.tiers.explore = "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false";
+    expect(() => applyRegions("plugins/pstack/skills/poteto-mode/SKILL.md", "## Models\n", policy)).toThrow('models.json: "science how explorer" needs a default that reads the domain terms');
   });
 
   test("a missing seat renders none and panels mark term-free defaults", () => {
     const policy = structuredClone(models);
     policy.domains.general.tiers.explore = null;
-    expect(applyRegions("plugins/pstack/skills/how/SKILL.md", "## Models\n", policy)).toContain("| how explorer | none | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |");
+    expect(applyRegions("plugins/pstack/skills/how/SKILL.md", "## Models\n", policy)).toContain("| how explorer | none | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` |");
     expect(applyRegions("plugins/pstack/skills/arena/SKILL.md", "## Models\n", models)).toContain("| arena runners | `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false`, `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false`, `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default`, `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` (term-free brief), `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` |");
   });
 
@@ -110,7 +153,7 @@ describe("regions", () => {
     const once = applyRegions(file, text, models, { strict: true });
     expect(once).not.toContain("stale");
     expect(once).toContain("## After\nkeep\n");
-    expect(once).toContain("| how explorer | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |");
+    expect(once).toContain("| how explorer | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` |");
     expect(applyRegions(file, once, models, { strict: true })).toBe(once);
   });
 
@@ -299,8 +342,8 @@ describe("deriveT3", () => {
     expect(out).toContain("It splits at its first `/`");
     expect(out).toEndWith("| how explainer | `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |\n");
     expect(out).toContain("`<role>: <entry>` sets the general column, as in every sheet written before domains, and `science <role>: <entry>` sets the science column.");
-    expect(out).not.toContain("Before the first dispatch");
-    expect(out).not.toContain("term-free.mjs");
+    expect(out).toContain("Before the first dispatch");
+    expect(out).toContain("term-free.mjs");
     expect(deriveT3("plugins/pstack/skills/how/SKILL.md", out, models)).toBe(out);
   });
 
