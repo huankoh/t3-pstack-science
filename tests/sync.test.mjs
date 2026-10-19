@@ -105,7 +105,9 @@ describe("applySubstitutions", () => {
 
   test("the shipped policy fork carries the amended speed and reasoning rules", () => {
     const text = readFileSync(new URL("../plugins/pstack/skills/poteto-mode/SKILL.md", import.meta.url), "utf8");
-    expect(text).toContain("Otherwise use standard speed, the entry's speed option at its standard value. This router never uses fast mode, urgent or not.");
+    expect(text).toContain("Every dispatch sets each speed option its model lists to its standard value (`fastMode=false` on Claude and `cursor`, `serviceTier=default` on Codex), as the defaults in [Models](#models) do. This router never uses fast mode, urgent or not, and `t3-sheet.mjs` rejects a fast entry.");
+    expect(text).not.toContain("only when the job is urgent");
+    expect(text).not.toContain("fastMode=true");
     expect(text).toContain("Change only the entry's reasoning option (`effort` on Claude, `reasoningEffort` on Codex, `reasoning_effort` on `cursor` targets),");
   });
 
@@ -150,8 +152,8 @@ describe("applySubstitutions", () => {
     ],
     [
       "skills/poteto-mode/SKILL.md",
-      "Otherwise use standard speed, the same slug without `-fast`. Verification is the exception and stays on the `swarm workers` model and speed (`grok-4.7-xhigh-fast` by default).",
-      "Otherwise use standard speed, the entry's speed option at its standard value. This router never uses fast mode, urgent or not. Every dispatch sets each speed option its model lists to the standard value, as the defaults in [Models](#models) do, and `t3-sheet.mjs` rejects a fast one. Verification is the exception and stays on the `swarm workers` model and speed (default in the **swarm** skill's Models section).",
+      "Use fast mode only when the job is urgent, meaning CI or trunk is red or a person is blocked on the result right now. Otherwise use standard speed, the same slug without `-fast`. Verification is the exception and stays on the `swarm workers` model and speed (`grok-4.7-xhigh-fast` by default).",
+      "Every dispatch sets each speed option its model lists to its standard value (`fastMode=false` on Claude and `cursor`, `serviceTier=default` on Codex), as the defaults in [Models](#models) do. This router never uses fast mode, urgent or not, and `t3-sheet.mjs` rejects a fast entry. Verification is the exception and stays on the `swarm workers` model and speed (default in the **swarm** skill's Models section).",
     ],
     [
       "skills/poteto-mode/SKILL.md",

@@ -206,14 +206,8 @@
     },
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",
-      "pattern": "Use fast mode only when the job is urgent,",
-      "replacement": "Use fast mode, the provider's speed option (`fastMode=true` on Claude, a fast `serviceTier` such as `priority` on Codex), only when the job is urgent,",
-      "rationale": "#613 per-job effort: a T3 entry carries its reasoning and speed as options, not as slug suffixes (The sheet)"
-    },
-    {
-      "files": "^skills/poteto-mode/SKILL\\.md$",
-      "pattern": "Otherwise use standard speed, the same slug without `-fast`.",
-      "replacement": "Otherwise use standard speed, the entry's speed option at its standard value. This router never uses fast mode, urgent or not. Every dispatch sets each speed option its model lists to the standard value, as the defaults in [Models](#models) do, and `t3-sheet.mjs` rejects a fast one.",
+      "pattern": "Use fast mode only when the job is urgent, meaning CI or trunk is red or a person is blocked on the result right now. Otherwise use standard speed, the same slug without `-fast`.",
+      "replacement": "Every dispatch sets each speed option its model lists to its standard value (`fastMode=false` on Claude and `cursor`, `serviceTier=default` on Codex), as the defaults in [Models](#models) do. This router never uses fast mode, urgent or not, and `t3-sheet.mjs` rejects a fast entry.",
       "rationale": "#613 per-job effort: a T3 entry carries its reasoning and speed as options, not as slug suffixes (The sheet); never fast (design.md, Speed)"
     },
     {
