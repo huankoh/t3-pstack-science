@@ -318,23 +318,28 @@ describe("side-by-side Claude plugins", () => {
 
 describe("side-by-side Codex plugins", () => {
   test.each(["trusted", "untrusted", "modified"])("warns only when the foreign hook is trusted (%s)", async (trustStatus) => {
+    const calls = [];
     const start = spyOn(AppServer, "start").mockResolvedValue({
-      request: async (method) => ({
-        "config/read": { config: {} },
-        "plugin/list": { marketplaces: [{ plugins: [
-          { id: "t3-pstack-science@t3-pstack-science", enabled: true },
-          { id: legacy.pluginId, enabled: true },
-        ] }] },
-        "hooks/list": { data: [{ hooks: [
-          { pluginId: legacy.pluginId, trustStatus },
-          { pluginId: "another@market", trustStatus: "trusted" },
-        ] }] },
-        "skills/list": { data: [{ skills: [] }] },
-      })[method],
+      request: async (method) => {
+        calls.push(method);
+        return ({
+          "config/read": { config: {} },
+          "plugin/list": { marketplaces: [{ plugins: [
+            { id: "t3-pstack-science@t3-pstack-science", enabled: true },
+            { id: legacy.pluginId, enabled: true },
+          ] }] },
+          "hooks/list": { data: [{ hooks: [
+            { pluginId: legacy.pluginId, trustStatus },
+            { pluginId: "another@market", trustStatus: "trusted" },
+          ] }] },
+          "skills/list": { data: [{ skills: [] }] },
+        })[method];
+      },
       close() {},
     });
     try {
       const checks = await doctorCodex({ dir: tmp(), bin: "codex" }, context);
+      expect(calls.filter((method) => method === "hooks/list")).toHaveLength(1);
       expect(checks.filter((c) => c.warn)).toEqual(trustStatus === "trusted" ? [{
         name: "session hooks", ok: false, warn: true,
         detail: "t3-pstack is also enabled, and its session hook runs too",
