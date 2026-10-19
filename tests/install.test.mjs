@@ -25,7 +25,7 @@ import { fileURLToPath } from "node:url";
 import { doctorClaude, installClaude, syncScopedRecords } from "../tools/install/claude.mjs";
 import { AppServer, doctorCodex } from "../tools/install/codex.mjs";
 import { parseSource, writeAtomic } from "../tools/install/common.mjs";
-import { discoverHomes } from "../tools/install/homes.mjs";
+import { cursorHome, discoverHomes } from "../tools/install/homes.mjs";
 import { doctorSheet } from "../tools/install/sheet.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
@@ -133,6 +133,35 @@ describe("discoverHomes", () => {
       ],
       settings: { path: join(t3, "userdata/settings.json"), instances: 0, error: "not found" },
     });
+  });
+});
+
+describe("cursorHome", () => {
+  test("is the OS home's .cursor for the default and every T3 cursor instance, whatever the instance names", () => {
+    const t3 = tmp();
+    writeJson(join(t3, "userdata/settings.json"), {
+      providerInstances: {
+        claudeAgent: { driver: "claudeAgent", config: { homePath: "" } },
+        cursor_main: { driver: "cursor", config: { homePath: "/tmp/not-the-os-home", binaryPath: "/opt/cursor" } },
+        cursor_env: { driver: "cursor", enabled: false, environment: [{ name: "CURSOR_HOME", value: "/opt/cursor-env" }] },
+        cursor_off: { driver: "cursor", config: { enabled: false } },
+      },
+    });
+    expect(cursorHome({ env: { T3CODE_HOME: t3 }, home: "/home/u" })).toEqual({
+      harness: "cursor",
+      dir: "/home/u/.cursor",
+      from: ["default", "T3 instance cursor_main", "T3 instance cursor_env (disabled)", "T3 instance cursor_off (disabled)"],
+      bin: null,
+    });
+  });
+
+  test("is the default alone when T3's settings are missing or do not parse", () => {
+    const t3 = tmp();
+    const expected = { harness: "cursor", dir: "/home/u/.cursor", from: ["default"], bin: null };
+    expect(cursorHome({ env: { T3CODE_HOME: t3 }, home: "/home/u" })).toEqual(expected);
+    mkdirSync(join(t3, "userdata"), { recursive: true });
+    writeFileSync(join(t3, "userdata/settings.json"), '{"providerInstances": {"cursor_main": {"driver": "cursor"');
+    expect(cursorHome({ env: { T3CODE_HOME: t3 }, home: "/home/u" })).toEqual(expected);
   });
 });
 

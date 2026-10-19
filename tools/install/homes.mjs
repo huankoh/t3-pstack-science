@@ -76,3 +76,16 @@ export function discoverHomes({ env, home, claudeHomes = [], codexHomes = [] }) 
   const counted = Object.values(instances).filter((instance) => DRIVERS[instance.driver]).length;
   return { homes: [...homes.values()], settings: { path: settingsPath, instances: counted, error } };
 }
+
+// The Cursor SDK reads the OS home's .cursor and ignores an instance's
+// homePath and environment, so every T3 cursor instance only adds provenance.
+export function cursorHome({ env, home }) {
+  const { instances } = readT3Settings(t3SettingsPath(env, home));
+  const from = ["default"];
+  for (const [id, instance] of Object.entries(instances)) {
+    if (instance.driver !== "cursor") continue;
+    const disabled = instance.enabled === false || instance.config?.enabled === false;
+    from.push(`T3 instance ${id}${disabled ? " (disabled)" : ""}`);
+  }
+  return { harness: "cursor", dir: join(home, ".cursor"), from, bin: null };
+}

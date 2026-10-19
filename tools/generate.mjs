@@ -14,6 +14,9 @@
 //   plugins/pstack/agents/*.md -> the "agents" list in
 //     plugins/pstack/.claude-plugin/plugin.json (a list replaces the default
 //     agents/ directory, so it names every agent)
+//   the planned Claude manifest and hooks/session-start-context.md
+//     -> plugins/pstack/.cursor-plugin/ (identity, skills, an empty agents
+//        list, and the always-apply session rule)
 //   LICENSE, LICENSE-cursor-team-kit, LICENSE-thermos, NOTICE-skills.md
 //     -> copies under poteto-mode/references/licenses/, so the notices ship
 //        inside the installed plugin
@@ -67,7 +70,8 @@ export const PORTABLE_ASSETS = [
 
 // The generator removes every entry of these directories that no planned path
 // runs through, so no hand-written file may live in one.
-export const OWNED_DIRS = [LICENSES];
+const CURSOR_PLUGIN = `${PLUGIN}/.cursor-plugin`;
+export const OWNED_DIRS = [LICENSES, CURSOR_PLUGIN];
 
 // A release version, with an optional pre-release suffix such as -rc.1.
 const VERSION_RE = /\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?/;
@@ -348,6 +352,30 @@ export function stampAgentPaths(manifestText, paths) {
   return JSON.stringify({ ...JSON.parse(manifestText), agents: paths }, null, 2) + "\n";
 }
 
+const CURSOR_COMPONENT_KEYS = ["skills", "agents", "rules", "hooks", "commands", "mcpServers"];
+
+// An empty agents list is what stops the SDK registering our agent files as
+// subagent types.
+export function cursorManifest(claude) {
+  const identity = Object.entries(claude).filter(([key]) => !CURSOR_COMPONENT_KEYS.includes(key));
+  return { ...Object.fromEntries(identity), skills: "./skills/", agents: [], rules: "./.cursor-plugin/rules/" };
+}
+
+const CURSOR_RULE_GATE =
+  "Follow this rule only when a `<runtime_info>` block says the session runs in T3 Code, and ignore it in any other Cursor session. " +
+  "Cursor does not prefix plugin skill names, and another plugin may ship skills or agents with the same names (such as `setup-pstack`, `poteto-mode`, `poteto-agent`). " +
+  "Each skill below is named by its `SKILL.md` path under `${CURSOR_PLUGIN_ROOT}`: open that file and follow it, never a bare name. " +
+  "In this rule, `poteto-mode` always means `${CURSOR_PLUGIN_ROOT}/skills/poteto-mode/SKILL.md`. " +
+  "A persona is a `delegate_task` brief that names `${CURSOR_PLUGIN_ROOT}/agents/<name>.md`, not a Cursor subagent type.";
+
+export function cursorRule(context, pluginName) {
+  const pattern = new RegExp(`\`${pluginName}:([a-z0-9-]+)\``, "g");
+  const body = context.replace(pattern, "`${CURSOR_PLUGIN_ROOT}/skills/$1/SKILL.md`");
+  if (body === context) throw new Error(`session-start context has no \`${pluginName}:<skill>\` token`);
+  if (body.includes(`${pluginName}:`)) throw new Error(`session-start context still names \`${pluginName}:\``);
+  return `---\ndescription: ${pluginName} session start for T3 Code\nalwaysApply: true\n---\n\n${CURSOR_RULE_GATE}\n\n${body}`;
+}
+
 export function validateCodexMarketplace(text, { expectedName, pathExists }) {
   const manifest = JSON.parse(text);
   const plugins = manifest.plugins ?? [];
@@ -534,6 +562,9 @@ export function plan(root, models) {
     stamp(file, (text) => applyRegions(file, text, models, { strict: true }));
   }
   stamp(`${PLUGIN}/.claude-plugin/plugin.json`, (text) => stampAgentPaths(text, pluginAgentPaths(join(root, PLUGIN))));
+  const claude = JSON.parse(files[`${PLUGIN}/.claude-plugin/plugin.json`]);
+  files[`${CURSOR_PLUGIN}/plugin.json`] = `${JSON.stringify(cursorManifest(claude), null, 2)}\n`;
+  files[`${CURSOR_PLUGIN}/rules/session-start.mdc`] = cursorRule(read(`${PLUGIN}/hooks/session-start-context.md`), claude.name);
   const realRoot = realpathSync(root);
   for (const { source, target } of PORTABLE_ASSETS) {
     if (!pathIsInside(realRoot, realpathSync(join(root, source)))) {
@@ -566,11 +597,22 @@ export function changes(root, intended) {
   const planned = Object.keys(intended.files);
   for (const dir of intended.ownedDirs) {
     if (!lstatNoSymlinks(root, dir)) continue;
-    for (const entry of readdirSync(join(root, dir)).sort()) {
-      const path = `${dir}/${entry}`;
-      if (!planned.some((p) => p === path || p.startsWith(`${path}/`))) pending.push({ kind: "remove", path });
-    }
+    pending.push(...orphansUnder(root, dir, planned));
   }
+  return pending;
+}
+
+function orphansUnder(root, dir, planned) {
+  const pending = [];
+  const visit = (rel) => {
+    for (const entry of readdirSync(join(root, rel)).sort()) {
+      const path = `${rel}/${entry}`;
+      const holdsPlanned = planned.some((plannedPath) => plannedPath.startsWith(`${path}/`));
+      if (!holdsPlanned && !planned.includes(path)) pending.push({ kind: "remove", path });
+      else if (holdsPlanned) visit(path);
+    }
+  };
+  visit(dir);
   return pending;
 }
 

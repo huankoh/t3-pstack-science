@@ -14,11 +14,24 @@ npx -y github:huankoh/t3-pstack-science update
 npx -y github:huankoh/t3-pstack-science doctor
 ```
 
-`npx -y github:huankoh/t3-pstack-science` runs the installer from the latest commit on `main`. That is the rolling channel, the same one each home's marketplace auto-updates from. To run one release's installer, name its tag, as in `npx -y github:huankoh/t3-pstack-science#v2.0.0-rc.11-science.1 doctor`.
+`npx -y github:huankoh/t3-pstack-science` runs the installer from the latest commit on `main`. That is the rolling channel, the same one each home's marketplace auto-updates from. To run one release's installer, name its tag, as in `npx -y github:huankoh/t3-pstack-science#v2.0.0-rc.11-science.2 doctor`.
 
 `install` and `update` are the same command, and a second run changes nothing. With Node 20 or later, it installs or updates the `t3-pstack-science@t3-pstack-science` plugin in every Claude Code and Codex config home T3 can run: `~/.claude` and `~/.codex`, `$CLAUDE_CONFIG_DIR` and `$CODEX_HOME`, and the home of each `claudeAgent` and `codex` instance in T3's settings, disabled ones included. Name any other home with `--claude-home <dir>` or `--codex-home <dir>`. Each home's `t3-pstack-science` marketplace must come from `huankoh/t3-pstack-science`, or from `--source <owner/repo|git URL|dir>` on the same run, and a home whose marketplace has another source is left as it is. A local directory needs a path such as `./t3-pstack-science`, since `owner/repo` always means GitHub. On Codex it also trusts t3-pstack-science's session-start hook, once its hooks file is the one this release pins. Codex runs a plugin's hook only once it is trusted, and T3's Codex sessions never ask, so without this step the hook never runs. Run `update` after each release.
 
 `doctor` reports on the same homes and changes nothing itself: each marketplace's source, the installed version, whether its files are all there, whether it is enabled, the Codex hook's trust, Claude Code records that pin an old version, plain copies of the plugin's skills, and the model sheet. It exits 1 on a failed check and prints a fix for each. It warns when chhoumann's plugin is enabled in the same home and its session hook runs. On Codex, that hook must be trusted. Disable that plugin in the home to run only this fork's hook. The installer leaves that plugin and its sheets intact.
+
+### Cursor (opt-in)
+
+```shell
+npx -y github:huankoh/t3-pstack-science install --cursor
+npx -y github:huankoh/t3-pstack-science update --cursor
+npx -y github:huankoh/t3-pstack-science doctor --cursor
+npx -y github:huankoh/t3-pstack-science uninstall --cursor
+```
+
+`install --cursor` and `update --cursor` also install Claude Code and Codex, as a plain install does, and they copy this package into `~/.cursor/plugins/local/t3-pstack-science`. `doctor --cursor` checks that copy. `uninstall --cursor` removes only that copy. `uninstall` without `--cursor` is a usage error. A `--cursor` run whose `--source` is a remote repository other than `huankoh/t3-pstack-science` is a usage error, because the copy is this package's files or a local `--source` directory. Plain `install`, `update`, and `doctor` never read or write `~/.cursor`, even when T3 settings list a Cursor instance.
+
+The session text is a Cursor rule, and each skill is named by the absolute path of its `SKILL.md` under that copy. A `session hook: off` line in the machine sheet leaves the rule out at the next `install --cursor`. The Cursor app and `cursor-agent` see the copy too, and the rule applies only when a `<runtime_info>` block says the session runs in T3 Code. Lauren's `pstack` keeps loading beside it. Moving the folder to another non-dot name inside `plugins/local` does not disable it. Back out with `uninstall --cursor`.
 
 Then run `/t3-pstack-science:setup-pstack` in a T3 thread on each machine. It writes the model sheet, `~/.config/t3-pstack-science/models.md`, with one T3 target per role (`<providerInstanceId>/<modelId>` plus that provider's options), and checks it against the machine's `orchestrator_capabilities`. Without a sheet, every role runs on the defaults in its skill's Models section. This fork reads only its machine sheet and never migrates or links another plugin's sheet.
 

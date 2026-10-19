@@ -2,6 +2,10 @@
 
 This file is the release changelog, with one `## <version> - <title>` entry per release, newest first. The Cursor-to-T3 rewrite rules live in [`tools/substitutions.json`](tools/substitutions.json), and the [sync boundary](CONTRIBUTING.md#the-sync-boundary) in `CONTRIBUTING.md` defines how a change to upstream's skill content is declared.
 
+## 2.0.0-rc.11-science.2 - Cursor install is opt-in
+
+`install --cursor`, `update --cursor`, and `doctor --cursor` copy this package into `~/.cursor/plugins/local/t3-pstack-science` and check it. `uninstall --cursor` removes only that copy. Plain `install`, `update`, and `doctor` do not read or write `~/.cursor`. The session text is a plugin rule that names skills by path, and `session hook: off` takes effect at the next `install --cursor`. Neither hooks file changes.
+
 ## 2.0.0-rc.11-science.1 - t3-pstack-science: science and general routing
 
 The science fork separates general and scientific work into model-routing columns. [PR #1](https://github.com/huankoh/t3-pstack-science/pull/1) adds the two-column policy and sheet checks. [PR #2](https://github.com/huankoh/t3-pstack-science/pull/2) carries the domain gate into the skill and dispatch prose, with term-free briefs for seats outside the science term readers.

@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { agentSkills } from "../tools/generate.mjs";
+import { sessionHookOff } from "../tools/install/sheet.mjs";
 import { sheetCases, writeSheet } from "./session-hook-sheets.mjs";
 
 const pluginRoot = fileURLToPath(new URL("../plugins/pstack/", import.meta.url));
@@ -75,6 +76,42 @@ describe("SessionStart hook", () => {
     const skills = new Set(agentSkills(join(pluginRoot, "skills")).map(({ name }) => name));
     expect(named).toContain("poteto-mode");
     expect(named.filter((name) => !skills.has(name))).toEqual([]);
+  });
+
+  // session-start.ps1 decodes this sheet with a replacement character and
+  // reads it as off, so it is not one of the shared cases.
+  const oddUtf16 = {
+    name: "off in UTF-16 LE that ends mid-character",
+    sheet: Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from("session hook: off\n", "utf16le"), Buffer.from([0x41])]),
+    off: false,
+  };
+
+  test("sessionHookOff agrees with session-start.sh on every sheet case", () => {
+    for (const { name, sheet, off } of [...sheetCases, oddUtf16]) {
+      const dir = mkdtempSync(join(tmpdir(), "pstack-sheet-"));
+      const path = join(dir, "models.md");
+      writeSheet(path, sheet);
+      const hook = runHook("claude", sheet);
+      try {
+        expect(sessionHookOff(path), name).toBe(off);
+        expect(hook.status === 0 && hook.out === "", name).toBe(off);
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    }
+    expect(sessionHookOff(join(tmpdir(), "pstack-sheet-missing", "models.md")), "missing sheet").toBe(false);
+  });
+
+  // read-sheet.sh is locale-dependent here (off in C, on in UTF-8 locales), so only the JS result is pinned.
+  test("sessionHookOff leaves the hook on when the sheet is not UTF-8", () => {
+    const dir = mkdtempSync(join(tmpdir(), "pstack-sheet-"));
+    const path = join(dir, "models.md");
+    writeFileSync(path, Buffer.from([0xff, ...Buffer.from("\nsession hook: off\n")]));
+    try {
+      expect(sessionHookOff(path)).toBe(false);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   for (const arg of ["cursor", "copilot", ""]) {

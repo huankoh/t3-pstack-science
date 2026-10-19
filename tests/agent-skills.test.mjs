@@ -59,6 +59,16 @@ describe("shared Agent Skills tree", () => {
     }
   });
 
+  test("every skill the Cursor session rule names by path exists and is model-invocable", () => {
+    const rule = readFileSync(join(repoRoot, "plugins/pstack/.cursor-plugin/rules/session-start.mdc"), "utf8");
+    const named = [...rule.matchAll(/\$\{CURSOR_PLUGIN_ROOT\}\/skills\/([a-z0-9-]+)\/SKILL\.md/g)].map((m) => m[1]);
+    expect(named).toContain("poteto-mode");
+    for (const name of named) {
+      const { data } = parseFrontmatter(readFileSync(join(skillsDir, name, "SKILL.md"), "utf8"));
+      expect(data["disable-model-invocation"], `${name} is named by the Cursor session rule`).not.toBe(true);
+    }
+  });
+
   test("every skill the session-start routing tells the model to invoke is model-invocable", () => {
     const routing = readFileSync(join(repoRoot, "plugins/pstack/hooks/session-start-context.md"), "utf8");
     const named = [...routing.matchAll(/`t3-pstack-science:([a-z0-9-]+)`/g)].map((m) => m[1]);

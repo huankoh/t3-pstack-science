@@ -47,7 +47,7 @@ bun tools/generate.mjs
 GIT_CONFIG_GLOBAL=/dev/null bun test tests/ --timeout 30000
 ```
 
-The generator stamps `VERSION` into the Claude Code and Codex manifests, the marketplace entry, and `package.json`. It renders each model-consuming skill's Models section, interrogate's reviewer table, and setup-pstack's sheet block from `plugins/pstack/models.json`, lists the plugin's agents in the Claude Code manifest, and copies the license and notice files into the installed plugin. It checks each skill's frontmatter, every local Markdown link, the plugin layout, agent frontmatter, the Codex marketplace, and both hooks files against their pins in `tools/frozen-hooks.json`. CI runs `bun tools/generate.mjs --check`, which writes nothing and fails naming each generated file that is stale or orphaned, so commit the generator's output. `.pre-commit-config.yaml` runs the same check before each commit once you run `prek install` (or `pre-commit install`).
+The generator stamps `VERSION` into the Claude Code and Codex manifests, the marketplace entry, and `package.json`, and derives `plugins/pstack/.cursor-plugin/` from the Claude manifest and the session-start context. It renders each model-consuming skill's Models section, interrogate's reviewer table, and setup-pstack's sheet block from `plugins/pstack/models.json`, lists the plugin's agents in the Claude Code manifest, and copies the license and notice files into the installed plugin. It checks each skill's frontmatter, every local Markdown link, the plugin layout, agent frontmatter, the Codex marketplace, and both hooks files against their pins in `tools/frozen-hooks.json`. CI runs `bun tools/generate.mjs --check`, which writes nothing and fails naming each generated file that is stale or orphaned, so commit the generator's output. `.pre-commit-config.yaml` runs the same check before each commit once you run `prek install` (or `pre-commit install`).
 
 Change model defaults in `models.json`, never in a skill body. A role names a tier (`default`, `strongest`, or `panel`), and each tier holds T3 entries in the grammar `t3-sheet.mjs` checks. The panel must span two model families. A role may carry an `alias`, the label a sheet written before upstream renamed the role still uses.
 
@@ -67,6 +67,13 @@ If you touched the installer (`tools/install.mjs` or `tools/install/`), also run
 
 ```shell
 T3_PSTACK_E2E=1 GIT_CONFIG_GLOBAL=/dev/null bun test tests/install-e2e.test.mjs --timeout 300000
+```
+
+The Cursor tests need no Cursor binary and no credential. `tests/install-cursor.test.mjs` and `tests/install-cursor-e2e.test.mjs` run in the default suite, in a throwaway `HOME`. The live proof is opt-in. It installs into a throwaway `HOME` and does not read T3's stored credentials. Set `T3_PSTACK_CURSOR_SDK` to the directory of `@cursor/sdk` (T3 bundles 1.0.35) and export `CURSOR_API_KEY` yourself:
+
+```shell
+T3_PSTACK_CURSOR_LIVE=1 T3_PSTACK_CURSOR_SDK=/absolute/path/to/node_modules/@cursor/sdk \
+  GIT_CONFIG_GLOBAL=/dev/null bun test tests/cursor-live.test.mjs --timeout 900000
 ```
 
 If you touched a workflow, audit it before pushing:

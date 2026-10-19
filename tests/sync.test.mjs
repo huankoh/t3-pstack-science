@@ -23,6 +23,7 @@ import {
   changedLines,
   classify,
   denylistHits,
+  isExcluded,
   mergeFile,
   parseForks,
   parseRule,
@@ -538,6 +539,17 @@ describe("classify", () => {
     ["an upstream deletion the port already made", { old: older("a\n") }, null],
   ])("%s", (_, input, outcome) => {
     expect(classify(input)).toEqual(outcome);
+  });
+});
+
+describe("upstream exclusions", () => {
+  test("the generated Cursor plugin files are excluded for pstack and thermos", () => {
+    const { components } = JSON.parse(readFileSync(join(import.meta.dir, "../tools/upstream.json"), "utf8"));
+    for (const name of ["pstack", "thermos"]) {
+      for (const rel of [".cursor-plugin/plugin.json", ".cursor-plugin/rules/session-start.mdc"]) {
+        expect(isExcluded(rel, components[name].exclude), `${name} ${rel}`).toBe(true);
+      }
+    }
   });
 });
 
