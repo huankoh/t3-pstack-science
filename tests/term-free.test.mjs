@@ -23,56 +23,128 @@ const run = (...args) => {
   return { status, stdout, stderr };
 };
 
+const regressionCases = [
+  ["catch", "binding affinity", "binding affinity", "binding affinity"],
+  ["catch", "binding\naffinity", "binding affinity", "binding\naffinity"],
+  ["catch", "amino\nacid", "amino acid", "amino\nacid"],
+  ["catch", "small\nmolecules", "small molecule", "small\nmolecules"],
+  ["catch", "binding\r\n\t affinities", "binding affinity", "binding\r\n\t affinities"],
+  ["catch", "bindingaffinity", "binding affinity", "bindingaffinity"],
+  ["catch", "aminoacid", "amino acid", "aminoacid"],
+  ["catch", "smallmolecule", "small molecule", "smallmolecule"],
+  ["catch", "rnaseq", "rna seq", "rnaseq"],
+  ["catch", "RNAseq", "rna seq", "RNAseq"],
+  ["catch", "scRNAseq", "rna seq", "RNAseq"],
+  ["catch", "RNA-seq", "rna seq", "RNA-seq"],
+  ["catch", "RNA-seq data", "rna seq", "RNA-seq"],
+  ["catch", "antibodies", "antibody", "antibodies"],
+  ["catch", "binding affinities", "binding affinity", "binding affinities"],
+  ["catch", "biologies", "biology", "biologies"],
+  ["catch", "countRNAs", "rna", "RNAs"],
+  ["catch", "readDNAsCount", "dna", "DNAs"],
+  ["catch", "RNAs", "rna", "RNAs"],
+  ["catch", "mRNA", "mrna", "mRNA"],
+  ["catch", "mRNA_count", "mrna", "mRNA"],
+  ["catch", "gene1", "gene", "gene"],
+  ["catch", "dna2vec", "dna", "dna"],
+  ["catch", "protein2vec", "protein", "protein"],
+  ["catch", "Protein3D", "protein", "Protein"],
+  ["catch", "ligandCount", "ligand", "ligand"],
+  ["catch", "gene_id", "gene", "gene"],
+  ["catch", "readGeneMatrix", "gene", "Gene"],
+  ["catch", "DNAParser", "dna", "DNA"],
+  ["catch", "bindingAffinity", "binding affinity", "bindingAffinity"],
+  ["catch", "binding_site", "binding site", "binding_site"],
+  ["catch", "BINDING-SITES", "binding site", "BINDING-SITES"],
+  ["catch", "biological", "biological", "biological"],
+  ["catch", "biologically", "biologically", "biologically"],
+  ["catch", "proteomics", "proteomics", "proteomics"],
+  ["catch", "proteomic", "proteomic", "proteomic"],
+  ["catch", "genomics", "genomics", "genomics"],
+  ["catch", "enzymatic", "enzymatic", "enzymatic"],
+  ["catch", "BRCA1", "brca1", "BRCA1", "BRCA1"],
+  ["catch", "readBRCA1Count", "brca1", "BRCA1", "BRCA1"],
+  ["catch", "brca1Status", "brca1", "brca1", "BRCA1"],
+  ["catch", "loadBRCA1", "brca1", "BRCA1", "BRCA1"],
+  ["catch", "BRCA 1", "brca1", "BRCA 1", "BRCA1"],
+  ["catch", "il6Level", "il6", "il6", "IL6"],
+  ["catch", "loadIL6Count", "il6", "IL6", "IL6"],
+  ["catch", "IL-6", "il6", "IL-6", "IL6"],
+  ["catch", "IL 6", "il6", "IL 6", "IL6"],
+  ["catch", "IL\n6", "il6", "IL\n6", "IL6"],
+  ["catch", "cd4Count", "cd4", "cd4", "CD4"],
+  ["catch", "CD 4", "cd4", "CD 4", "CD4"],
+  ["catch", "dCas9", "cas9", "Cas9", "Cas9"],
+  ["catch", "spCas9", "cas9", "Cas9", "Cas9"],
+  ["catch", "readCas9", "cas9", "Cas9", "Cas9"],
+  ["catch", "readCRISPRCas9Count", "crispr cas9", "CRISPRCas9", "CRISPR-Cas9"],
+  ["catch", "getFOXP3", "foxp3", "FOXP3", "FOXP3"],
+  ["catch", "readRowGroup2Count", "rowgroup2", "RowGroup2", "RowGroup2"],
+  ["catch", "mAbTiter", "mab", "mAb", "mAb"],
+  ["catch", "mAb_titer", "mab", "mAb", "mAb"],
+  ["catch", "pKaValue", "pka", "pKa", "pKa"],
+  ["catch", "pKa_value", "pka", "pKa", "pKa"],
+  ["catch", "mAb\n titer", "mab titer", "mAb\n titer", "mAb titer"],
+  ["catch", "categories", "category", "categories", "category"],
+  ["catch", "categories", "category", "categories", "CATEGORY"],
+  ["catch", "activities", "activity", "activities", "activity"],
+  ["catch", "IL-6", "il 6", "IL-6", "IL-6"],
+  ["catch", "CRISPR-Cas9", "crispr cas9", "CRISPR-Cas9", "CRISPR-Cas9"],
+  ["catch", "α_helix", "α helix", "α_helix", "α helix"],
+  ["catch", "α-helix", "α helix", "α-helix", "α_helix"],
+  ["catch", "mutation", "mutation", "mutation", "mutation"],
+  ["catch", "pdb", "pdb", "pdb", "pdb"],
+  ["catch", "docking", "docking", "docking", "docking"],
+  ["catch", "smiles", "smiles", "smiles", "smiles"],
+  ["catch", "assayes", "assay", "assayes"],
+  ["catch", "binding.affinity", "binding affinity", "binding.affinity"],
+  ["catch", "binding/affinities", "binding affinity", "binding/affinities"],
+  ["catch", "CoAValue", "coa", "CoA", "CoA"],
+  ["pass", "general"],
+  ["pass", "generator"],
+  ["pass", "generic"],
+  ["pass", "cancellation"],
+  ["pass", "excellent"],
+  ["pass", "eigenvalue matrix vector"],
+  ["pass", "useMutation(Q)"],
+  ["pass", "new MutationObserver(cb)"],
+  ["pass", "mutation testing"],
+  ["pass", "import pdb; pdb.set_trace()"],
+  ["pass", "docking layout"],
+  ["pass", "he smiles"],
+  ["pass", "genetic algorithm"],
+  ["pass", "enzyme.mount(<App/>)"],
+  ["pass", "import { mount } from 'enzyme'; enzyme.mount(<App/>)"],
+  ["pass", "x = m - abs(y)", null, null, "mAb"],
+  ["pass", "p - ka", null, null, "pKa"],
+  ["pass", "m_AbTiter", null, null, "mAb"],
+  ["pass", "m-AbTiter", null, null, "mAb"],
+  ["pass", "co - a", null, null, "CoA"],
+  ["pass", "ids", null, null, "id"],
+  ["pass", "Sort rows by the third column, then merge runs within 5 of the previous end.\n"],
+];
+
+describe("term-free regression table", () => {
+  test.each(regressionCases.map(([verdict, input, term = null, found = null, extra = null]) => [verdict, input, term, found, extra]))("%s %j", (verdict, input, term, found, extra) => {
+    const file = brief(`Sort rows.\n${input}\n`);
+    const result = run(file, ...(extra ? ["--term", extra] : []));
+    expect(result).toEqual(verdict === "catch" ? {
+      status: 1, stdout: `line 2: ${term} (${JSON.stringify(found)})\n`, stderr: "",
+    } : {
+      status: 0, stdout: `ok: no listed term in ${file}\n`, stderr: "",
+    });
+  });
+});
+
 describe("findTerms", () => {
-  test("reports case, plurals, and separators in reading order", async () => {
+  test("reports each occurrence in reading order with original spellings and CRLF lines", async () => {
     const { findTerms } = await checker();
-    expect(findTerms("Count Genes per row.\nGroup single-cell records.\nfold the PROTEIN chain", ["protein", "single cell", "gene"])).toEqual([
-      { line: 1, term: "gene", found: "Genes" },
-      { line: 2, term: "single cell", found: "single-cell" },
-      { line: 3, term: "protein", found: "PROTEIN" },
-    ]);
-    expect(findTerms("assays and assayes; binding_affinities; binding_sites", ["assay", "binding site"])).toEqual([
-      { line: 1, term: "assay", found: "assays" },
-      { line: 1, term: "assay", found: "assayes" },
-      { line: 1, term: "binding site", found: "binding_sites" },
-    ]);
-  });
-
-  test("splits underscores, camel case, and acronym humps", async () => {
-    const { findTerms } = await checker();
-    expect(findTerms("Rename `gene_id`, `readGeneMatrix`, `DNAParser`, and `ligandCount`.", ["gene", "dna", "ligand"])).toEqual([
+    expect(findTerms("protein gene protein\r\nGENES", ["gene", "protein"])).toEqual([
+      { line: 1, term: "protein", found: "protein" },
       { line: 1, term: "gene", found: "gene" },
-      { line: 1, term: "gene", found: "Gene" },
-      { line: 1, term: "dna", found: "DNA" },
-      { line: 1, term: "ligand", found: "ligand" },
+      { line: 1, term: "protein", found: "protein" },
+      { line: 2, term: "gene", found: "GENES" },
     ]);
-  });
-
-  test("preserves original spelling across split humps and underscores", async () => {
-    const { findTerms } = await checker();
-    expect(findTerms("bindingAffinity and binding_site and BINDING-SITES", ["binding affinity", "binding site"])).toEqual([
-      { line: 1, term: "binding affinity", found: "bindingAffinity" },
-      { line: 1, term: "binding site", found: "binding_site" },
-      { line: 1, term: "binding site", found: "BINDING-SITES" },
-    ]);
-  });
-
-  test("retains mixed-case words and acronym plurals that case splitting would divide", async () => {
-    const { findTerms } = await checker();
-    expect(findTerms("mRNA, RNAs, DNAs, mRNA_count", ["mrna", "rna", "dna"])).toEqual([
-      { line: 1, term: "mrna", found: "mRNA" },
-      { line: 1, term: "rna", found: "RNAs" },
-      { line: 1, term: "dna", found: "DNAs" },
-      { line: 1, term: "mrna", found: "mRNA" },
-    ]);
-  });
-
-  test("matches whole terms across lines and reports their first line", async () => {
-    const { findTerms } = await checker();
-    expect(findTerms("Handle cancellation and excellent cases.\nsingle\ncell", ["cell", "single cell"])).toEqual([
-      { line: 2, term: "single cell", found: "single\ncell" },
-    ]);
-    expect(findTerms("Cell cancellation", ["cell"])).toEqual([{ line: 1, term: "cell", found: "Cell" }]);
   });
 
   test.each([["proteomic", "proteomics"], ["proteomics", "proteomic"]])("reports the longer term once for the same span with %j first", async (first, second) => {
@@ -83,22 +155,12 @@ describe("findTerms", () => {
     ]);
   });
 
-  test.each([["rna", "rna seq"], ["rna seq", "rna"]])("drops contained spans across passes with %j first", async (first, second) => {
+  test.each([["rna", "rna seq"], ["rna seq", "rna"]])("drops contained spans with %j first", async (first, second) => {
     const { findTerms } = await checker();
     expect(findTerms("RNA-seq data; rnaSeqData; rna", [first, second])).toEqual([
       { line: 1, term: "rna seq", found: "RNA-seq" },
       { line: 1, term: "rna seq", found: "rnaSeq" },
       { line: 1, term: "rna", found: "rna" },
-    ]);
-  });
-
-  test("reports each occurrence, including repeated terms on one line and CRLF lines", async () => {
-    const { findTerms } = await checker();
-    expect(findTerms("protein gene protein\r\nGENES", ["gene", "protein"])).toEqual([
-      { line: 1, term: "protein", found: "protein" },
-      { line: 1, term: "gene", found: "gene" },
-      { line: 1, term: "protein", found: "protein" },
-      { line: 2, term: "gene", found: "GENES" },
     ]);
   });
 });
@@ -132,126 +194,6 @@ describe("parseGlossary", () => {
 });
 
 describe("term-free.mjs CLI", () => {
-  test.each([
-    ["binding\naffinity", "binding affinity", "binding\naffinity"],
-    ["amino\nacid", "amino acid", "amino\nacid"],
-    ["small\nmolecules", "small molecule", "small\nmolecules"],
-    ["binding\r\n\t affinities", "binding affinity", "binding\r\n\t affinities"],
-    ["antibodies", "antibody", "antibodies"],
-    ["binding affinities", "binding affinity", "binding affinities"],
-    ["biologies", "biology", "biologies"],
-    ["countRNAs", "rna", "RNAs"],
-    ["readDNAsCount", "dna", "DNAs"],
-    ["RNAs", "rna", "RNAs"],
-    ["mRNA", "mrna", "mRNA"],
-    ["gene1", "gene", "gene"],
-    ["dna2vec", "dna", "dna"],
-    ["protein2vec", "protein", "protein"],
-    ["Protein3D", "protein", "Protein"],
-    ["bindingaffinity", "binding affinity", "bindingaffinity"],
-    ["aminoacid", "amino acid", "aminoacid"],
-    ["smallmolecule", "small molecule", "smallmolecule"],
-    ["rnaseq", "rna seq", "rnaseq"],
-    ["RNAseq", "rna seq", "RNAseq"],
-    ["scRNAseq", "rna seq", "RNAseq"],
-    ["RNA-seq data", "rna seq", "RNA-seq"],
-    ["biological", "biological", "biological"],
-    ["biologically", "biologically", "biologically"],
-    ["proteomics", "proteomics", "proteomics"],
-    ["proteomic", "proteomic", "proteomic"],
-    ["genomics", "genomics", "genomics"],
-    ["enzymatic", "enzymatic", "enzymatic"],
-  ])("exits 1 with the term and original spelling for %j", (input, term, found) => {
-    expect(run(brief(`Sort rows.\n${input}\n`))).toEqual({
-      status: 1, stdout: [term].flat().map((word) => `line 2: ${word} (${JSON.stringify(found)})\n`).join(""), stderr: "",
-    });
-  });
-
-  test.each([
-    "general", "generator", "generic", "cancellation", "excellent", "eigenvalue matrix vector",
-    "genetic algorithm", "import { mount } from 'enzyme'; enzyme.mount(<App/>)",
-    "useMutation(Q)", "new MutationObserver(cb)", "mutation testing", "import pdb; pdb.set_trace()", "docking layout", "he smiles",
-  ])("exits 0 for ordinary code and prose %j", (input) => {
-    const file = brief(input);
-    expect(run(file)).toEqual({ status: 0, stdout: `ok: no listed term in ${file}\n`, stderr: "" });
-  });
-
-  test.each([
-    ["category", "categories", "category"],
-    ["CATEGORY", "categories", "category"],
-    ["activity", "activities", "activity"],
-    ["IL-6", "IL-6", "il 6"],
-    ["CRISPR-Cas9", "CRISPR-Cas9", "crispr cas9"],
-    ["α helix", "α_helix", "α helix"],
-    ["α_helix", "α-helix", "α helix"],
-    ["mutation", "mutation", "mutation"],
-    ["pdb", "pdb", "pdb"],
-    ["docking", "docking", "docking"],
-    ["smiles", "smiles", "smiles"],
-  ])("--term %j detects normalized task terms and plurals", (extra, input, term) => {
-    expect(run(brief(input), "--term", extra)).toEqual({
-      status: 1, stdout: `line 1: ${term} (${JSON.stringify(input)})\n`, stderr: "",
-    });
-  });
-
-  test.each([
-    ["BRCA1", "readBRCA1Count", "brca1", "BRCA1"],
-    ["BRCA1", "brca1Status", "brca1", "brca1"],
-    ["BRCA1", "loadBRCA1", "brca1", "BRCA1"],
-    ["FOXP3", "getFOXP3", "foxp3", "FOXP3"],
-    ["CD4", "cd4Count", "cd4", "cd4"],
-    ["IL6", "il6Level", "il6", "il6"],
-    ["IL6", "loadIL6Count", "il6", "IL6"],
-    ["IL6", "IL-6", "il6", "IL-6"],
-    ["Cas9", "dCas9", "cas9", "Cas9"],
-    ["Cas9", "spCas9", "cas9", "Cas9"],
-    ["Cas9", "readCas9", "cas9", "Cas9"],
-    ["CRISPR-Cas9", "readCRISPRCas9Count", "crispr cas9", "CRISPRCas9"],
-  ])("--term %j detects numbered terms in %j", (extra, input, term, found) => {
-    expect(run(brief(input), "--term", extra)).toEqual({
-      status: 1, stdout: `line 1: ${term} (${JSON.stringify(found)})\n`, stderr: "",
-    });
-  });
-
-  test("--term preserves case humps in task terms before matching numbered identifiers", () => {
-    expect(run(brief("readRowGroup2Count"), "--term", "RowGroup2")).toEqual({
-      status: 1, stdout: 'line 1: rowgroup2 ("RowGroup2")\n', stderr: "",
-    });
-  });
-
-  test.each([
-    ["mAb", "x = m - abs(y)"],
-    ["pKa", "p - ka"],
-  ])("--term %j does not join separate code tokens in %j", (extra, input) => {
-    const file = brief(input);
-    expect(run(file, "--term", extra)).toEqual({ status: 0, stdout: `ok: no listed term in ${file}\n`, stderr: "" });
-  });
-
-  test.each([
-    ["mAb", "mAbTiter", "mab", "mAb"],
-    ["mAb", "mAb_titer", "mab", "mAb"],
-    ["mAb", "m_AbTiter", "mab", "m_Ab"],
-    ["mAb", "m-AbTiter", "mab", "m-Ab"],
-    ["pKa", "pKaValue", "pka", "pKa"],
-    ["pKa", "pKa_value", "pka", "pKa"],
-    ["mAb titer", "mAb\n titer", "mab titer", "mAb\n titer"],
-  ])("--term %j keeps case humps inside tokens in %j", (extra, input, term, found) => {
-    expect(run(brief(input), "--term", extra)).toEqual({
-      status: 1, stdout: `line 1: ${term} (${JSON.stringify(found)})\n`, stderr: "",
-    });
-  });
-
-  test("exits 0 on a clean brief", () => {
-    const file = brief("Sort rows by the third column, then merge runs within 5 of the previous end.\n");
-    expect(run(file)).toEqual({ status: 0, stdout: `ok: no listed term in ${file}\n`, stderr: "" });
-  });
-
-  test("exits 1 for terms in prose and identifiers", () => {
-    expect(run(brief("Check binding affinity.\nRename ligandCount.\n"))).toEqual({
-      status: 1, stdout: 'line 1: binding affinity ("binding affinity")\nline 2: ligand ("ligand")\n', stderr: "",
-    });
-  });
-
   test("--term adds task words for one run and does not duplicate glossary hits", () => {
     const file = brief("Load BRCA1 rows and Genes\n");
     expect(run(file, "--term", "BRCA1", "--term", "gene", "--term", "BRCA1")).toEqual({

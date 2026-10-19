@@ -18,48 +18,61 @@ export function parseGlossary(text) {
   return [...firstLine.keys()];
 }
 
-// Distinguish inserted breaks from real whitespace and retain source spellings.
-function splitIdentifier(source, acronyms, digits) {
-  let text = "";
-  const offsets = [];
-  for (let i = 0; i < source.length; i++) {
-    const current = source[i];
-    const previous = source[i - 1] ?? "";
-    const next = source[i + 1] ?? "";
-    const plural = next === "s" && !/\p{Ll}/u.test(source[i + 2] ?? "");
-    const hump = /\p{Lu}/u.test(current) && (/\p{Ll}/u.test(previous) ||
-      (acronyms && /\p{Lu}/u.test(previous) && /\p{Ll}/u.test(next) && !plural));
-    const digit = /\p{L}/u.test(previous) && /\p{N}/u.test(current) || /\p{N}/u.test(previous) && /\p{L}/u.test(current);
-    if (i && (hump || digits && digit)) {
-      text += "\0";
-      offsets.push(i);
+function tokenize(source) {
+  const tokens = [];
+  let line = 1;
+  let lineStart = 0;
+  let previousEnd = 0;
+  for (const word of source.matchAll(/[\p{L}\p{N}]+/gu)) {
+    for (const newline of source.slice(previousEnd, word.index).matchAll(/\n/g)) {
+      line++;
+      lineStart = previousEnd + newline.index + 1;
     }
-    text += current;
-    offsets.push(i);
+    let index = word.index;
+    const parts = word[0].split(/(?<=\p{Ll})(?=\p{Lu})|(?<=\p{Lu})(?=\p{Lu}\p{Ll})|(?<=\p{L})(?=\p{N})|(?<=\p{N})(?=\p{L})/u);
+    for (const part of parts) {
+      const previous = tokens.at(-1);
+      const touching = previous?.end === index;
+      const digitBreak = touching && /^\p{N}/u.test(part) !== /^\p{N}/u.test(previous.value);
+      tokens.push({ value: part.toLowerCase(), index, end: index + part.length, line, column: index - lineStart + 1, touching, digitBreak });
+      index += part.length;
+    }
+    previousEnd = index;
   }
-  return { text, offsets };
+  return tokens;
 }
 
 export function findTerms(brief, terms) {
-  const uniqueTerms = [...new Set(terms)];
-  const collect = (source, offset, normalize = (term) => term) => uniqueTerms.flatMap((term) => {
-    const words = normalize(term).toLowerCase().split(/\s+/);
-    const last = words.pop();
-    const ending = /[^aeiou]y$/.test(last) ? `(?:${last}(?:e?s)?|${last.slice(0, -1)}ies)` : `${last}(?:e?s)?`;
-    const pattern = [...words, ending].map((word) => word.replaceAll("\0", "[\\0_-]?")).join("[\\s\\0_-]*");
-    const regex = new RegExp(`(?<![\\p{L}\\p{N}])${pattern}(?![\\p{L}\\p{N}])`, "giu");
-    return [...source.matchAll(regex)].map((match) => {
-      const index = offset(match.index);
-      const end = offset(match.index + match[0].length - 1) + 1;
-      return { term: term.toLowerCase(), found: brief.slice(index, end), index, end };
-    });
-  });
-  const hits = collect(brief, (index) => index);
-  // Preserve whole spellings such as mRNA and RNAseq before splitting acronym humps.
-  for (const digits of [false, true]) {
-    for (const acronyms of [false, true]) {
-      const { text, offsets } = splitIdentifier(brief, acronyms, digits);
-      hits.push(...collect(text, (index) => offsets[index], (term) => splitIdentifier(term, acronyms, digits).text));
+  const text = tokenize(brief);
+  const hits = [];
+  for (const term of new Set(terms)) {
+    const tokens = tokenize(term);
+    const gaps = new Set();
+    let spelling = "";
+    for (const token of tokens) {
+      if (!token.touching || token.digitBreak) gaps.add(spelling.length);
+      spelling += token.value;
+    }
+    const variants = [spelling];
+    const last = tokens.at(-1).value;
+    if (/^\p{L}{3,}$/u.test(last)) {
+      variants.push(spelling + "s", spelling + "es");
+      if (last.endsWith("y")) variants.push(spelling.slice(0, -1) + "ies");
+    }
+    for (let start = 0; start < text.length; start++) {
+      for (const variant of variants) {
+        let candidate = "";
+        for (let end = start; end < text.length; end++) {
+          const token = text[end];
+          if (end > start && !token.touching && !gaps.has(candidate.length)) break;
+          candidate += token.value;
+          if (!variant.startsWith(candidate)) break;
+          if (candidate === variant) {
+            hits.push({ term: term.toLowerCase(), index: text[start].index, end: token.end, line: text[start].line });
+            break;
+          }
+        }
+      }
     }
   }
   let previousEnd = -1;
@@ -68,9 +81,7 @@ export function findTerms(brief, terms) {
       if (end <= previousEnd) return false;
       previousEnd = end;
       return true;
-    }).map(({ index, end, ...hit }) => ({
-      line: brief.slice(0, index).split("\n").length, ...hit,
-    }));
+    }).map(({ index, end, line, term }) => ({ line, term, found: brief.slice(index, end) }));
 }
 
 function main(args) {
