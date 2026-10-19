@@ -67,9 +67,10 @@ describe("findTerms", () => {
     ]);
   });
 
-  test("matches whole words without joining terms across lines", async () => {
+  test("matches whole terms across lines and reports their first line", async () => {
     const { findTerms } = await checker();
     expect(findTerms("Handle cancellation and excellent cases.\nsingle\ncell", ["cell", "single cell"])).toEqual([
+      { line: 2, term: "single cell", found: "single\ncell" },
       { line: 3, term: "cell", found: "cell" },
     ]);
     expect(findTerms("Cell cancellation", ["cell"])).toEqual([{ line: 1, term: "cell", found: "Cell" }]);
@@ -105,16 +106,76 @@ describe("parseGlossary", () => {
   test("the shipped glossary promises the specified seed and omits ambiguous code words", async () => {
     const { GLOSSARY, parseGlossary } = await checker();
     expect(parseGlossary(readFileSync(GLOSSARY, "utf8"))).toEqual([
-      "amino acid", "antibody", "antigen", "assay", "bioassay", "binding affinity", "binding site", "biology",
-      "biomarker", "chromosome", "codon", "cytokine", "dna", "docking", "enzyme", "epitope", "gene", "genome",
-      "genomic", "glycan", "glycoprotein", "glycosylation", "inhibitor", "kinase", "ligand", "metabolite",
-      "microbiome", "mrna", "mutation", "nucleotide", "oligosaccharide", "pathogen", "pdb", "peptide", "phenotype",
-      "protein", "proteome", "receptor", "rna", "small molecule", "smiles", "tissue", "transcriptome",
+      "amino acid", "antibody", "antigen", "assay", "bioassay", "binding affinity", "binding site", "biological", "biologically", "biology",
+      "biomarker", "chromosome", "codon", "cytokine", "dna", "enzyme", "enzymatic", "epitope", "gene", "genetic", "genome",
+      "genomic", "genomics", "glycan", "glycoprotein", "glycosylation", "inhibitor", "kinase", "ligand", "metabolite",
+      "microbiome", "mrna", "nucleotide", "oligosaccharide", "pathogen", "peptide", "phenotype",
+      "protein", "proteome", "proteomic", "proteomics", "receptor", "rna", "rna seq", "small molecule", "tissue", "transcriptome",
     ]);
   });
 });
 
 describe("term-free.mjs CLI", () => {
+  test.each([
+    ["binding\naffinity", "binding affinity", "binding\naffinity"],
+    ["amino\nacid", "amino acid", "amino\nacid"],
+    ["small\nmolecules", "small molecule", "small\nmolecules"],
+    ["binding\r\n\t affinities", "binding affinity", "binding\r\n\t affinities"],
+    ["antibodies", "antibody", "antibodies"],
+    ["binding affinities", "binding affinity", "binding affinities"],
+    ["biologies", "biology", "biologies"],
+    ["countRNAs", "rna", "RNAs"],
+    ["readDNAsCount", "dna", "DNAs"],
+    ["RNAs", "rna", "RNAs"],
+    ["mRNA", "mrna", "mRNA"],
+    ["gene1", "gene", "gene"],
+    ["dna2vec", "dna", "dna"],
+    ["protein2vec", "protein", "protein"],
+    ["Protein3D", "protein", "Protein"],
+    ["bindingaffinity", "binding affinity", "bindingaffinity"],
+    ["aminoacid", "amino acid", "aminoacid"],
+    ["smallmolecule", "small molecule", "smallmolecule"],
+    ["rnaseq", "rna seq", "rnaseq"],
+    ["RNAseq", "rna seq", "RNAseq"],
+    ["scRNAseq", "rna seq", "RNAseq"],
+    ["biological", "biological", "biological"],
+    ["biologically", "biologically", "biologically"],
+    ["proteomics", ["proteomic", "proteomics"], "proteomics"],
+    ["proteomic", "proteomic", "proteomic"],
+    ["genomics", ["genomic", "genomics"], "genomics"],
+    ["genetic", "genetic", "genetic"],
+    ["enzymatic", "enzymatic", "enzymatic"],
+  ])("exits 1 with the term and original spelling for %j", (input, term, found) => {
+    expect(run(brief(`Sort rows.\n${input}\n`))).toEqual({
+      status: 1, stdout: [term].flat().map((word) => `line 2: ${word} (${JSON.stringify(found)})\n`).join(""), stderr: "",
+    });
+  });
+
+  test.each([
+    "general", "generator", "generic", "cancellation", "excellent", "eigenvalue matrix vector",
+    "useMutation(Q)", "new MutationObserver(cb)", "mutation testing", "import pdb; pdb.set_trace()", "docking layout", "he smiles",
+  ])("exits 0 for ordinary code and prose %j", (input) => {
+    const file = brief(input);
+    expect(run(file)).toEqual({ status: 0, stdout: `ok: no listed term in ${file}\n`, stderr: "" });
+  });
+
+  test.each([
+    ["category", "categories", "category"],
+    ["activity", "activities", "activity"],
+    ["IL-6", "IL-6", "il 6"],
+    ["CRISPR-Cas9", "CRISPR-Cas9", "crispr cas9"],
+    ["α helix", "α_helix", "α helix"],
+    ["α_helix", "α-helix", "α helix"],
+    ["mutation", "mutation", "mutation"],
+    ["pdb", "pdb", "pdb"],
+    ["docking", "docking", "docking"],
+    ["smiles", "smiles", "smiles"],
+  ])("--term %j detects normalized task terms and plurals", (extra, input, term) => {
+    expect(run(brief(input), "--term", extra)).toEqual({
+      status: 1, stdout: `line 1: ${term} (${JSON.stringify(input)})\n`, stderr: "",
+    });
+  });
+
   test("exits 0 on a clean brief", () => {
     const file = brief("Sort rows by the third column, then merge runs within 5 of the previous end.\n");
     expect(run(file)).toEqual({ status: 0, stdout: `ok: no listed term in ${file}\n`, stderr: "" });

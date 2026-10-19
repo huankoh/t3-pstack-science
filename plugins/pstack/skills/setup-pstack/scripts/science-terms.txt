@@ -1,5 +1,6 @@
 # Terms excluded from term-free briefs. One lowercase term per line.
-# Spaces also match hyphens or underscores. A trailing s or es also matches.
+# Spaces also match whitespace, hyphens, underscores, or joined words. Plurals include s, es, and y to ies.
+# Words with common code meanings stay out; a task using them in the science sense adds them with --term.
 amino acid
 antibody
 antigen
@@ -7,18 +8,22 @@ assay
 bioassay
 binding affinity
 binding site
+biological
+biologically
 biology
 biomarker
 chromosome
 codon
 cytokine
 dna
-docking
 enzyme
+enzymatic
 epitope
 gene
+genetic
 genome
 genomic
+genomics
 glycan
 glycoprotein
 glycosylation
@@ -28,18 +33,18 @@ ligand
 metabolite
 microbiome
 mrna
-mutation
 nucleotide
 oligosaccharide
 pathogen
-pdb
 peptide
 phenotype
 protein
 proteome
+proteomic
+proteomics
 receptor
 rna
+rna seq
 small molecule
-smiles
 tissue
 transcriptome
