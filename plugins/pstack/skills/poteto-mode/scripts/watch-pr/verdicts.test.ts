@@ -163,7 +163,7 @@ describe("review gate", () => {
     expect(classifyPr(snapshot)).toMatchObject({ kind: "waiting" });
   });
 
-  it("waits out t3-pstack's review settle window before reporting the review gate", async () => {
+  it("waits out t3-pstack-science's review settle window before reporting the review gate", async () => {
     const read = (settling: boolean) =>
       readSnapshot({
         reader: fakeReader({

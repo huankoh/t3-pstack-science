@@ -29,7 +29,7 @@ import { hookDigest } from "../tools/plugin.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 const version = JSON.parse(readFileSync(join(repoRoot, "plugins/pstack/.claude-plugin/plugin.json"), "utf8")).version;
-const ROUTING = "You have t3-pstack, pstack for T3 Code.";
+const ROUTING = "You have t3-pstack-science, pstack for T3 Code.";
 const SHEET = "# budget: large (xhigh)\nbug-fix: inherit-parent\nsession hook: on\n";
 
 let root;
@@ -55,7 +55,7 @@ function installer(command, source = repoRoot) {
 
 const row = (report, dir) => report.homes.find((h) => h.dir === join(home, dir));
 const failing = (checks) => checks.filter((c) => !c.ok && !c.warn).map((c) => `${c.name}: ${c.detail}`);
-const HOOK = "t3-pstack@t3-pstack:hooks/codex-hooks.json:session_start:0:0";
+const HOOK = "t3-pstack-science@t3-pstack-science:hooks/codex-hooks.json:session_start:0:0";
 
 // The plugin as a marketplace of its own, outside this checkout.
 function pluginCopy(dir) {
@@ -122,7 +122,7 @@ const enabled = process.env.T3_PSTACK_E2E === "1";
 // A fresh HOME per suite, with T3's settings listing `providerInstances`.
 function isolate(providerInstances) {
   beforeAll(() => {
-    root = realpathSync(mkdtempSync(join(tmpdir(), "t3-pstack-e2e-")));
+    root = realpathSync(mkdtempSync(join(tmpdir(), "t3-pstack-science-e2e-")));
     home = join(root, "home");
     for (const name of ISOLATED) saved[name] = process.env[name];
     for (const name of ISOLATED) delete process.env[name];
@@ -140,6 +140,78 @@ function isolate(providerInstances) {
   });
 }
 
+describe.skipIf(!enabled)("side-by-side plugin identities", () => {
+  isolate({});
+
+  test("install and update preserve the foreign plugin and warn when its hook runs", async () => {
+    const legacy = JSON.parse(readFileSync(join(repoRoot, "tests/fixtures/identity/legacy-install.json"), "utf8"));
+    const foreign = pluginCopy(join(root, "foreign"));
+    for (const file of [".claude-plugin/marketplace.json", ".agents/plugins/marketplace.json",
+      "plugins/pstack/.claude-plugin/plugin.json", "plugins/pstack/.codex-plugin/plugin.json"]) {
+      edit(join(foreign, file), /"t3-pstack-science"/g, JSON.stringify(legacy.name));
+    }
+    for (const [bin, dir, variable, command] of [
+      ["claude", ".claude", "CLAUDE_CONFIG_DIR", ["install", legacy.pluginId, "--scope", "user"]],
+      ["codex", ".codex", "CODEX_HOME", ["add", legacy.pluginId]],
+    ]) {
+      mkdirSync(join(home, dir), { recursive: true });
+      sh(bin, ["plugin", "marketplace", "add", foreign], { [variable]: join(home, dir) });
+      sh(bin, ["plugin", ...command], { [variable]: join(home, dir) });
+    }
+    const records = () => JSON.parse(readFileSync(join(home, ".claude/plugins/installed_plugins.json"), "utf8")).plugins[legacy.pluginId];
+    const before = records();
+    const installed = installer("install");
+    expect(installed.status).toBe(0);
+    expect(installed.report.failed).toBe(0);
+    const warnings = installed.report.homes.flatMap((h) => h.checks.filter((c) => c.warn));
+    expect(warnings).toEqual([{
+      name: "session hooks", ok: false, warn: true,
+      detail: "t3-pstack is also enabled, and its session hook runs too",
+      fix: `disable ${legacy.pluginId} in this home`,
+    }]);
+    expect(row(installed.report, ".claude").checks.filter((c) => c.warn)).toEqual(warnings);
+    expect(row(installed.report, ".codex").checks.filter((c) => c.warn)).toEqual([]);
+    expect(records()).toEqual(before);
+    expect(JSON.parse(readFileSync(join(home, ".claude/settings.json"), "utf8")).enabledPlugins[legacy.pluginId]).toBe(true);
+    expect(readFileSync(join(home, ".codex/config.toml"), "utf8")).toContain(`[plugins."${legacy.pluginId}"]\nenabled = true`);
+    expect(installer("update").report.homes.flatMap((h) => h.steps)).toEqual([]);
+    expect(records()).toEqual(before);
+    const doctor = installer("doctor");
+    expect(doctor.status).toBe(0);
+    expect(doctor.report.homes.flatMap((h) => h.checks.filter((c) => c.warn))).toEqual(warnings);
+    console.log("side-by-side doctor, foreign Codex hook untrusted:\n" + sh("node", [join(repoRoot, "tools/install.mjs"), "doctor", "--source", repoRoot]));
+
+    const server = await AppServer.start({ dir: join(home, ".codex"), bin: "codex" });
+    try {
+      const { layers } = await server.request("config/read", { includeLayers: true });
+      const { data } = await server.request("hooks/list", {});
+      const hooks = data.flatMap((entry) => entry.hooks).filter((hook) => hook.pluginId === legacy.pluginId);
+      expect(hooks.length).toBeGreaterThan(0);
+      expect(hooks.every((hook) => hook.trustStatus === "untrusted")).toBe(true);
+      await server.request("config/value/write", {
+        keyPath: "hooks.state",
+        mergeStrategy: "upsert",
+        value: Object.fromEntries(hooks.map((hook) => [hook.key, { trusted_hash: hook.currentHash }])),
+        expectedVersion: layers.find((layer) => layer.name.type === "user").version,
+      });
+      const trusted = await server.request("hooks/list", {});
+      expect(trusted.data.flatMap((entry) => entry.hooks).filter((hook) => hook.pluginId === legacy.pluginId)
+        .every((hook) => hook.trustStatus === "trusted")).toBe(true);
+    } finally {
+      server.close();
+    }
+    const trustedDoctor = installer("doctor");
+    expect(trustedDoctor.status).toBe(0);
+    expect(trustedDoctor.report.homes.flatMap((h) => h.checks.filter((c) => c.warn))).toEqual([...warnings, ...warnings]);
+    console.log("side-by-side doctor, foreign Codex hook trusted:\n" + sh("node", [join(repoRoot, "tools/install.mjs"), "doctor", "--source", repoRoot]));
+    sh("claude", ["plugin", "disable", legacy.pluginId, "--scope", "user"], { CLAUDE_CONFIG_DIR: join(home, ".claude") });
+    edit(join(home, ".codex/config.toml"), `[plugins."${legacy.pluginId}"]\nenabled = true`, `[plugins."${legacy.pluginId}"]\nenabled = false`);
+    const disabled = installer("doctor");
+    expect(disabled.status).toBe(0);
+    expect(disabled.report.homes.flatMap((h) => h.checks.filter((c) => c.warn))).toEqual([]);
+  }, 300_000);
+});
+
 describe.skipIf(!enabled)("the installer, end to end", () => {
   isolate({
     claudeAgent: { driver: "claudeAgent", enabled: true, config: { binaryPath: "claude", homePath: "" } },
@@ -149,11 +221,10 @@ describe.skipIf(!enabled)("the installer, end to end", () => {
   });
 
   test("before: a hand-installed Codex home never runs the hook, and doctor says so", async () => {
-    // The pre-installer README way, and the released per-home sheet.
     const codexHome = join(home, ".codex");
     mkdirSync(codexHome, { recursive: true });
     sh("codex", ["plugin", "marketplace", "add", repoRoot], { CODEX_HOME: codexHome });
-    sh("codex", ["plugin", "add", "t3-pstack@t3-pstack"], { CODEX_HOME: codexHome });
+    sh("codex", ["plugin", "add", "t3-pstack-science@t3-pstack-science"], { CODEX_HOME: codexHome });
     mkdirSync(join(home, ".claude"), { recursive: true });
     writeFileSync(join(home, ".claude/t3-pstack-models.md"), SHEET);
     symlinkSync(join(home, ".claude/t3-pstack-models.md"), join(codexHome, "t3-pstack-models.md"));
@@ -162,13 +233,13 @@ describe.skipIf(!enabled)("the installer, end to end", () => {
     const pool = join(home, ".claude-pool");
     mkdirSync(pool, { recursive: true });
     sh("claude", ["plugin", "marketplace", "add", repoRoot], { CLAUDE_CONFIG_DIR: pool });
-    sh("claude", ["plugin", "install", "t3-pstack@t3-pstack", "--scope", "user"], { CLAUDE_CONFIG_DIR: pool });
+    sh("claude", ["plugin", "install", "t3-pstack-science@t3-pstack-science", "--scope", "user"], { CLAUDE_CONFIG_DIR: pool });
     const recordsPath = join(pool, "plugins/installed_plugins.json");
     const records = JSON.parse(readFileSync(recordsPath, "utf8"));
-    records.plugins["t3-pstack@t3-pstack"].push({
+    records.plugins["t3-pstack-science@t3-pstack-science"].push({
       scope: "project",
       projectPath: home,
-      installPath: join(pool, "plugins/cache/t3-pstack/t3-pstack/1.0.11"),
+      installPath: join(pool, "plugins/cache/t3-pstack-science/t3-pstack-science/1.0.11"),
       version: "1.0.11",
       installedAt: "2026-10-13T04:43:26.759Z",
       lastUpdated: "2026-10-13T04:43:26.759Z",
@@ -189,9 +260,12 @@ describe.skipIf(!enabled)("the installer, end to end", () => {
       `other-scope records: project ${home} at 1.0.11`,
     ]);
     expect(failing(row(report, ".codex-work").checks)).toEqual(["installed: the home does not exist"]);
-    expect(failing(report.sheet.checks)).toEqual([
-      `machine sheet: missing; ${join(home, ".claude/t3-pstack-models.md")}, ${join(home, ".codex/t3-pstack-models.md")} not moved yet`,
-    ]);
+    expect(failing(report.sheet.checks)).toEqual([]);
+    expect(report.sheet.checks).toEqual([{
+      name: "machine sheet", ok: false, warn: true,
+      detail: "none, so every role runs on its skill's defaults",
+      fix: "run /t3-pstack-science:setup-pstack in a T3 thread",
+    }]);
   }, 300_000);
 
   test("install: every home converges, the hook is trusted, and its routing text reaches the rollout", async () => {
@@ -203,20 +277,20 @@ describe.skipIf(!enabled)("the installer, end to end", () => {
       `trusted hook ${HOOK} (was untrusted)`,
     ]);
     expect(row(report, ".codex-work").steps).toEqual([
-      `added the t3-pstack marketplace from ${repoRoot.replace(/\/$/, "")}`,
+      `added the t3-pstack-science marketplace from ${repoRoot.replace(/\/$/, "")}`,
       `installed ${version}`,
       `trusted hook ${HOOK} (was untrusted)`,
     ]);
     const pool = row(report, ".claude-pool").steps;
     expect(pool[0]).toBe(`moved the project-scope record for ${home} from 1.0.11 to ${version}`);
     expect(pool[1]).toStartWith("backed up plugins/installed_plugins.json to ");
-    expect(report.sheet.steps).toEqual([
-      `moved the sheet from ${join(home, ".claude/t3-pstack-models.md")}`,
-      `linked ${join(home, ".claude/t3-pstack-models.md")} to it`,
-      `linked ${join(home, ".claude-pool/t3-pstack-models.md")} to it`,
-      `linked ${join(home, ".codex-work/t3-pstack-models.md")} to it`,
-    ]);
-    expect(readFileSync(join(home, ".config/t3-pstack/models.md"), "utf8")).toBe(SHEET);
+    expect(report.sheet.steps).toEqual([]);
+    const machineSheet = join(home, ".config/t3-pstack-science/models.md");
+    expect(existsSync(machineSheet)).toBe(false);
+    expect(readFileSync(join(home, ".claude/t3-pstack-models.md"), "utf8")).toBe(SHEET);
+    expect(readlinkSync(join(home, ".codex/t3-pstack-models.md"))).toBe(join(home, ".claude/t3-pstack-models.md"));
+    mkdirSync(join(home, ".config/t3-pstack-science"), { recursive: true });
+    writeFileSync(machineSheet, SHEET);
 
     const after = await probe(join(home, ".codex"));
     console.log("after:", JSON.stringify(after));
@@ -256,18 +330,18 @@ describe.skipIf(!enabled)("the installer, end to end", () => {
   }, 300_000);
 
   test("install reinstalls a plugin whose files are gone, and enables a disabled one", () => {
-    const codexCache = join(home, ".codex/plugins/cache/t3-pstack/t3-pstack", version);
+    const codexCache = join(home, ".codex/plugins/cache/t3-pstack-science/t3-pstack-science", version);
     rmSync(join(codexCache, "skills/how"), { recursive: true });
-    const poolRecord = JSON.parse(readFileSync(join(home, ".claude-pool/plugins/installed_plugins.json"), "utf8")).plugins["t3-pstack@t3-pstack"][0];
+    const poolRecord = JSON.parse(readFileSync(join(home, ".claude-pool/plugins/installed_plugins.json"), "utf8")).plugins["t3-pstack-science@t3-pstack-science"][0];
     rmSync(poolRecord.installPath, { recursive: true });
-    edit(join(home, ".codex-work/config.toml"), /(\[plugins\."t3-pstack@t3-pstack"\]\s*enabled = )true/, "$1false");
+    edit(join(home, ".codex-work/config.toml"), /(\[plugins\."t3-pstack-science@t3-pstack-science"\]\s*enabled = )true/, "$1false");
 
     const doctor = installer("doctor").report;
     expect(failing(row(doctor, ".codex").checks)).toEqual([`installed: its files in ${codexCache} are missing`]);
     expect(failing(row(doctor, ".claude-pool").checks)).toEqual([
       `installed: ${version}, but its files at ${poolRecord.installPath} are missing`,
     ]);
-    expect(failing(row(doctor, ".codex-work").checks)).toEqual(["enabled: no", "session-start hook trusted: no t3-pstack hook listed"]);
+    expect(failing(row(doctor, ".codex-work").checks)).toEqual(["enabled: no", "session-start hook trusted: no t3-pstack-science hook listed"]);
 
     const { status, report } = installer("install");
     expect(row(report, ".codex").steps).toEqual([`reinstalled ${version}, whose files were missing`]);
@@ -289,7 +363,7 @@ describe.skipIf(!enabled)("the installer, end to end", () => {
   }, 300_000);
 });
 
-describe.skipIf(!enabled)("the installer, on a t3-pstack marketplace from another source", () => {
+describe.skipIf(!enabled)("the installer, on a t3-pstack-science marketplace from another source", () => {
   isolate({
     claudeAgent: { driver: "claudeAgent", enabled: true, config: { binaryPath: "claude", homePath: "" } },
     codex: { driver: "codex", enabled: true, config: { binaryPath: "codex", homePath: "" } },
@@ -297,7 +371,7 @@ describe.skipIf(!enabled)("the installer, on a t3-pstack marketplace from anothe
   });
 
   test("installs nothing from it, trusts none of its hooks, and doctor names the source", async () => {
-    // A marketplace that calls itself t3-pstack, with a hook that leaves a mark.
+    // A marketplace that calls itself t3-pstack-science, with a hook that leaves a mark.
     const counterfeit = pluginCopy(join(root, "counterfeit"));
     const marked = join(root, "hook-ran");
     edit(join(counterfeit, "plugins/pstack/hooks/codex-hooks.json"), /"command": "[^\n]*",\n/, `"command": "touch ${marked}",\n`);
@@ -305,20 +379,20 @@ describe.skipIf(!enabled)("the installer, on a t3-pstack marketplace from anothe
       mkdirSync(join(home, dir), { recursive: true });
       sh(bin, ["plugin", "marketplace", "add", counterfeit], { [variable]: join(home, dir) });
     }
-    sh("codex", ["plugin", "add", "t3-pstack@t3-pstack"], { CODEX_HOME: join(home, ".codex") });
+    sh("codex", ["plugin", "add", "t3-pstack-science@t3-pstack-science"], { CODEX_HOME: join(home, ".codex") });
 
     const { status, report } = installer("install");
     expect(status).toBe(1);
     expect(row(report, ".codex").steps).toEqual([]);
     expect(row(report, ".claude").steps).toEqual([]);
-    const foreign = `marketplace: ${counterfeit}, which is neither chhoumann/t3-pstack nor --source`;
+    const foreign = `marketplace: ${counterfeit}, which is neither huankoh/t3-pstack-science nor --source`;
     expect(failing(row(report, ".codex").checks)).toEqual([
       foreign,
       `session-start hook trusted: ${HOOK} untrusted, not from the hooks/codex-hooks.json this release pins`,
     ]);
     expect(failing(row(report, ".claude").checks)).toEqual([foreign, "installed: not installed", "enabled: no"]);
     expect(row(report, ".codex-dev").steps).toEqual([
-      `added the t3-pstack marketplace from ${repoRoot.replace(/\/$/, "")}`,
+      `added the t3-pstack-science marketplace from ${repoRoot.replace(/\/$/, "")}`,
       `installed ${version}`,
       `trusted hook ${HOOK} (was untrusted)`,
     ]);
@@ -334,7 +408,7 @@ describe.skipIf(!enabled)("the installer, on a t3-pstack marketplace from anothe
     expect(status).toBe(1);
     expect(report.homes.flatMap((h) => h.steps)).toEqual([]);
     expect(failing(row(report, ".codex-dev").checks)).toEqual([
-      `marketplace: ${repoRoot.replace(/\/$/, "")}, which is neither chhoumann/t3-pstack nor --source`,
+      `marketplace: ${repoRoot.replace(/\/$/, "")}, which is neither huankoh/t3-pstack-science nor --source`,
     ]);
     expect(snapshot()).toEqual(before);
   }, 300_000);
@@ -382,7 +456,7 @@ describe.skipIf(!enabled)("the installer, on a release that changes the hook ent
 describe.skipIf(!enabled)("the installer, on a Codex home that changes while it trusts the hook", () => {
   isolate({});
   const path = process.env.PATH;
-  const hooksFile = () => join(home, ".codex/plugins/cache/t3-pstack/t3-pstack", version, "hooks/codex-hooks.json");
+  const hooksFile = () => join(home, ".codex/plugins/cache/t3-pstack-science/t3-pstack-science", version, "hooks/codex-hooks.json");
   const configFile = () => join(home, ".codex/config.toml");
   const attack = (at, files) => writeFileSync(process.env.CODEX_ATTACK, JSON.stringify({ at, files }));
   let genuine;

@@ -1,5 +1,5 @@
 {
-  "name": "t3-pstack",
+  "name": "t3-pstack-science",
   "owner": {
     "name": "Christian Bager Bach Houmann",
     "url": "https://github.com/chhoumann"
@@ -7,10 +7,10 @@
   "description": "pstack for T3 Code: Lauren Tan's pstack rewritten in place for T3, with every subagent, panel, schedule, and PR watch dispatched through T3's orchestration so panels mix Claude, GPT, and Grok.",
   "plugins": [
     {
-      "name": "t3-pstack",
+      "name": "t3-pstack-science",
       "source": "./plugins/pstack",
       "description": "pstack for T3 Code: rigorous agent workflows whose panels and fan-outs run across model families through T3. Original pstack by Lauren Tan (poteto).",
-      "version": "2.0.0-rc.11"
+      "version": "2.0.0-rc.11-science.1"
     }
   ]
 }

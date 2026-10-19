@@ -1,11 +1,11 @@
 {
-  "name": "t3-pstack",
+  "name": "t3-pstack-science",
   "interface": {
-    "displayName": "t3-pstack"
+    "displayName": "t3-pstack-science"
   },
   "plugins": [
     {
-      "name": "t3-pstack",
+      "name": "t3-pstack-science",
       "source": {
         "source": "local",
         "path": "./plugins/pstack"

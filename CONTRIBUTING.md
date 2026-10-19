@@ -103,4 +103,4 @@ Plugin auto-update installs **by version number**, not by tracking `main`. A ski
 
 ## Reporting bugs
 
-Include the t3-pstack version, the T3 Code version, the host (Claude Code or Codex) and its version, and the reproduction steps.
+Include the t3-pstack-science version, the T3 Code version, the host (Claude Code or Codex) and its version, and the reproduction steps.

@@ -1,19 +1,19 @@
 #!/usr/bin/env node
-// t3-pstack's installer. `install`, or `update`, the same command, brings
+// t3-pstack-science's installer. `install`, or `update`, the same command, brings
 // every Claude Code and Codex home T3 can run to this package's version of
-// t3-pstack, trusts the Codex session-start hook, and moves the model sheet to
-// its one path per machine. Each step converges, so a second run changes
+// t3-pstack-science, trusts the Codex session-start hook, and checks this fork's
+// machine sheet. Each step converges, so a second run changes
 // nothing. `doctor` checks the same homes and writes nothing itself, though
 // the Codex app-server it starts refreshes a Git marketplace, as any T3 Codex
 // thread does. Both exit 1 when a check fails.
 //
-// Each home's t3-pstack marketplace must come from chhoumann/t3-pstack or from
+// Each home's t3-pstack-science marketplace must come from huankoh/t3-pstack-science or from
 // this run's --source. A home whose marketplace has another source, such as a
 // local --source from an earlier run, gets nothing installed and no hook
 // trusted, and doctor fails it with that source.
 //
-//   npx -y github:chhoumann/t3-pstack <install|update|doctor>
-//     --source <owner/repo|git URL|dir>   marketplace source, default chhoumann/t3-pstack
+//   npx -y github:huankoh/t3-pstack-science <install|update|doctor>
+//     --source <owner/repo|git URL|dir>   marketplace source, default huankoh/t3-pstack-science
 //     --claude-home <dir>, --codex-home <dir>   more homes, repeatable
 //     --catalog <file>   an orchestrator_capabilities dump to check the sheet's targets against
 //     --json
@@ -26,9 +26,9 @@ import { parseArgs } from "node:util";
 
 import { doctorClaude, installClaude } from "./install/claude.mjs";
 import { doctorCodex, installCodex } from "./install/codex.mjs";
-import { check, hasCli, HOME_REPO, INSTALL_HINT, parseSource, readJson } from "./install/common.mjs";
+import { check, hasCli, HOME_REPO, INSTALL_HINT, MARKETPLACE, parseSource, PLUGIN_ID, readJson } from "./install/common.mjs";
 import { discoverHomes } from "./install/homes.mjs";
-import { doctorSheet, moveSheet, sheetPath } from "./install/sheet.mjs";
+import { doctorSheet, sheetPath } from "./install/sheet.mjs";
 import { FROZEN_HOOKS } from "./plugin.mjs";
 
 const HARNESSES = {
@@ -37,7 +37,7 @@ const HARNESSES = {
 };
 
 const USAGE =
-  "usage: t3-pstack <install|update|doctor> [--source <owner/repo|git URL|dir>] " +
+  "usage: t3-pstack-science <install|update|doctor> [--source <owner/repo|git URL|dir>] " +
   "[--claude-home <dir>]... [--codex-home <dir>]... [--catalog <file>] [--json]";
 
 // What to converge on comes from the plugin this run installs: the local
@@ -45,8 +45,24 @@ const USAGE =
 // maps each skill to its SKILL.md, and `codexHook` is the hooks file the
 // Codex manifest names, with its pinned digest.
 function pluginFacts(root) {
+  const pluginName = PLUGIN_ID.split("@")[0];
+  for (const file of [".claude-plugin/marketplace.json", ".agents/plugins/marketplace.json"]) {
+    const path = join(root, file);
+    const manifest = readJson(path);
+    const name = manifest?.name;
+    if (name !== MARKETPLACE) throw new Error(`${path}: found marketplace name ${JSON.stringify(name) ?? "missing"}, expected "${MARKETPLACE}"`);
+    const names = manifest.plugins?.map((plugin) => plugin.name);
+    if (!names?.includes(pluginName)) throw new Error(`${path}: found plugin names ${JSON.stringify(names) ?? "missing"}, expected "${pluginName}"`);
+  }
   const plugin = join(root, "plugins/pstack");
-  const models = readJson(join(plugin, "models.json"));
+  for (const file of [".claude-plugin/plugin.json", ".codex-plugin/plugin.json"]) {
+    const path = join(plugin, file);
+    const name = readJson(path)?.name;
+    if (name !== pluginName) throw new Error(`${path}: found plugin name ${JSON.stringify(name) ?? "missing"}, expected "${pluginName}"`);
+  }
+  const modelsPath = join(plugin, "models.json");
+  const models = readJson(modelsPath);
+  if (!models?.domains) throw new Error(`${modelsPath}: source "${MARKETPLACE}" is missing "domains"`);
   const hooks = readJson(join(plugin, ".codex-plugin/plugin.json")).hooks.replace(/^\.\//, "");
   const skills = readdirSync(join(plugin, "skills"), { withFileTypes: true }).filter((entry) => entry.isDirectory());
   return {
@@ -106,12 +122,7 @@ async function run(argv, env, home) {
   }
   const sheet = sheetPath(env, home);
   report.sheet = { path: sheet, steps: [], checks: [] };
-  try {
-    if (command !== "doctor") report.sheet.steps = moveSheet(sheet, homes);
-  } catch (err) {
-    report.sheet.checks.push(check("move", false, err.message, INSTALL_HINT));
-  }
-  report.sheet.checks.push(...doctorSheet(sheet, homes, { catalog, models: facts.models }));
+  report.sheet.checks.push(...doctorSheet(sheet, { catalog, models: facts.models }));
   const all = [...report.homes.flatMap((row) => row.checks), ...report.sheet.checks];
   report.failed = all.filter((c) => !c.ok && !c.warn).length;
   report.warnings = all.filter((c) => !c.ok && c.warn).length;
@@ -119,7 +130,7 @@ async function run(argv, env, home) {
 }
 
 function render({ command, version, source, settings, homes, sheet, failed, warnings }, home) {
-  const lines = [`t3-pstack ${version} from ${source}`];
+  const lines = [`t3-pstack-science ${version} from ${source}`];
   lines.push(`T3 settings: ${settings.path}${settings.error ? ` (${settings.error})` : `, ${settings.instances} Claude Code or Codex instances`}`);
   const section = (title, steps, checks) => {
     lines.push("", title);
@@ -153,6 +164,6 @@ try {
     process.exitCode = report.failed ? 1 : 0;
   }
 } catch (err) {
-  console.error(`t3-pstack: ${err.message}`);
+  console.error(`t3-pstack-science: ${err.message}`);
   process.exitCode = 2;
 }

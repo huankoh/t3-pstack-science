@@ -5,6 +5,8 @@ import { join } from "node:path";
 import {
   check,
   claudeSource,
+  coexistingHooks,
+  FOREIGN_PLUGIN_ID,
   INSTALL_HINT,
   isPlainCopy,
   MARKETPLACE,
@@ -34,6 +36,7 @@ function read(dir) {
     user,
     stale: user ? records.filter((r) => isStale(r, user)) : [],
     enabled: settings.enabledPlugins?.[PLUGIN_ID] === true,
+    foreignEnabled: settings.enabledPlugins?.[FOREIGN_PLUGIN_ID] === true,
   };
 }
 
@@ -138,6 +141,7 @@ export function doctorClaude(home, { version, skills, trusted }) {
       INSTALL_HINT,
     ),
     check("enabled", state.enabled, state.enabled ? "yes" : "no", INSTALL_HINT),
+    ...coexistingHooks(state.enabled && state.foreignEnabled),
     check("marketplace auto-update", autoUpdates(state.marketplace), state.marketplace ? String(autoUpdates(state.marketplace)) : "no marketplace", INSTALL_HINT),
     check(
       "other-scope records",

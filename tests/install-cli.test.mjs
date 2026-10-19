@@ -11,7 +11,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const common = pathToFileURL(fileURLToPath(new URL("../tools/install/common.mjs", import.meta.url))).href;
 const windows = process.platform === "win32";
-const dir = realpathSync(mkdtempSync(join(tmpdir(), "t3-pstack-cli-")));
+const dir = realpathSync(mkdtempSync(join(tmpdir(), "t3-pstack-science-cli-")));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
 // What cmd.exe would split, expand, or run as a second command.

@@ -2,7 +2,7 @@
 // Resolve one known Codex chat ID to its rollout file. Prints bounded JSON and
 // never prints transcript text.
 // From open-pstack (Eric A. Litman and Donncha O'Toole), modified for
-// t3-pstack; NOTICE.md lists the changes.
+// t3-pstack-science; NOTICE.md lists the changes.
 import { constants, Database } from "bun:sqlite";
 import {
   closeSync,

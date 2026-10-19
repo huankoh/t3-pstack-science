@@ -61,7 +61,7 @@ describe("shared Agent Skills tree", () => {
 
   test("every skill the session-start routing tells the model to invoke is model-invocable", () => {
     const routing = readFileSync(join(repoRoot, "plugins/pstack/hooks/session-start-context.md"), "utf8");
-    const named = [...routing.matchAll(/`t3-pstack:([a-z0-9-]+)`/g)].map((m) => m[1]);
+    const named = [...routing.matchAll(/`t3-pstack-science:([a-z0-9-]+)`/g)].map((m) => m[1]);
     expect(named).toContain("poteto-mode");
     for (const name of named) {
       const { data } = parseFrontmatter(readFileSync(join(skillsDir, name, "SKILL.md"), "utf8"));

@@ -124,7 +124,7 @@ describe("regions", () => {
       expect(out).toContain("Stage neutral copies of the code, data, and diffs that seat needs in its own directory, check each text input with the same command, and never point the seat at the original scientific files, papers, transcripts, or diffs.");
       expect(out).toContain("have a research delegate on the `science how explorer` line translate it first (its default reads the terms).");
       expect(out).toContain("If that seat's family does not read the terms, the translation stays blocked; never route raw context to it.");
-      expect(out).toContain("`~/.config/t3-pstack/models.md`");
+      expect(out).toContain("`~/.config/t3-pstack-science/models.md`");
     }
   });
 
@@ -347,7 +347,8 @@ describe("deriveT3", () => {
   test("appends and stamps a Models section when upstream has none, naming the sheet and the entry grammar", () => {
     const out = deriveT3("plugins/pstack/skills/how/SKILL.md", front(""), models);
     expect(out).toContain("body\n\n## Models\n\nRole defaults on T3, stamped from `plugins/pstack/models.json`, one column per domain.");
-    expect(out).toContain("`t3-pstack-models.md`");
+    expect(out).toContain("When it is missing, use the defaults in the table below.");
+    expect(out).not.toContain("t3-pstack-models.md");
     expect(out).toContain("It splits at its first `/`");
     expect(out).toEndWith("| how explainer | `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |\n");
     expect(out).toContain("`<role>: <entry>` sets the general column, as in every sheet written before domains, and `science <role>: <entry>` sets the science column.");
@@ -400,7 +401,7 @@ describe("plan, changes, apply", () => {
   };
   const repoCopy = () => {
     const dir = scratch("pstack-generate-");
-    for (const entry of readdirSync(repoRoot).filter((name) => ![".git", "node_modules"].includes(name))) {
+    for (const entry of readdirSync(repoRoot).filter((name) => ![".git", "node_modules", ".audit"].includes(name))) {
       cpSync(join(repoRoot, entry), join(dir, entry), { recursive: true, filter: (src) => basename(src) !== "node_modules" });
     }
     symlinkSync(join(repoRoot, "node_modules"), join(dir, "node_modules"));
@@ -557,15 +558,13 @@ describe("plan, changes, apply", () => {
     expect(readFileSync(join(root, "out/sub/a.md"), "utf8")).toBe("A");
   });
 
-  test("a pre-release VERSION stamps every manifest", () => {
+  test.each(["9.0.0-rc.2", "2.0.0-rc.11-science.1"])("pre-release VERSION %s stamps every manifest", (version) => {
     const root = repoCopy();
-    writeFileSync(join(root, "VERSION"), "9.0.0-rc.2\n");
-    append(root, "CHANGES.md", "");
-    const changelog = readFileSync(join(root, "CHANGES.md"), "utf8");
-    writeFileSync(join(root, "CHANGES.md"), changelog.replace(/^## \S+ - /m, "## 9.0.0-rc.2 - next\n\n$&"));
+    writeFileSync(join(root, "VERSION"), `${version}\n`);
+    writeFileSync(join(root, "CHANGES.md"), `# CHANGES\n\n## ${version} - test\n`);
     const { files } = plan(root);
     for (const manifest of [".claude-plugin/marketplace.json", "plugins/pstack/.claude-plugin/plugin.json", "plugins/pstack/.codex-plugin/plugin.json", "package.json"]) {
-      expect(files[manifest]).toContain('"version": "9.0.0-rc.2"');
+      expect(files[manifest]).toContain(`"version": "${version}"`);
     }
   });
 
@@ -627,8 +626,8 @@ describe("plan, changes, apply", () => {
       expect.stringContaining(`${hooks} changed, which stops its hook`),
     ]);
     const marketplace = ".agents/plugins/marketplace.json";
-    writeFileSync(join(root, marketplace), readFileSync(join(root, marketplace), "utf8").replace('"name": "t3-pstack",\n      "source"', '"name": "other",\n      "source"'));
-    expect(problems(root)).toContainEqual(expect.stringContaining('plugin name "other" != Codex manifest name "t3-pstack"'));
+    writeFileSync(join(root, marketplace), readFileSync(join(root, marketplace), "utf8").replace('"name": "t3-pstack-science",\n      "source"', '"name": "other",\n      "source"'));
+    expect(problems(root)).toContainEqual(expect.stringContaining('plugin name "other" != Codex manifest name "t3-pstack-science"'));
   });
 
   test("problems reports a hook path that resolves outside the plugin, through .. or through a symlink", () => {

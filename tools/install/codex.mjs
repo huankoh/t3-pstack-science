@@ -16,6 +16,8 @@ import { hookDigest } from "../plugin.mjs";
 import {
   check,
   codexSource,
+  coexistingHooks,
+  FOREIGN_PLUGIN_ID,
   INSTALL_HINT,
   isPlainCopy,
   launch,
@@ -34,7 +36,7 @@ const REQUEST_TIMEOUT = 60_000;
 export class AppServer {
   static async start(home) {
     const server = new AppServer(home);
-    await server.request("initialize", { clientInfo: { name: "t3-pstack-installer", version: "1" } });
+    await server.request("initialize", { clientInfo: { name: "t3-pstack-science-installer", version: "1" } });
     server.proc.stdin.write(JSON.stringify({ method: "initialized" }) + "\n");
     return server;
   }
@@ -129,20 +131,22 @@ const marketplaceSources = (config) => (config.marketplaces?.[MARKETPLACE] ? [co
 async function pluginState(server, dir, skills) {
   const { config } = await server.request("config/read", {});
   const { marketplaces = [] } = await server.request("plugin/list", {});
-  const plugin = marketplaces.flatMap((m) => m.plugins ?? []).find((p) => p.id === PLUGIN_ID);
+  const plugins = marketplaces.flatMap((m) => m.plugins ?? []);
+  const plugin = plugins.find((p) => p.id === PLUGIN_ID);
   const versions = installedVersions(dir);
   return {
     sources: marketplaceSources(config),
     installed: plugin?.installed === true,
     enabled: plugin?.enabled === true,
+    foreignEnabled: plugins.some((p) => p.id === FOREIGN_PLUGIN_ID && p.enabled === true),
     versions,
     intact: versions.length === 1 && pluginIntact(join(cacheDir(dir), versions[0]), ".codex-plugin/plugin.json", skills),
   };
 }
 
-async function pluginHooks(server) {
+async function listHooks(server) {
   const { data } = await server.request("hooks/list", {});
-  return data.flatMap((entry) => entry.hooks).filter((hook) => hook.pluginId === PLUGIN_ID);
+  return data.flatMap((entry) => entry.hooks);
 }
 
 // A file's text, read once without following a symlink, or null when it is a
@@ -233,8 +237,8 @@ async function trustHooks(server, trusted, pin) {
   const { config, layers } = await server.request("config/read", { includeLayers: true });
   if (!marketplaceCheck(marketplaceSources(config), trusted).ok) return [];
   const user = layers.find((layer) => layer.name.type === "user");
-  const pending = (await pluginHooks(server)).filter(
-    (h) => (h.trustStatus === "untrusted" || h.trustStatus === "modified") && isPinned(h, pin),
+  const pending = (await listHooks(server)).filter(
+    (h) => h.pluginId === PLUGIN_ID && (h.trustStatus === "untrusted" || h.trustStatus === "modified") && isPinned(h, pin),
   );
   if (!pending.length) return [];
   await server.request("config/value/write", {
@@ -243,7 +247,7 @@ async function trustHooks(server, trusted, pin) {
     value: Object.fromEntries(pending.map((h) => [h.key, { trusted_hash: h.currentHash }])),
     expectedVersion: user.version,
   });
-  const listed = new Map((await pluginHooks(server)).map((h) => [h.key, h]));
+  const listed = new Map((await listHooks(server)).filter((h) => h.pluginId === PLUGIN_ID).map((h) => [h.key, h]));
   const now = (h) => listed.get(h.key) ?? {};
   const same = (h) => now(h).command === h.command && now(h).currentHash === h.currentHash;
   const failed = pending.filter((h) => now(h).trustStatus !== "trusted" || !same(h));
@@ -258,7 +262,9 @@ async function trustHooks(server, trusted, pin) {
 export async function doctorCodex(home, { version, skills, trusted, codexHook }) {
   return withServer(home, async (server) => {
     const state = await pluginState(server, home.dir, skills);
-    const hooks = await pluginHooks(server);
+    const listedHooks = await listHooks(server);
+    const hooks = listedHooks.filter((hook) => hook.pluginId === PLUGIN_ID);
+    const foreignHooks = listedHooks.filter((hook) => hook.pluginId === FOREIGN_PLUGIN_ID);
     const listed = (await server.request("skills/list", { cwds: [neutralCwd()] })).data.flatMap((entry) => entry.skills);
     const plain = listed.filter((skill) => isPlainCopy(skill.name, skill.path, skills)).map((skill) => skill.path);
     const installed = state.versions.join(", ");
@@ -278,12 +284,13 @@ export async function doctorCodex(home, { version, skills, trusted, codexHook })
         INSTALL_HINT,
       ),
       check("enabled", state.enabled, state.enabled ? "yes" : "no", INSTALL_HINT),
+      ...coexistingHooks(state.enabled && state.foreignEnabled && foreignHooks.some((h) => h.trustStatus === "trusted")),
       check(
         "session-start hook trusted",
         hooks.length > 0 && hooks.every(good),
         hooks.length
           ? hooks.map((h) => `${h.key} ${h.trustStatus}${isPinned(h, codexHook) ? "" : `, not from the ${codexHook.path} this release pins`}`).join("; ")
-          : "no t3-pstack hook listed",
+          : "no t3-pstack-science hook listed",
         INSTALL_HINT,
       ),
       check(
