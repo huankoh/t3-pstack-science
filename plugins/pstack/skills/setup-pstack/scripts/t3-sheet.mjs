@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url";
 export const GENERAL = "general";
 export const SCIENCE = "science";
 export const DOMAINS = Object.freeze([GENERAL, SCIENCE]);
-export const SHEET_DIR = "t3-pstack";
+export const SHEET_DIR = "t3-pstack-science";
 const STANDARD_SPEED = { fastMode: "false", serviceTier: "default" };
 
 /**

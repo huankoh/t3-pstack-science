@@ -16,6 +16,8 @@ import { hookDigest } from "../plugin.mjs";
 import {
   check,
   codexSource,
+  coexistingHooks,
+  FOREIGN_PLUGIN_ID,
   INSTALL_HINT,
   isPlainCopy,
   launch,
@@ -34,7 +36,7 @@ const REQUEST_TIMEOUT = 60_000;
 export class AppServer {
   static async start(home) {
     const server = new AppServer(home);
-    await server.request("initialize", { clientInfo: { name: "t3-pstack-installer", version: "1" } });
+    await server.request("initialize", { clientInfo: { name: "t3-pstack-science-installer", version: "1" } });
     server.proc.stdin.write(JSON.stringify({ method: "initialized" }) + "\n");
     return server;
   }
@@ -129,12 +131,14 @@ const marketplaceSources = (config) => (config.marketplaces?.[MARKETPLACE] ? [co
 async function pluginState(server, dir, skills) {
   const { config } = await server.request("config/read", {});
   const { marketplaces = [] } = await server.request("plugin/list", {});
-  const plugin = marketplaces.flatMap((m) => m.plugins ?? []).find((p) => p.id === PLUGIN_ID);
+  const plugins = marketplaces.flatMap((m) => m.plugins ?? []);
+  const plugin = plugins.find((p) => p.id === PLUGIN_ID);
   const versions = installedVersions(dir);
   return {
     sources: marketplaceSources(config),
     installed: plugin?.installed === true,
     enabled: plugin?.enabled === true,
+    foreignEnabled: plugins.some((p) => p.id === FOREIGN_PLUGIN_ID && p.enabled === true),
     versions,
     intact: versions.length === 1 && pluginIntact(join(cacheDir(dir), versions[0]), ".codex-plugin/plugin.json", skills),
   };
@@ -278,12 +282,13 @@ export async function doctorCodex(home, { version, skills, trusted, codexHook })
         INSTALL_HINT,
       ),
       check("enabled", state.enabled, state.enabled ? "yes" : "no", INSTALL_HINT),
+      ...coexistingHooks(state.enabled && state.foreignEnabled),
       check(
         "session-start hook trusted",
         hooks.length > 0 && hooks.every(good),
         hooks.length
           ? hooks.map((h) => `${h.key} ${h.trustStatus}${isPinned(h, codexHook) ? "" : `, not from the ${codexHook.path} this release pins`}`).join("; ")
-          : "no t3-pstack hook listed",
+          : "no t3-pstack-science hook listed",
         INSTALL_HINT,
       ),
       check(

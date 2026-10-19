@@ -38,13 +38,13 @@
     },
     {
       "pattern": "`https://github.com/cursor/plugins/blob/main/pstack/` followed by its path",
-      "replacement": "`https://github.com/chhoumann/t3-pstack/blob/main/plugins/pstack/` followed by its path",
+      "replacement": "`https://github.com/huankoh/t3-pstack-science/blob/main/plugins/pstack/` followed by its path",
       "rationale": "the public copy of this port's file (Per-skill notes: poteto-help)",
       "files": "^skills/poteto-help/SKILL\\.md$"
     },
     {
       "pattern": "- No `~/.cursor/rules/pstack-models.mdc` means `/setup-pstack` hasn't run for this user",
-      "replacement": "- No model sheet (`~/.config/t3-pstack/models.md`, see `/setup-pstack`) means `/setup-pstack` hasn't run for this user",
+      "replacement": "- No model sheet (`~/.config/t3-pstack-science/models.md`, see `/setup-pstack`) means `/setup-pstack` hasn't run for this user",
       "rationale": "the T3 sheet replaces the Cursor rule (The sheet)",
       "files": "^skills/poteto-help/SKILL\\.md$"
     },
@@ -56,7 +56,7 @@
     },
     {
       "pattern": "1. Install with `/add-plugin pstack` in chat, or from Customize in the sidebar.",
-      "replacement": "1. Install t3-pstack per its [README](https://github.com/chhoumann/t3-pstack#readme), once per harness that T3 runs.",
+      "replacement": "1. Run `npx -y github:huankoh/t3-pstack-science install` to install in every Claude Code and Codex home T3 runs. Run the same command with `update` to update or `doctor` to check. See the [README](https://github.com/huankoh/t3-pstack-science#readme).",
       "rationale": "Cursor's install UI does not exist on T3 (Per-skill notes: poteto-help)",
       "files": "^skills/poteto-help/SKILL\\.md$"
     },
@@ -68,7 +68,7 @@
     },
     {
       "pattern": "[README](../../README.md)",
-      "replacement": "[README](https://github.com/chhoumann/t3-pstack/blob/main/README.md)",
+      "replacement": "[README](https://github.com/huankoh/t3-pstack-science/blob/main/README.md)",
       "rationale": "the port does not carry Lauren's README",
       "files": "^skills/poteto-help/SKILL\\.md$"
     },
@@ -86,13 +86,13 @@
     },
     {
       "pattern": "pstack is built for Cursor. Its skills use the Agent Skills format, so other tools can read them. But most workflow skills, including `/poteto-mode`, `/how`, `/why`, and `/teach`, spawn Cursor subagents with per-role models, and Custom Modes and `/loop` are Cursor features, so those parts may not work there.",
-      "replacement": "t3-pstack is pstack rewritten for T3 Code. Its workflow skills, including `/poteto-mode`, `/how`, `/why`, and `/teach`, dispatch subagents through T3's `delegate_task` with per-role models, so those parts need a T3 thread.",
+      "replacement": "t3-pstack-science is pstack rewritten for T3 Code. Its workflow skills, including `/poteto-mode`, `/how`, `/why`, and `/teach`, dispatch subagents through T3's `delegate_task` with per-role models, so those parts need a T3 thread.",
       "rationale": "states where the port runs (Precedence)",
       "files": "^skills/poteto-help/SKILL\\.md$"
     },
     {
       "pattern": "- Enter on `/poteto-mode` attaches the skill to one message. It fades as the chat moves on.\n- Option+Enter on Mac or Alt+Enter on Windows, or Use as Mode from the skill entry, makes it a Custom Mode. It stays in context every turn until the user exits the mode, and it stays out of casual turns.\n- Cursor's docs list Custom Modes in the Agents Window and the CLI. Elsewhere, start each new task with `/poteto-mode`.",
-      "replacement": "- Invoking `/poteto-mode` attaches the skill to one message. It fades as the chat moves on, so start each new task with it.\n- Where the harness runs t3-pstack's session-start hook, each new chat is told when to enter `/poteto-mode` on its own.\n- Skill names differ by harness: `/t3-pstack:poteto-mode` on Claude Code, `$poteto-mode` on Codex. This file writes every skill as `/<name>`.",
+      "replacement": "- Invoking `/poteto-mode` attaches the skill to one message. It fades as the chat moves on, so start each new task with it.\n- Where the harness runs t3-pstack-science's session-start hook, each new chat is told when to enter `/poteto-mode` on its own.\n- Skill names differ by harness: `/t3-pstack-science:poteto-mode` on Claude Code, `$poteto-mode` on Codex. This file writes every skill as `/<name>`.",
       "rationale": "harness-specific invocation (Per-skill notes: poteto-help)",
       "files": "^skills/poteto-help/SKILL\\.md$"
     },
@@ -606,7 +606,7 @@
     {
       "files": "^skills/poteto-mode/playbooks/",
       "pattern": "in the root agent's store (path in the system prompt)",
-      "replacement": "in the root's store, `${XDG_STATE_HOME:-~/.local/state}/t3-pstack/` (T3 names no agent store),",
+      "replacement": "in the root's store, `${XDG_STATE_HOME:-~/.local/state}/t3-pstack-science/` (T3 names no agent store),",
       "rationale": "no Cursor agent store on T3"
     },
     {
@@ -749,7 +749,7 @@
     },
     {
       "pattern": "in the current agent's store (path in the system prompt).",
-      "replacement": "in `${XDG_STATE_HOME:-~/.local/state}/t3-pstack/` (T3 names no agent store).",
+      "replacement": "in `${XDG_STATE_HOME:-~/.local/state}/t3-pstack-science/` (T3 names no agent store).",
       "rationale": "no Cursor agent store on T3",
       "files": "^skills/poteto-mode/playbooks/"
     },

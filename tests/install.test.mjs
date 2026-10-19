@@ -341,6 +341,23 @@ describe("a t3-pstack-science marketplace from another source", () => {
     });
   });
 
+  test("rejects the foreign plugin's GitHub source under this fork's marketplace name", () => {
+    const { dir } = claudeHome({ autoUpdate: true });
+    const settings = JSON.parse(readFileSync(join(dir, "settings.json"), "utf8"));
+    const foreignRepo = legacy.install.slice("github:".length);
+    settings.extraKnownMarketplaces["t3-pstack-science"].source = { source: "github", repo: foreignRepo };
+    writeJson(join(dir, "settings.json"), settings);
+    const claude = fakeClaude();
+    const home = { harness: "claude", dir, bin: claude.bin };
+    expect(installClaude(home, context)).toEqual([]);
+    expect(claude.calls()).toEqual([]);
+    expect(doctorClaude(home, context)[0]).toEqual({
+      name: "marketplace", ok: false,
+      detail: `${foreignRepo}, which is neither huankoh/t3-pstack-science nor --source`,
+      fix: `if you trust it, rerun with --source ${foreignRepo}; otherwise remove it with \`CLAUDE_CONFIG_DIR=${dir} claude plugin marketplace remove t3-pstack-science\`, then ${FIX}`,
+    });
+  });
+
   test("is trusted when it is this run's --source", () => {
     const { dir, elsewhere } = counterfeit();
     const local = parseSource(elsewhere, "/home/u");
@@ -446,7 +463,7 @@ describe("the model sheet", () => {
     const { root, homes, sheet } = machine();
     writeFileSync(join(root, ".claude/t3-pstack-models.md"), SHEET);
     writeFileSync(join(root, ".codex/t3-pstack-models.md"), "session hook: off\n");
-    expect(doctorSheet(sheet, homes, { catalog: null, models })).toEqual([
+    expect(doctorSheet(sheet, { catalog: null, models })).toEqual([
       {
         name: "machine sheet", ok: false, warn: true,
         detail: "none, so every role runs on its skill's defaults",
@@ -457,7 +474,7 @@ describe("the model sheet", () => {
 
   test("doctor warns without a sheet and fails on a malformed one", () => {
     const { homes, sheet } = machine();
-    expect(doctorSheet(sheet, homes, { catalog: null, models })).toEqual([
+    expect(doctorSheet(sheet, { catalog: null, models })).toEqual([
       {
         name: "machine sheet",
         ok: false,
@@ -468,7 +485,7 @@ describe("the model sheet", () => {
     ]);
     mkdirSync(join(sheet, ".."), { recursive: true });
     writeFileSync(sheet, "bug-fix: claude-opus\nhow critics: inherit-parent\n");
-    expect(doctorSheet(sheet, homes, { catalog: null, models })[0]).toEqual({
+    expect(doctorSheet(sheet, { catalog: null, models })[0]).toEqual({
       name: "machine sheet valid",
       ok: false,
       detail: 'bug-fix: "claude-opus" does not start with <providerInstanceId>/<modelId>; "how critics" is not a pstack role',
@@ -480,7 +497,7 @@ describe("the model sheet", () => {
     const { homes, sheet } = machine();
     mkdirSync(join(sheet, ".."), { recursive: true });
     writeFileSync(sheet, "science bug-fix: opus\n");
-    expect(doctorSheet(sheet, homes, { catalog: null, models })[0]).toEqual({
+    expect(doctorSheet(sheet, { catalog: null, models })[0]).toEqual({
       name: "machine sheet valid", ok: false,
       detail: 'science bug-fix: "opus" does not start with <providerInstanceId>/<modelId>',
       fix: "run /t3-pstack-science:setup-pstack in a T3 thread",
@@ -489,7 +506,7 @@ describe("the model sheet", () => {
 
   test("doctor reports a source policy that predates domains without throwing", () => {
     const { homes, sheet } = machine();
-    expect(doctorSheet(sheet, homes, { catalog: null, models: { tiers: {}, roles: [] } })).toEqual([
+    expect(doctorSheet(sheet, { catalog: null, models: { tiers: {}, roles: [] } })).toEqual([
       { name: "model policy", ok: false, detail: "models.json predates domains; install a t3-pstack-science source", fix: "remove the existing `t3-pstack-science` marketplace from each affected home, then run `npx -y github:huankoh/t3-pstack-science install --source huankoh/t3-pstack-science` (or set --source to a t3-pstack-science checkout)" },
     ]);
   });

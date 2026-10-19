@@ -71,7 +71,7 @@ describe("SessionStart hook", () => {
   });
 
   test("names only skills that exist", () => {
-    const named = [...mandate.matchAll(/(?:pstack:|`\/)([a-z0-9-]+)/g)].map((m) => m[1]);
+    const named = [...mandate.matchAll(/(?:t3-pstack-science:|`\/)([a-z0-9-]+)/g)].map((m) => m[1]);
     const skills = new Set(agentSkills(join(pluginRoot, "skills")).map(({ name }) => name));
     expect(named).toContain("poteto-mode");
     expect(named.filter((name) => !skills.has(name))).toEqual([]);
@@ -143,6 +143,29 @@ describe("the machine sheet", () => {
       writeFileSync(join(home, "xdg/t3-pstack-science/models.md"), "session hook: off\n");
       expect(run(runtime, home)).toBe(mandate);
       expect(run(runtime, home, { XDG_CONFIG_HOME: join(home, "xdg") })).toBe("");
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("foreign sheets", () => {
+  test.each(Object.keys(runtimes))("ignores every foreign off sheet on %s", (runtime) => {
+    const home = mkdtempSync(join(tmpdir(), "pstack-hook-"));
+    const { sheetDir, env, hooks } = runtimes[runtime];
+    try {
+      for (const dir of [".claude", ".codex", sheetDir]) {
+        mkdirSync(join(home, dir), { recursive: true });
+        writeFileSync(join(home, dir, "t3-pstack-models.md"), "session hook: off\n");
+        writeFileSync(join(home, dir, "t3-pstack-science-models.md"), "session hook: off\n");
+      }
+      mkdirSync(join(home, ".config/t3-pstack"), { recursive: true });
+      writeFileSync(join(home, ".config/t3-pstack/models.md"), "session hook: off\n");
+      const result = spawnSync("sh", ["-c", sessionStart[hooks].hooks[0].command], {
+        env: { PATH: process.env.PATH, HOME: home, CLAUDE_PLUGIN_ROOT: pluginRoot, ...env(join(home, sheetDir)) },
+        encoding: "utf8",
+      });
+      expect({ status: result.status, out: result.stdout, err: result.stderr }).toEqual({ status: 0, out: mandate, err: "" });
     } finally {
       rmSync(home, { recursive: true, force: true });
     }

@@ -2,6 +2,12 @@
 
 This file is the release changelog, with one `## <version> - <title>` entry per release, newest first. The Cursor-to-T3 rewrite rules live in [`tools/substitutions.json`](tools/substitutions.json), and the [sync boundary](CONTRIBUTING.md#the-sync-boundary) in `CONTRIBUTING.md` defines how a change to upstream's skill content is declared.
 
+## 2.0.0-rc.11-science.1 - t3-pstack-science: science and general routing
+
+The science fork separates general and scientific work into model-routing columns. [PR #1](https://github.com/huankoh/t3-pstack-science/pull/1) adds the two-column policy and sheet checks. [PR #2](https://github.com/huankoh/t3-pstack-science/pull/2) carries the domain gate into the skill and dispatch prose, with term-free briefs for seats outside the science term readers.
+
+The fork now installs as `t3-pstack-science@t3-pstack-science` from `huankoh/t3-pstack-science`, alongside chhoumann's plugin. Its hooks and skills read only `~/.config/t3-pstack-science/models.md`, or that path under `$XDG_CONFIG_HOME`, and use `models.json` defaults without a sheet. The installer leaves other plugins and their sheets intact. Doctor warns once per home when both plugins are enabled. Neither hooks JSON file changes.
+
 ## 2.0.0-rc.11 - Lauren's `0148b78`: sharpen no longer forbids handing back a rewritten prompt
 
 t3-pstack moves to Lauren Tan's pstack at cursor/plugins `0148b78` for all three components. Only pstack changed upstream. Sharpen drops its final sentence, "Don't hand back a rewritten prompt.", so the skill now ends on "without narrating the framing, then do the work." ([pstack #712](https://github.com/cursor/plugins/pull/712)). [pstack #710](https://github.com/cursor/plugins/pull/710) and [#713](https://github.com/cursor/plugins/pull/713) bump Lauren's version to 0.15.26 and then 0.15.27 in her manifests, and upstream's copy under `harness/pstack/claude-code/` follows #712. Both sit outside every synced component. `bun tools/sync.mjs` updated `sharpen/SKILL.md` cleanly. The port's copy matched upstream byte for byte, and no substitution matches its old or new text, since the sentence names no Cursor mechanism. No rule was added, and the 15 declared forks are untouched. At `0148b78` each component's dry run reports no undeclared fork, no denylist hit, and no substitution that matches nothing. Neither hooks file changes.

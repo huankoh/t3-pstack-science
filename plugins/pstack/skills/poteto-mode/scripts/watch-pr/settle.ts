@@ -2,7 +2,7 @@ import { WatcherQueryError } from "./github.ts";
 import type { WatchClock } from "./policy.ts";
 import type * as T from "./types.ts";
 
-// t3-pstack's review settle window. Review bots post minutes after CI turns
+// t3-pstack-science's review settle window. Review bots post minutes after CI turns
 // green, so READY waits until no account other than the PR author and the gh
 // viewer has commented, reviewed, or reacted for the settle window since the
 // review was triggered: the push, the PR opening, or its last ready for review.
