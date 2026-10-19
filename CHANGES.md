@@ -6,7 +6,7 @@ This file is the release changelog, with one `## <version> - <title>` entry per 
 
 The science fork separates general and scientific work into model-routing columns. [PR #1](https://github.com/huankoh/t3-pstack-science/pull/1) adds the two-column policy and sheet checks. [PR #2](https://github.com/huankoh/t3-pstack-science/pull/2) carries the domain gate into the skill and dispatch prose, with term-free briefs for seats outside the science term readers.
 
-The fork now installs as `t3-pstack-science@t3-pstack-science` from `huankoh/t3-pstack-science`, alongside chhoumann's plugin. Its hooks and skills read only `~/.config/t3-pstack-science/models.md`, or that path under `$XDG_CONFIG_HOME`, and use `models.json` defaults without a sheet. The installer leaves other plugins and their sheets intact. Doctor warns once per home when both plugins are enabled. Neither hooks JSON file changes.
+The fork now installs as `t3-pstack-science@t3-pstack-science` from `huankoh/t3-pstack-science`, alongside chhoumann's plugin. Its hooks and skills read only `~/.config/t3-pstack-science/models.md`, or that path under `$XDG_CONFIG_HOME`. Without a sheet, each skill's Models table applies. The installer leaves other plugins and their sheets intact. Doctor warns when chhoumann's plugin is enabled and its session hook runs. Before touching any home, the installer refuses a source whose marketplace or plugin is not named `t3-pstack-science` or whose `models.json` lacks domains. Neither hooks JSON file changes.
 
 ## 2.0.0-rc.11 - Lauren's `0148b78`: sharpen no longer forbids handing back a rewritten prompt
 
