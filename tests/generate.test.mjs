@@ -119,7 +119,8 @@ describe("regions", () => {
       expect(out).toContain('`node "<plugin root>/skills/setup-pstack/scripts/term-free.mjs" "<file>"`');
       expect(out).toContain("The check knows only the listed terms and does not prove a brief is term-free, so write the brief term-free first and use the check as a last guard.");
       expect(out).toContain("adding `--term <word>` for each domain word the task itself uses.");
-      expect(out).toContain("send the brief only once it exits 0.");
+      expect(out).toContain("Rewrite each listed scientific word. A listed word used in its ordinary code or math sense, such as a library, API, or variable name, may stay, and the dispatch ledger names it.");
+      expect(out).toContain("When a term-free seat still treats a brief as biological research, add the words that set it off to `science-terms.txt` in a PR, with the brief excerpt as the example.");
       expect(out).toContain("Stage neutral copies of the code, data, and diffs that seat needs in its own directory, check each text input with the same command, and never point the seat at the original scientific files, papers, transcripts, or diffs.");
       expect(out).toContain("have a research delegate on the `science how explorer` line translate it first (its default reads the terms).");
       expect(out).toContain("If that seat's family does not read the terms, the translation stays blocked; never route raw context to it.");

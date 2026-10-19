@@ -9,7 +9,7 @@
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",
       "pattern": "Prose and judgment read `judgment and prose`.",
-      "replacement": "Prose and judgment read `judgment and prose`. Trivial mechanical edits read `mechanical code`. Each line is the one in the todolist's `domain:` column ([Models](#models)). In `science`, the hardest changes still read `hardest tasks`, and the rest read their playbook's line.",
+      "replacement": "Prose and judgment read `judgment and prose`. Trivial mechanical edits read `mechanical code`. Each line is the one in the todolist's `domain:` column ([Models](#models)).",
       "rationale": "router: every role follows its column and keeps the playbook difficulty tiering"
     },
     {

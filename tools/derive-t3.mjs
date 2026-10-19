@@ -105,7 +105,8 @@ function routerProse(models) {
     `A term-free brief states inputs, outputs, data shapes, invariants, formulas, and acceptance tests in plain math and code, with no vocabulary of ${covers}. ` +
     '`<plugin root>` is the directory that holds this plugin\'s `skills/`. Write the brief to a file and run `node "<plugin root>/skills/setup-pstack/scripts/term-free.mjs" "<file>"`, adding `--term <word>` for each domain word the task itself uses. ' +
     "The check knows only the listed terms and does not prove a brief is term-free, so write the brief term-free first and use the check as a last guard. " +
-    "It exits 1 and lists each term it finds; send the brief only once it exits 0. " +
+    "It exits 1 and lists each term it finds. Rewrite each listed scientific word. A listed word used in its ordinary code or math sense, such as a library, API, or variable name, may stay, and the dispatch ledger names it. " +
+    "When a term-free seat still treats a brief as biological research, add the words that set it off to `science-terms.txt` in a PR, with the brief excerpt as the example. " +
     "Stage neutral copies of the code, data, and diffs that seat needs in its own directory, check each text input with the same command, and never point the seat at the original scientific files, papers, transcripts, or diffs. " +
     `When the work cannot be stated without the terms, have a research delegate on the \`${translator.key}\` line translate it first (its default reads the terms). ` +
     "If that seat's family does not read the terms, the translation stays blocked; never route raw context to it.";

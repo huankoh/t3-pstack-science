@@ -153,7 +153,7 @@ describe("applySubstitutions", () => {
     const poteto = readFileSync(new URL("../plugins/pstack/skills/poteto-mode/SKILL.md", import.meta.url), "utf8");
     expect(poteto).toContain("Trivial mechanical edits go to your fast code model.");
     expect(poteto).toContain("Prose and judgment read `judgment and prose`. Trivial mechanical edits read `mechanical code`.");
-    expect(poteto).toContain("In `science`, the hardest changes still read `hardest tasks`, and the rest read their playbook's line.");
+    expect(poteto).toContain("Each line is the one in the todolist's `domain:` column ([Models](#models)).");
     expect(poteto).toContain("That verdict, and the **show-me-your-work** handback review, run on the `final review` line. Other verification stays on `swarm workers`.");
     const shipping = readFileSync(new URL("../plugins/pstack/skills/poteto-mode/playbooks/shipping.md", import.meta.url), "utf8");
     expect(shipping).toContain("and still performs this step's prescribed verification. Other verification stays on `swarm workers`.");
