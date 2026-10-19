@@ -5,8 +5,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { GLOSSARY, findTerms, parseGlossary } from "../plugins/pstack/skills/setup-pstack/scripts/term-free.mjs";
+
 const script = fileURLToPath(new URL("../plugins/pstack/skills/setup-pstack/scripts/term-free.mjs", import.meta.url));
-const checker = () => import(script);
 const made = [];
 afterEach(() => {
   for (const dir of made.splice(0)) rmSync(dir, { recursive: true, force: true });
@@ -141,8 +142,7 @@ describe("term-free regression table", () => {
 });
 
 describe("findTerms", () => {
-  test("reports each occurrence in reading order with original spellings and CRLF lines", async () => {
-    const { findTerms } = await checker();
+  test("reports each occurrence in reading order with original spellings and CRLF lines", () => {
     expect(findTerms("protein gene protein\r\nGENES", ["gene", "protein"])).toEqual([
       { line: 1, term: "protein", found: "protein" },
       { line: 1, term: "gene", found: "gene" },
@@ -151,16 +151,14 @@ describe("findTerms", () => {
     ]);
   });
 
-  test.each([["proteomic", "proteomics"], ["proteomics", "proteomic"]])("reports the longer term once for the same span with %j first", async (first, second) => {
-    const { findTerms } = await checker();
+  test.each([["proteomic", "proteomics"], ["proteomics", "proteomic"]])("reports the longer term once for the same span with %j first", (first, second) => {
     expect(findTerms("proteomics readProteomicsCount", [first, second])).toEqual([
       { line: 1, term: "proteomics", found: "proteomics" },
       { line: 1, term: "proteomics", found: "Proteomics" },
     ]);
   });
 
-  test.each([["rna", "rna seq"], ["rna seq", "rna"]])("drops contained spans with %j first", async (first, second) => {
-    const { findTerms } = await checker();
+  test.each([["rna", "rna seq"], ["rna seq", "rna"]])("drops contained spans with %j first", (first, second) => {
     expect(findTerms("RNA-seq data; rnaSeqData; rna", [first, second])).toEqual([
       { line: 1, term: "rna seq", found: "RNA-seq" },
       { line: 1, term: "rna seq", found: "rnaSeq" },
@@ -170,23 +168,19 @@ describe("findTerms", () => {
 });
 
 describe("parseGlossary", () => {
-  test("skips comments and blank lines", async () => {
-    const { parseGlossary } = await checker();
+  test("skips comments and blank lines", () => {
     expect(parseGlossary("# terms\r\n\r\ngene\r\nsingle cell\r\n")).toEqual(["gene", "single cell"]);
   });
 
-  test.each(["- protein", "Protein", "binding  site", "binding_site", "rna.*"])("rejects malformed term %s", async (line) => {
-    const { parseGlossary } = await checker();
+  test.each(["- protein", "Protein", "binding  site", "binding_site", "rna.*"])("rejects malformed term %s", (line) => {
     expect(() => parseGlossary(`gene\n${line}`)).toThrow(`glossary line 2: "${line}" is not a lowercase term`);
   });
 
-  test("names both lines for a duplicate term", async () => {
-    const { parseGlossary } = await checker();
+  test("names both lines for a duplicate term", () => {
     expect(() => parseGlossary("gene\n# comment\ngene")).toThrow('glossary line 3: "gene" repeats line 1');
   });
 
-  test("the shipped glossary promises the specified seed and omits ambiguous code words", async () => {
-    const { GLOSSARY, parseGlossary } = await checker();
+  test("the shipped glossary promises the specified seed and omits ambiguous code words", () => {
     expect(parseGlossary(readFileSync(GLOSSARY, "utf8"))).toEqual([
       "amino acid", "antibody", "antigen", "assay", "bioassay", "binding affinity", "binding site", "biological", "biologically", "biology",
       "biomarker", "chromosome", "codon", "cytokine", "dna", "enzymatic", "epitope", "gene", "genome",
