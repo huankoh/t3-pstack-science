@@ -62,10 +62,10 @@ arena cross-judge pool: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=defa
 swarm workers: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
 architect runners: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false, codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
 interrogate reviewers: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false, codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
-science feature, refactoring: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
-science bug-fix: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
-science perf-issue: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
-science hillclimb: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+science feature, refactoring: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+science bug-fix: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+science perf-issue: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+science hillclimb: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
 science judgment and prose: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
 science hardest tasks: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
 science how explorer: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
@@ -76,7 +76,7 @@ science reflect tooling: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=def
 science reflect judgment, divergent, synthesizer: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
 science arena runners: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
 science arena cross-judge pool: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
-science swarm workers: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+science swarm workers: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
 science architect runners: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
 science interrogate reviewers: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
 session hook: on

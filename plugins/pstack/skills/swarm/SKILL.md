@@ -46,4 +46,4 @@ Role defaults on T3, stamped from `plugins/pstack/models.json`, one column per d
 
 | Role | general | science |
 | --- | --- | --- |
-| swarm workers | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |
+| swarm workers | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` |

@@ -28,11 +28,33 @@ describe("committed models.json", () => {
     expect(raw.roles.find((r) => r.alias === "strongest judgment")?.role).toBe("hardest tasks");
   });
 
-  test("the domain policy keeps the 17 released roles and five U1 tiers", () => {
+  test("the domain policy keeps the 17 released roles and six U1 tiers", () => {
     expect(Object.keys(models.domains)).toEqual(["general", "science"]);
     expect(models.roles).toHaveLength(17);
-    expect(Object.keys(models.domains.general.tiers)).toEqual(["code", "judgment", "runners", "judges", "reviewers"]);
-    expect(Object.keys(models.domains.science.tiers)).toEqual(["code", "judgment", "runners", "judges", "reviewers"]);
+    expect(Object.keys(models.domains.general.tiers)).toEqual(["code", "explore", "judgment", "runners", "judges", "reviewers"]);
+    expect(Object.keys(models.domains.science.tiers)).toEqual(["code", "explore", "judgment", "runners", "judges", "reviewers"]);
+  });
+
+  test("science workers use Grok while research delegates use Sol", () => {
+    const science = sheet.seats(models).filter((s) => s.domain === "science" && !s.panel);
+    expect(science.map((s) => [s.role, s.defaults[0].entry])).toEqual([
+      ["feature, refactoring", "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"],
+      ["bug-fix", "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"],
+      ["perf-issue", "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"],
+      ["hillclimb", "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"],
+      ["judgment and prose", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
+      ["hardest tasks", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
+      ["how explorer", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
+      ["how explainer", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
+      ["why investigators", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
+      ["why synthesizer", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
+      ["reflect tooling", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
+      ["reflect judgment, divergent, synthesizer", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
+      ["swarm workers", "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"],
+    ]);
+    expect(models.roles.filter((r) => r.tier === "explore").map((r) => r.role)).toEqual([
+      "how explorer", "why investigators", "reflect tooling",
+    ]);
   });
 
   test("only science panel defaults outside its term readers need term-free briefs", () => {

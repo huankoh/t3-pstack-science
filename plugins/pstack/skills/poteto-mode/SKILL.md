@@ -163,9 +163,9 @@ Role defaults on T3, stamped from `plugins/pstack/models.json`, one column per d
 
 | Role | general | science |
 | --- | --- | --- |
-| feature, refactoring | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |
-| bug-fix | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |
-| perf-issue | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |
-| hillclimb | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |
+| feature, refactoring | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` |
+| bug-fix | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` |
+| perf-issue | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` |
+| hillclimb | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` |
 | judgment and prose | `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |
 | hardest tasks (a `strongest judgment` line counts as this role) | `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |

@@ -3,6 +3,7 @@
     "general": {
       "tiers": {
         "code": "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
+        "explore": "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
         "judgment": "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
         "runners": [
           "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
@@ -25,7 +26,8 @@
       "covers": "biology or other scientific work",
       "termReaders": ["gpt", "grok"],
       "tiers": {
-        "code": "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
+        "code": "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
+        "explore": "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
         "judgment": "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
         "runners": [
           "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
@@ -52,11 +54,11 @@
     { "role": "hillclimb", "tier": "code", "skill": "poteto-mode" },
     { "role": "judgment and prose", "tier": "judgment", "skill": "poteto-mode" },
     { "role": "hardest tasks", "alias": "strongest judgment", "tier": "judgment", "skill": "poteto-mode" },
-    { "role": "how explorer", "tier": "code", "skill": "how" },
+    { "role": "how explorer", "tier": "explore", "skill": "how" },
     { "role": "how explainer", "tier": "judgment", "skill": "how" },
-    { "role": "why investigators", "tier": "code", "skill": "why" },
+    { "role": "why investigators", "tier": "explore", "skill": "why" },
     { "role": "why synthesizer", "tier": "judgment", "skill": "why" },
-    { "role": "reflect tooling", "tier": "code", "skill": "reflect" },
+    { "role": "reflect tooling", "tier": "explore", "skill": "reflect" },
     { "role": "reflect judgment, divergent, synthesizer", "tier": "judgment", "skill": "reflect" },
     { "role": "arena runners", "tier": "runners", "skill": "arena" },
     { "role": "arena cross-judge pool", "tier": "judges", "skill": "arena" },

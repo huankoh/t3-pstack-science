@@ -124,7 +124,8 @@ describe("checkSheet against a catalog", () => {
     expect(check("session hook: on", noCursor)).toEqual([
       "feature, refactoring", "bug-fix", "perf-issue", "hillclimb", "how explorer", "why investigators", "reflect tooling",
       "arena runners", "arena cross-judge pool", "swarm workers", "architect runners", "interrogate reviewers",
-      "science arena runners", "science arena cross-judge pool", "science architect runners", "science interrogate reviewers",
+      "science feature, refactoring", "science bug-fix", "science perf-issue", "science hillclimb",
+      "science arena runners", "science arena cross-judge pool", "science swarm workers", "science architect runners", "science interrogate reviewers",
     ].map((key) => `${key} (no line, tier default): cursor/grok-4.7: no provider instance "cursor" in this T3`));
   });
 
@@ -270,7 +271,7 @@ describe("seats", () => {
     expect(keys.at(-1)).toBe("science interrogate reviewers");
     expect(sheetApi.seats(models).find((s) => s.key === "science bug-fix")).toEqual({
       key: "science bug-fix", alias: null, domain: "science", role: "bug-fix", skill: "poteto-mode", panel: false,
-      defaults: [{ entry: "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default", termFree: false }],
+      defaults: [{ entry: "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false", termFree: false }],
     });
   });
 

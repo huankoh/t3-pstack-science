@@ -81,7 +81,7 @@ describe("regions", () => {
       expect(stamped).toContain(`\n| ${role.role}`);
     }
     const file = "plugins/pstack/skills/poteto-mode/SKILL.md";
-    expect(applyRegions(file, "## Models\n", models)).toContain("| bug-fix | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |");
+    expect(applyRegions(file, "## Models\n", models)).toContain("| bug-fix | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` |");
   });
 
   test("the setup sheet lists 17 general seats then 17 science seats", () => {
@@ -89,14 +89,17 @@ describe("regions", () => {
     expect(block[0]).toBe("# pstack model configuration (T3). One line per role and column. Delete a line to fall back to the skill default.");
     expect(block[1]).toBe("# `<role>:` sets the general column, as in every sheet before domains. `science <role>:` sets the science column.");
     expect(block[4]).toBe("feature, refactoring: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false");
-    expect(block[21]).toBe("science feature, refactoring: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default");
+    expect(block[21]).toBe("science feature, refactoring: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false");
+    expect(block).toContain("science how explorer: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default");
+    expect(block).toContain("science why investigators: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default");
+    expect(block).toContain("science reflect tooling: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default");
     expect(block.at(-1)).toBe("session hook: on");
     expect(block).toHaveLength(39);
   });
 
   test("a missing seat renders none and panels mark term-free defaults", () => {
     const policy = structuredClone(models);
-    policy.domains.general.tiers.code = null;
+    policy.domains.general.tiers.explore = null;
     expect(applyRegions("plugins/pstack/skills/how/SKILL.md", "## Models\n", policy)).toContain("| how explorer | none | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |");
     expect(applyRegions("plugins/pstack/skills/arena/SKILL.md", "## Models\n", models)).toContain("| arena runners | `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false`, `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false`, `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default`, `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` (term-free brief), `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` |");
   });
