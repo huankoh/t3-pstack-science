@@ -101,15 +101,23 @@ describe("regions", () => {
     for (const skill of new Set(models.roles.map((r) => r.skill))) {
       const out = applyRegions(`plugins/pstack/skills/${skill}/SKILL.md`, "## Models\n", models);
       expect(out).toContain("records it in the todolist as `domain: science` when the task is biology or other scientific work, else as `domain: general`.");
-      expect(out).toContain("A thread that already records one keeps it.");
-      expect(out).toContain("The chat is the orchestrator only.");
+      expect(out).toContain("For each task, before step 1 and before the first `delegate_task`,");
+      expect(out).toContain("When the task changes, pick the domain again.");
+      expect(out).toContain("When unsure, pick `science`.");
+      expect(out).toContain("If the skill opens no todolist, record the domain in the first reply.");
+      expect(out).not.toContain("A thread that already records one keeps it.");
+      expect(out).toContain("The chat picks the column, writes each brief, and dispatches each step a skill delegates.");
       expect(out).toContain("read `<role>:` under `domain: general` and `science <role>:` under `domain: science`.");
       expect(out).toContain("The column picks only the target.");
-      expect(out).toContain("up to `max` and never a level above it, such as Codex's `ultra`.");
+      expect(out).toContain("up to `max` and never a level above it.");
+      expect(out).not.toContain("`ultra`");
       expect(out).toContain("In `science`, only `gpt` and `grok` models read the domain's terms.");
+      expect(out).toContain("A `science` dispatch to any other family carries a term-free brief. A default marked (term-free brief) gets one.");
       expect(out).toContain("Resolve an `inherit-parent` or `auto` seat's family from `orchestrator_capabilities`' `inheritedModel` before choosing its brief; an unknown family gets a term-free brief.");
       expect(out).toContain("no vocabulary of biology or other scientific work.");
-      expect(out).toContain("`node <plugin root>/skills/setup-pstack/scripts/term-free.mjs <file>`");
+      expect(out).toContain('`<plugin root>` is the directory that holds this plugin\'s `skills/`.');
+      expect(out).toContain('`node "<plugin root>/skills/setup-pstack/scripts/term-free.mjs" "<file>"`');
+      expect(out).toContain("The check knows only the listed terms and does not prove a brief is term-free, so write the brief term-free first and use the check as a last guard.");
       expect(out).toContain("adding `--term <word>` for each domain word the task itself uses.");
       expect(out).toContain("send the brief only once it exits 0.");
       expect(out).toContain("Stage neutral copies of the code, data, and diffs that seat needs in its own directory, check each text input with the same command, and never point the seat at the original scientific files, papers, transcripts, or diffs.");
@@ -342,7 +350,7 @@ describe("deriveT3", () => {
     expect(out).toContain("It splits at its first `/`");
     expect(out).toEndWith("| how explainer | `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |\n");
     expect(out).toContain("`<role>: <entry>` sets the general column, as in every sheet written before domains, and `science <role>: <entry>` sets the science column.");
-    expect(out).toContain("Before the first dispatch");
+    expect(out).toContain("For each task, before step 1 and before the first `delegate_task`");
     expect(out).toContain("term-free.mjs");
     expect(deriveT3("plugins/pstack/skills/how/SKILL.md", out, models)).toBe(out);
   });

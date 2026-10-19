@@ -94,19 +94,21 @@ function routerProse(models) {
   }
   const families = new Intl.ListFormat("en", { style: "long", type: "conjunction" }).format(termReaders.map(code));
   const gate =
-    `Before the first dispatch, the chat that runs the playbook picks the task's column and records it in the todolist as \`domain: ${SCIENCE}\` when the task is ${covers}, else as \`domain: ${GENERAL}\`. ` +
-    "A thread that already records one keeps it. The chat is the orchestrator only. It picks the column, writes each brief, and dispatches. " +
+    `For each task, before step 1 and before the first \`delegate_task\`, the chat picks the task's column and records it in the todolist as \`domain: ${SCIENCE}\` when the task is ${covers}, else as \`domain: ${GENERAL}\`. ` +
+    `When the task changes, pick the domain again. When unsure, pick \`${SCIENCE}\`. If the skill opens no todolist, record the domain in the first reply. ` +
+    "The chat picks the column, writes each brief, and dispatches each step a skill delegates. " +
     `Every role resolves from that column, so wherever a skill names a role's line, read \`<role>:\` under \`domain: ${GENERAL}\` and \`${SCIENCE} <role>:\` under \`domain: ${SCIENCE}\`. ` +
-    "The column picks only the target. The reasoning level follows the **poteto-mode** skill's Subagents section in every column, up to `max` and never a level above it, such as Codex's `ultra`.";
+    "The column picks only the target. The reasoning level follows the **poteto-mode** skill's Subagents section in every column, up to `max` and never a level above it.";
   const terms =
-    `In \`${SCIENCE}\`, only ${families} models read the domain's terms. A \`${SCIENCE}\` dispatch to any other family carries a term-free brief. ` +
+    `In \`${SCIENCE}\`, only ${families} models read the domain's terms. A \`${SCIENCE}\` dispatch to any other family carries a term-free brief. A default marked (term-free brief) gets one. ` +
     "Resolve an `inherit-parent` or `auto` seat's family from `orchestrator_capabilities`' `inheritedModel` before choosing its brief; an unknown family gets a term-free brief. " +
     `A term-free brief states inputs, outputs, data shapes, invariants, formulas, and acceptance tests in plain math and code, with no vocabulary of ${covers}. ` +
-    "Write it to a file and run `node <plugin root>/skills/setup-pstack/scripts/term-free.mjs <file>`, adding `--term <word>` for each domain word the task itself uses. " +
+    '`<plugin root>` is the directory that holds this plugin\'s `skills/`. Write the brief to a file and run `node "<plugin root>/skills/setup-pstack/scripts/term-free.mjs" "<file>"`, adding `--term <word>` for each domain word the task itself uses. ' +
+    "The check knows only the listed terms and does not prove a brief is term-free, so write the brief term-free first and use the check as a last guard. " +
     "It exits 1 and lists each term it finds; send the brief only once it exits 0. " +
     "Stage neutral copies of the code, data, and diffs that seat needs in its own directory, check each text input with the same command, and never point the seat at the original scientific files, papers, transcripts, or diffs. " +
     `When the work cannot be stated without the terms, have a research delegate on the \`${translator.key}\` line translate it first (its default reads the terms). ` +
-    "If that seat's family does not read the terms, the translation stays blocked; never route raw context to it. A default marked (term-free brief) is such a seat.";
+    "If that seat's family does not read the terms, the translation stays blocked; never route raw context to it.";
   return `${gate}\n\n${terms}\n\n${sheetProse}`;
 }
 

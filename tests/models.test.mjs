@@ -66,11 +66,23 @@ describe("committed models.json", () => {
       ["science mechanical code", [{ entry: "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false", termFree: false }]],
       ["science final review", [{ entry: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default", termFree: false }]],
     ]);
-    expect(models.roles.slice(6, 8)).toEqual([
+    expect(["mechanical code", "final review"].map((role) => models.roles.find((r) => r.role === role))).toEqual([
       { role: "mechanical code", tier: "mechanical", skill: "poteto-mode" },
       { role: "final review", tier: "final", skill: "poteto-mode" },
     ]);
     expect(models.roles.map((r) => r.role)).not.toContain("term-free code");
+  });
+
+  test("science defaults allow independent review of workers and of final-review-family authors", () => {
+    const family = (entry) => sheet.family(sheet.parseEntry(entry).model);
+    const science = sheet.seats(models).filter((s) => s.domain === "science");
+    const final = science.find((s) => s.role === "final review");
+    const finalFamily = family(final.defaults[0].entry);
+    expect(["code", "mechanical"].map((tier) => family(models.domains.science.tiers[tier]))).toEqual(["grok", "grok"]);
+    for (const tier of ["code", "mechanical"]) expect(family(models.domains.science.tiers[tier])).not.toBe(finalFamily);
+    const independent = science.find((s) => s.role === "interrogate reviewers").defaults
+      .filter((d) => family(d.entry) !== finalFamily && !d.termFree);
+    expect(independent.map((d) => family(d.entry))).toEqual(["grok"]);
   });
 
   test("only science panel defaults outside its term readers need term-free briefs", () => {

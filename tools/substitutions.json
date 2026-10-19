@@ -3,7 +3,7 @@
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",
       "pattern": "Open a todolist whose first items are the matched playbook's steps, copied in verbatim, before any task-specific todos.",
-      "replacement": "Open a todolist whose first items are the matched playbook's steps, copied in verbatim, before any task-specific todos. The first task-specific todo is the domain gate, `domain: science` or `domain: general`, picked per [Models](#models) before the first `delegate_task`.",
+      "replacement": "Open a todolist whose first items are the matched playbook's steps, copied in verbatim, before any task-specific todos. The first task-specific todo is the domain gate, `domain: science` or `domain: general`, picked per [Models](#models) before step 1 and before the first `delegate_task`.",
       "rationale": "router: the domain gate records the column every role resolves from"
     },
     {
@@ -27,7 +27,7 @@
     {
       "files": "^skills/show-me-your-work/SKILL\\.md$",
       "pattern": "Before handing back, spawn a subagent on a different model family from the one that did the work.",
-      "replacement": "Before handing back, spawn a subagent on a different model family from the one that did the work. It runs on the `final review` line (default in poteto-mode's [Models](../poteto-mode/SKILL.md#models)). When that line's family did the work, record `BLOCKED: independent review` and keep the handback closed. Do not substitute another reviewer.",
+      "replacement": "Before handing back, spawn a subagent on a different model family from the one that did the work. \"The work\" is the change being handed back. Count the chat's family when it edited the change itself and every delegate's family whose output is in the change. The `final review` line always reviews (default in poteto-mode's [Models](../poteto-mode/SKILL.md#models)). When that line's family is among those families, the first entry of the same column's `interrogate reviewers` whose family is outside them and that reads the column's terms also reviews. Both verdicts must pass. Only when no such reviewer exists, record `BLOCKED: independent review` and keep the handback closed.",
       "rationale": "router: final review owns handback and preserves the different-family requirement"
     },
     {
@@ -35,6 +35,18 @@
       "pattern": "Trivial mechanical edits go to your fast code model.",
       "replacement": "Trivial mechanical edits go to the `mechanical code` line.",
       "rationale": "T3 routing names the mechanical code sheet line explicitly"
+    },
+    {
+      "files": "^skills/(?:[^/]+/SKILL\\.md|poteto-mode/playbooks/[^/]+\\.md)$",
+      "pattern": "Pick each subagent's reasoning level and fast or standard speed for the job,",
+      "replacement": "Pick each subagent's reasoning level for the job,",
+      "rationale": "T3 routing keeps speed standard and chooses only the reasoning level per job"
+    },
+    {
+      "files": "^skills/recall/SKILL\\.md$",
+      "pattern": "Spawn parallel subagents on a fast, cheap model, each taking a slice of the corpus.",
+      "replacement": "Spawn parallel subagents on a cheap model, each taking a slice of the corpus.",
+      "rationale": "T3 routing keeps speed standard when recall picks its history readers"
     },
     {
       "pattern": "and mention once that a Custom Mode keeps it on.",
@@ -249,13 +261,13 @@
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",
       "pattern": "Use fast mode only when the job is urgent, meaning CI or trunk is red or a person is blocked on the result right now. Otherwise use standard speed, the same slug without `-fast`.",
-      "replacement": "Every dispatch sets each speed option its model lists to its standard value (`fastMode=false` on Claude and `cursor`, `serviceTier=default` on Codex), as the defaults in [Models](#models) do. This router never uses fast mode, urgent or not, and `t3-sheet.mjs` rejects a fast entry.",
+      "replacement": "Every dispatch sets each speed option its model lists to its standard value (`fastMode=false` on Claude and `cursor`, `serviceTier=default` on Codex), as the defaults in [Models](#models) do. `t3-sheet.mjs` rejects an entry with nonstandard speed.",
       "rationale": "#613 per-job effort: a T3 entry carries its reasoning and speed as options, not as slug suffixes (The sheet); never fast (design.md, Speed)"
     },
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",
       "pattern": "Verification is the exception and stays on the `swarm workers` model and speed (`grok-4.7-xhigh-fast` by default).",
-      "replacement": "Verification is the exception and stays on the `swarm workers` model and speed (default in the **swarm** skill's Models section).",
+      "replacement": "Verification is the exception and stays on the `swarm workers` model and speed (default in the **swarm** skill's Models section), except the independent verdict and the handback review, which run on `final review`.",
       "rationale": "#613 per-job effort: a T3 entry carries its reasoning and speed as options, not as slug suffixes (The sheet)"
     },
     {
