@@ -265,6 +265,11 @@ describe("the T3 session-start context", () => {
 describe("seats", () => {
   test("exports the router's fixed domain pair", () => {
     expect([sheetApi.GENERAL, sheetApi.SCIENCE, sheetApi.DOMAINS]).toEqual(["general", "science", ["general", "science"]]);
+    try {
+      expect(() => sheetApi.DOMAINS.push("extra")).toThrow(TypeError);
+    } finally {
+      if (sheetApi.DOMAINS.at(-1) === "extra") sheetApi.DOMAINS.pop();
+    }
   });
 
   test("lists 17 general seats then 17 science seats in role order", () => {
@@ -346,11 +351,26 @@ describe("standard speed", () => {
       "fastMode=true is not standard speed, and this router never runs fast; write fastMode=false",
       "serviceTier=priority is not standard speed, and this router never runs fast; write serviceTier=default",
     ]);
-    expect(check("bug-fix: claudeAgent/claude-opus-5-5 fastMode=true", null)).toEqual([
+    expect(check("bug-fix: claudeAgent/claude-opus-5-5 fastMode=true")).toEqual([
       "bug-fix: claudeAgent/claude-opus-5-5: fastMode=true is not standard speed, and this router never runs fast; write fastMode=false",
     ]);
     expect(check("science bug-fix: codex/gpt-6.1-sol serviceTier=priority")).toEqual([
       "science bug-fix: codex/gpt-6.1-sol: serviceTier=priority is not standard speed, and this router never runs fast; write serviceTier=default",
+    ]);
+  });
+
+  test("without a catalog speed advice allows an option the model does not list to be deleted", () => {
+    expect(check("bug-fix: claudeAgent/claude-fable-5-1 effort=xhigh fastMode=true serviceTier=priority", null)).toEqual([
+      "bug-fix: claudeAgent/claude-fable-5-1: fastMode=true is not standard speed, and this router never runs fast; write fastMode=false, or delete fastMode if the model lists no such option",
+      "bug-fix: claudeAgent/claude-fable-5-1: serviceTier=priority is not standard speed, and this router never runs fast; write serviceTier=default, or delete serviceTier if the model lists no such option",
+    ]);
+  });
+
+  test("each option reports its catalog or speed problem once, in entry order", () => {
+    expect(check("bug-fix: claudeAgent/claude-opus-5-5 effort=extreme fastMode=true serviceTier=priority")).toEqual([
+      "bug-fix: claudeAgent/claude-opus-5-5: effort=extreme is not one of low, medium, high, xhigh, max",
+      "bug-fix: claudeAgent/claude-opus-5-5: fastMode=true is not standard speed, and this router never runs fast; write fastMode=false",
+      'bug-fix: claudeAgent/claude-opus-5-5: no option "serviceTier" (has effort, fastMode); delete serviceTier',
     ]);
   });
 

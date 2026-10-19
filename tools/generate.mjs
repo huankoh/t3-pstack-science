@@ -211,7 +211,6 @@ function parseDomains(raw) {
   if (domainNames.length !== DOMAINS.length || domainNames.some((domain, i) => domain !== DOMAINS[i])) {
     failModels('"domains" must hold "general" then "science"');
   }
-  if (!Array.isArray(raw.roles)) failModels('"roles" must be a list');
   for (const domain of DOMAINS) {
     const policy = raw.domains[domain];
     if (!isObject(policy)) failModels(`domain "${domain}" must be an object`);
@@ -288,6 +287,7 @@ function parseTiers(domains) {
 }
 
 function parseRoles(roles, tierNames, skillExists) {
+  if (!Array.isArray(roles)) failModels('"roles" must be a list');
   const labels = new Set();
   for (const role of roles) {
     for (const label of [role.role, role.alias].filter(Boolean)) {

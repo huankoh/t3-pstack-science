@@ -77,7 +77,7 @@ export const fenceUnder = (title, lang) => (lines) => {
   return close === -1 ? null : [open + 1, close];
 };
 
-const sheetProse = () =>
+const sheetProse =
   `A line in the model sheet overrides each default. \`<role>: <entry>\` sets the ${GENERAL} column, as in every sheet written before domains, and \`${SCIENCE} <role>: <entry>\` sets the ${SCIENCE} column. ` +
   `The sheet is \`~/.config/${SHEET_DIR}/models.md\` (\`$XDG_CONFIG_HOME/${SHEET_DIR}/models.md\` when that is set), one per machine, and \`/setup-pstack\` writes it. ` +
   "When it is missing, read `t3-pstack-models.md` in the host's config directory (`$CLAUDE_CONFIG_DIR` or " +
@@ -97,7 +97,7 @@ export function modelsSection(models, roles) {
     const label = role.role + (role.alias ? ` (a \`${role.alias}\` line counts as this role)` : "");
     return `| ${label} | ${DOMAINS.map((domain) => cell(byRole.get(role.role)?.find((s) => s.domain === domain))).join(" | ")} |`;
   });
-  return `Role defaults on T3, stamped from \`plugins/pstack/models.json\`, one column per domain. ${sheetProse()}\n\n${header}\n${rows.join("\n")}`;
+  return `Role defaults on T3, stamped from \`plugins/pstack/models.json\`, one column per domain. ${sheetProse}\n\n${header}\n${rows.join("\n")}`;
 }
 
 export function reviewerRows(models) {
