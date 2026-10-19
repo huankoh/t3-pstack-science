@@ -213,8 +213,8 @@
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",
       "pattern": "Otherwise use standard speed, the same slug without `-fast`.",
-      "replacement": "Otherwise use standard speed, the entry without that option.",
-      "rationale": "#613 per-job effort: a T3 entry carries its reasoning and speed as options, not as slug suffixes (The sheet)"
+      "replacement": "Otherwise use standard speed, the entry's speed option at its standard value. This router never uses fast mode, urgent or not. Every dispatch sets each speed option its model lists to the standard value, as the defaults in [Models](#models) do, and `t3-sheet.mjs` rejects a fast one.",
+      "rationale": "#613 per-job effort: a T3 entry carries its reasoning and speed as options, not as slug suffixes (The sheet); never fast (design.md, Speed)"
     },
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",
@@ -225,8 +225,8 @@
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",
       "pattern": "Change only the effort level and whether the slug is fast,",
-      "replacement": "Change only the entry's reasoning option (`effort` on Claude, `reasoningEffort` on Codex and Grok) and its speed option,",
-      "rationale": "#613 per-job effort: a T3 entry carries its reasoning and speed as options, not as slug suffixes (The sheet)"
+      "replacement": "Change only the entry's reasoning option (`effort` on Claude, `reasoningEffort` on Codex, `reasoning_effort` on `cursor` targets),",
+      "rationale": "#613 per-job effort: a T3 entry carries its reasoning as an option; speed stays standard (design.md, Speed)"
     },
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",

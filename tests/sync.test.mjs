@@ -103,6 +103,12 @@ describe("applySubstitutions", () => {
     );
   });
 
+  test("the shipped policy fork carries the amended speed and reasoning rules", () => {
+    const text = readFileSync(new URL("../plugins/pstack/skills/poteto-mode/SKILL.md", import.meta.url), "utf8");
+    expect(text).toContain("Otherwise use standard speed, the entry's speed option at its standard value. This router never uses fast mode, urgent or not.");
+    expect(text).toContain("Change only the entry's reasoning option (`effort` on Claude, `reasoningEffort` on Codex, `reasoning_effort` on `cursor` targets),");
+  });
+
   test("every rule's replacement is free of the denylist", () => {
     for (const rule of RULES.substitutions) {
       expect(denylistHits("rule", rule.replacement, RULES.denylist)).toEqual([]);
