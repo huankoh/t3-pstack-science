@@ -144,9 +144,9 @@ async function pluginState(server, dir, skills) {
   };
 }
 
-async function pluginHooks(server, pluginId) {
+async function listHooks(server) {
   const { data } = await server.request("hooks/list", {});
-  return data.flatMap((entry) => entry.hooks).filter((hook) => hook.pluginId === pluginId);
+  return data.flatMap((entry) => entry.hooks);
 }
 
 // A file's text, read once without following a symlink, or null when it is a
@@ -237,8 +237,8 @@ async function trustHooks(server, trusted, pin) {
   const { config, layers } = await server.request("config/read", { includeLayers: true });
   if (!marketplaceCheck(marketplaceSources(config), trusted).ok) return [];
   const user = layers.find((layer) => layer.name.type === "user");
-  const pending = (await pluginHooks(server, PLUGIN_ID)).filter(
-    (h) => (h.trustStatus === "untrusted" || h.trustStatus === "modified") && isPinned(h, pin),
+  const pending = (await listHooks(server)).filter(
+    (h) => h.pluginId === PLUGIN_ID && (h.trustStatus === "untrusted" || h.trustStatus === "modified") && isPinned(h, pin),
   );
   if (!pending.length) return [];
   await server.request("config/value/write", {
@@ -247,7 +247,7 @@ async function trustHooks(server, trusted, pin) {
     value: Object.fromEntries(pending.map((h) => [h.key, { trusted_hash: h.currentHash }])),
     expectedVersion: user.version,
   });
-  const listed = new Map((await pluginHooks(server, PLUGIN_ID)).map((h) => [h.key, h]));
+  const listed = new Map((await listHooks(server)).filter((h) => h.pluginId === PLUGIN_ID).map((h) => [h.key, h]));
   const now = (h) => listed.get(h.key) ?? {};
   const same = (h) => now(h).command === h.command && now(h).currentHash === h.currentHash;
   const failed = pending.filter((h) => now(h).trustStatus !== "trusted" || !same(h));
@@ -262,8 +262,7 @@ async function trustHooks(server, trusted, pin) {
 export async function doctorCodex(home, { version, skills, trusted, codexHook }) {
   return withServer(home, async (server) => {
     const state = await pluginState(server, home.dir, skills);
-    const { data } = await server.request("hooks/list", {});
-    const listedHooks = data.flatMap((entry) => entry.hooks);
+    const listedHooks = await listHooks(server);
     const hooks = listedHooks.filter((hook) => hook.pluginId === PLUGIN_ID);
     const foreignHooks = listedHooks.filter((hook) => hook.pluginId === FOREIGN_PLUGIN_ID);
     const listed = (await server.request("skills/list", { cwds: [neutralCwd()] })).data.flatMap((entry) => entry.skills);
