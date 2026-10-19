@@ -40,7 +40,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { Type } from "typebox";
 import { Value } from "typebox/value";
 
-import { panelFamilies, parseEntry } from "../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
+import { GENERAL, panelFamilies, parseEntry, speedProblems } from "../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
 import { applyRegions, parseFrontmatter, ROUTED_SKILL, t3Regions } from "./derive-t3.mjs";
 import { FROZEN_HOOKS, hookDigest, PLUGIN, SKILLS } from "./plugin.mjs";
 import { pathIsInside, validateSkillsTree, walk } from "./validate-skills.mjs";
@@ -200,48 +200,94 @@ export function validatePluginLayout(pluginRoot) {
   }
 }
 
-const TIERS = ["default", "strongest", "panel"];
+const RESERVED_KEYS = ["session hook", "default effort"];
 
-// Check models.json's shape, throwing with the offending tier, role, or entry
-// named. `skillExists(skill)` reports whether a role's skill directory carries
-// a SKILL.md. Every tier holds T3 entries in the sheet grammar of
-// setup-pstack's t3-sheet.mjs, and the panel spans two model families.
+// Validate the policy once at the build boundary. Shipped consumers trust it.
 export function parseModels(raw, skillExists) {
   const fail = (message) => {
     throw new Error(`models.json: ${message}`);
   };
   const isObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
-  if (!isObject(raw.tiers)) fail('"tiers" must be an object');
+  const domainNames = isObject(raw) && isObject(raw.domains) ? Object.keys(raw.domains) : [];
+  if (domainNames.length !== 2 || domainNames[0] !== GENERAL || domainNames[1] !== "science") {
+    fail('"domains" must hold "general" then "science"');
+  }
   if (!Array.isArray(raw.roles)) fail('"roles" must be a list');
-  for (const tier of TIERS) if (!Object.hasOwn(raw.tiers, tier)) fail(`tiers has no "${tier}"`);
-  for (const [tier, value] of Object.entries(raw.tiers)) {
-    if (!TIERS.includes(tier)) fail(`tiers names "${tier}", which is not one of ${TIERS.join(", ")}`);
-    if (tier !== "panel" && typeof value !== "string") fail(`tier "${tier}" must be one entry, not a list`);
-    if (tier === "panel" && !Array.isArray(value)) fail('tier "panel" must be a list');
-    const list = [value].flat();
-    if (new Set(list).size !== list.length) fail(`tier "${tier}" lists an entry twice`);
-    const parsed = list.map((entry) => {
-      if (typeof entry !== "string" || entry !== entry.trim().split(/\s+/).join(" ")) {
-        fail(`tier "${tier}": ${JSON.stringify(entry)} is not one entry written with single spaces`);
+  const domains = Object.entries(raw.domains);
+  for (const [domain, policy] of domains) {
+    if (!isObject(policy)) fail(`domain "${domain}" must be an object`);
+    for (const field of Object.keys(policy)) {
+      if (!["tiers", "covers", "termReaders"].includes(field)) fail(`domain "${domain}" has unknown field "${field}"`);
+      if (domain === GENERAL && field !== "tiers") {
+        fail(`domain "${domain}" takes no ${field}; unprefixed v2 sheet lines set it, and they had no term rule`);
       }
-      let target;
-      try {
-        target = parseEntry(entry);
-      } catch (err) {
-        fail(`tier "${tier}": ${err.message}`);
+    }
+    if (domain !== GENERAL) {
+      if (typeof policy.covers !== "string" || !policy.covers.trim()) {
+        fail(`domain "${domain}" needs "covers", the task class the gate routes to it`);
       }
-      if (!target) fail(`tier "${tier}" must name a target, not inherit the parent`);
-      return target;
-    });
-    if (tier === "panel" && panelFamilies(parsed).size < 2) fail("the panel needs at least two model families");
+      const readers = policy.termReaders;
+      if (
+        !Array.isArray(readers) || !readers.length || new Set(readers).size !== readers.length ||
+        readers.some((f) => typeof f !== "string" || !/^[a-z]+$/.test(f))
+      ) {
+        fail(`domain "${domain}" needs "termReaders", the families that may read its terms`);
+      }
+    }
+    if (!isObject(policy.tiers) || !Object.keys(policy.tiers).length) fail(`domain "${domain}" needs a non-empty "tiers" object`);
+  }
+  const tierNames = Object.keys(raw.domains[GENERAL].tiers);
+  for (const [domain, { tiers }] of domains) {
+    for (const tier of tierNames) {
+      if (!Object.hasOwn(tiers, tier)) fail(`domain "${domain}" has no tier "${tier}"; write null if it has no such seat`);
+    }
+    for (const tier of Object.keys(tiers)) {
+      if (!tierNames.includes(tier)) fail(`domain "${domain}" names tier "${tier}", which "${GENERAL}" does not`);
+    }
+  }
+  for (const tier of tierNames) {
+    const present = domains.filter(([, { tiers }]) => tiers[tier] !== null);
+    if (!present.length) fail(`tier "${tier}" has no seat in any domain`);
+    const list = present.find(([, { tiers }]) => Array.isArray(tiers[tier]));
+    const single = present.find(([, { tiers }]) => typeof tiers[tier] === "string");
+    if (list && single) fail(`tier "${tier}" is a list in "${list[0]}" but one entry in "${single[0]}"`);
+  }
+  for (const [domain, { tiers }] of domains) {
+    for (const [tier, value] of Object.entries(tiers)) {
+      if (value === null) continue;
+      const where = `domain "${domain}" tier "${tier}"`;
+      if (typeof value !== "string" && !Array.isArray(value)) fail(`${where} must be one entry, a list, or null`);
+      const list = [value].flat();
+      if (new Set(list).size !== list.length) fail(`${where} lists an entry twice`);
+      const parsed = list.map((entry) => {
+        if (typeof entry !== "string" || entry !== entry.trim().split(/\s+/).join(" ")) {
+          fail(`${where}: ${JSON.stringify(entry)} is not one entry written with single spaces`);
+        }
+        let target;
+        try {
+          target = parseEntry(entry);
+        } catch (err) {
+          fail(`${where}: ${err.message}`);
+        }
+        if (!target) fail(`${where} must name a target, not inherit the parent`);
+        const speed = speedProblems(target);
+        if (speed.length) fail(`${where}: ${speed[0]}`);
+        return target;
+      });
+      if (Array.isArray(value) && panelFamilies(parsed).size < 2) fail(`${where}: the panel needs at least two model families`);
+    }
   }
   const labels = new Set();
   for (const role of raw.roles) {
     for (const label of [role.role, role.alias].filter(Boolean)) {
       if (labels.has(label)) fail(`role "${label}" appears twice`);
       labels.add(label);
+      if (RESERVED_KEYS.includes(label)) fail(`role "${label}" is a reserved sheet key`);
+      for (const [domain] of domains.filter(([d]) => d !== GENERAL)) {
+        if (label.startsWith(`${domain} `)) fail(`role "${label}" starts with the domain name "${domain}", so its sheet line would be ambiguous`);
+      }
     }
-    if (!TIERS.includes(role.tier)) fail(`role "${role.role}" names tier "${role.tier}", which tiers does not define`);
+    if (!tierNames.includes(role.tier)) fail(`role "${role.role}" names tier "${role.tier}", which no domain defines`);
     if (!skillExists(role.skill)) fail(`role "${role.role}" names skill "${role.skill}", which has no SKILL.md`);
   }
   return raw;

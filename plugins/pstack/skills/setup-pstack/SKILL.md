@@ -41,26 +41,44 @@ Write the candidate to a temp file. Call `orchestrator_capabilities` again and s
 Overwrite the sheet with the candidate, creating its directory and writing through any symlink at its path (resolve it with `realpath`). If a different file is already there, run the checker on it and ask before you replace it. Overwrite the whole file so re-runs stay idempotent. Then replace `t3-pstack-models.md` in the host's config directory with a link to the sheet (`ln -sf`), so an older t3-pstack reads the same sheet. Step 2 already read what it held. On Codex, remove any pstack model rows an earlier setup pasted into `<codex-home>/AGENTS.md`. With every default kept, the sheet reads:
 
 ```markdown
-# pstack model configuration (T3). One line per role. Delete a line to fall back to the skill default.
+# pstack model configuration (T3). One line per role and column. Delete a line to fall back to the skill default.
+# `<role>:` sets the general column, as in every sheet before domains. `science <role>:` sets the science column.
 # `inherit-parent` or `auto` as a value: the role runs on the parent chat's model (`delegate_task` omits `target`). Alias entries in a panel list still count toward its fan-out.
 # budget: large (xhigh)
-feature, refactoring: claudeAgent/claude-opus-5-5 effort=xhigh
-bug-fix: claudeAgent/claude-fable-5-1 effort=xhigh
-perf-issue: claudeAgent/claude-fable-5-1 effort=xhigh
-hillclimb: claudeAgent/claude-fable-5-1 effort=xhigh
-judgment and prose: claudeAgent/claude-opus-5-5 effort=xhigh
-hardest tasks: claudeAgent/claude-fable-5-1 effort=xhigh
-how explorer: claudeAgent/claude-opus-5-5 effort=xhigh
-how explainer: claudeAgent/claude-opus-5-5 effort=xhigh
-why investigators: claudeAgent/claude-opus-5-5 effort=xhigh
-why synthesizer: claudeAgent/claude-opus-5-5 effort=xhigh
-reflect tooling: claudeAgent/claude-opus-5-5 effort=xhigh
-reflect judgment, divergent, synthesizer: claudeAgent/claude-opus-5-5 effort=xhigh
-arena runners: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh
-arena cross-judge pool: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh
-swarm workers: claudeAgent/claude-opus-5-5 effort=xhigh
-architect runners: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh
-interrogate reviewers: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh
+feature, refactoring: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+bug-fix: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+perf-issue: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+hillclimb: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+judgment and prose: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
+hardest tasks: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
+how explorer: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+how explainer: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
+why investigators: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+why synthesizer: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
+reflect tooling: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+reflect judgment, divergent, synthesizer: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
+arena runners: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false, codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+arena cross-judge pool: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+swarm workers: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+architect runners: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false, codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+interrogate reviewers: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false, codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
+science feature, refactoring: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+science bug-fix: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+science perf-issue: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+science hillclimb: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+science judgment and prose: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
+science hardest tasks: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
+science how explorer: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+science how explainer: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
+science why investigators: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+science why synthesizer: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
+science reflect tooling: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+science reflect judgment, divergent, synthesizer: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
+science arena runners: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+science arena cross-judge pool: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+science swarm workers: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+science architect runners: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+science interrogate reviewers: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
 session hook: on
 ```
 

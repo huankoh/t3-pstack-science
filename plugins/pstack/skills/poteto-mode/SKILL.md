@@ -159,11 +159,13 @@ A large or cross-cutting effort (a migration across many call sites, an ambitiou
 
 ## Models
 
-Role defaults on T3, stamped from `plugins/pstack/models.json`. A role line in the model sheet overrides each one. The sheet is `~/.config/t3-pstack/models.md` (`$XDG_CONFIG_HOME/t3-pstack/models.md` when that is set), one per machine, and `/setup-pstack` writes it. When it is missing, read `t3-pstack-models.md` in the host's config directory (`$CLAUDE_CONFIG_DIR` or `~/.claude` on Claude Code, `$CODEX_HOME` or `~/.codex` on Codex). An entry is `<providerInstanceId>/<modelId>` plus `<optionId>=<value>` pairs, and it maps onto `delegate_task`'s `target`, with the provider instance as `providerInstanceId`, the model as `model`, and the pairs as `options`. It splits at its first `/`, so a model ID with its own `/`, such as OpenCode's `<provider>/<model>`, is written whole after it. Option IDs differ per provider, so take them from `orchestrator_capabilities`. `inherit-parent` or `auto` omits `target`.
+Role defaults on T3, stamped from `plugins/pstack/models.json`, one column per domain. A line in the model sheet overrides each default. `<role>: <entry>` sets the general column, as in every sheet written before domains, and `science <role>: <entry>` sets the science column. The sheet is `~/.config/t3-pstack/models.md` (`$XDG_CONFIG_HOME/t3-pstack/models.md` when that is set), one per machine, and `/setup-pstack` writes it. When it is missing, read `t3-pstack-models.md` in the host's config directory (`$CLAUDE_CONFIG_DIR` or `~/.claude` on Claude Code, `$CODEX_HOME` or `~/.codex` on Codex). An entry is `<providerInstanceId>/<modelId>` plus `<optionId>=<value>` pairs, and it maps onto `delegate_task`'s `target`, with the provider instance as `providerInstanceId`, the model as `model`, and the pairs as `options`. It splits at its first `/`, so a model ID with its own `/`, such as OpenCode's `<provider>/<model>`, is written whole after it. Option IDs differ per provider, so take them from `orchestrator_capabilities`. `inherit-parent` or `auto` omits `target`.
 
-- feature, refactoring: `claudeAgent/claude-opus-5-5 effort=xhigh`
-- bug-fix: `claudeAgent/claude-fable-5-1 effort=xhigh`
-- perf-issue: `claudeAgent/claude-fable-5-1 effort=xhigh`
-- hillclimb: `claudeAgent/claude-fable-5-1 effort=xhigh`
-- judgment and prose: `claudeAgent/claude-opus-5-5 effort=xhigh`
-- hardest tasks: `claudeAgent/claude-fable-5-1 effort=xhigh` (a `strongest judgment` line counts as this role)
+| Role | general | science |
+| --- | --- | --- |
+| feature, refactoring | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |
+| bug-fix | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |
+| perf-issue | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |
+| hillclimb | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |
+| judgment and prose | `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |
+| hardest tasks (a `strongest judgment` line counts as this role) | `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |

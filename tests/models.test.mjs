@@ -80,6 +80,7 @@ describe("parseModels", () => {
     ["wrong order", (p) => p.domains = { science: p.domains.science, general: p.domains.general }],
     ["extra domain", (p) => p.domains.law = p.domains.science],
     ["no domains", (p) => delete p.domains],
+    ["joined domain names", (p) => p.domains = { "general,science": p.domains.general }],
   ])("requires general then science, %s", (_, mutate) => {
     expect(parse(mutate)).toThrow('models.json: "domains" must hold "general" then "science"');
   });
@@ -89,7 +90,7 @@ describe("parseModels", () => {
     expect(parse((p) => delete p.domains.science.termReaders)).toThrow('models.json: domain "science" needs "termReaders", the families that may read its terms');
   });
 
-  test.each([[], ["gpt", "gpt"], ["GPT"], "gpt"])("rejects invalid term readers %j", (value) => {
+  test.each([[[]], [["gpt", "gpt"]], [["GPT"]], ["gpt"]])("rejects invalid term readers %j", (value) => {
     expect(parse((p) => p.domains.science.termReaders = value)).toThrow('models.json: domain "science" needs "termReaders", the families that may read its terms');
   });
 

@@ -6,14 +6,14 @@
 import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, renameSync, statSync, symlinkSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
-import { checkSheet, parseSheet } from "../../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
+import { checkSheet, parseSheet, SHEET_DIR } from "../../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
 import { check, INSTALL_HINT, tempBeside, writeAtomic } from "./common.mjs";
 
 export const HOME_SHEET = "t3-pstack-models.md";
 const SETUP_HINT = "run /t3-pstack:setup-pstack in a T3 thread";
 
 export const sheetPath = (env, home) =>
-  join(env.XDG_CONFIG_HOME?.trim() ? resolve(env.XDG_CONFIG_HOME.trim()) : join(home, ".config"), "t3-pstack", "models.md");
+  join(env.XDG_CONFIG_HOME?.trim() ? resolve(env.XDG_CONFIG_HOME.trim()) : join(home, ".config"), SHEET_DIR, "models.md");
 
 const isFile = (path) => statSync(path, { throwIfNoEntry: false })?.isFile() ?? false;
 const sameBytes = (a, b) => readFileSync(a).equals(readFileSync(b));
@@ -63,7 +63,10 @@ export function moveSheet(sheet, homes) {
   return steps;
 }
 
-export function doctorSheet(sheet, homes, { catalog, roles, tiers }) {
+export function doctorSheet(sheet, homes, { catalog, models }) {
+  if (!models?.domains) {
+    return [check("model policy", false, "models.json predates domains; install a t3-pstack-science source", INSTALL_HINT)];
+  }
   const old = homeSheets(homes).filter(isFile);
   if (!isFile(sheet)) {
     const differ = new Set(old.map((path) => readFileSync(path, "utf8"))).size > 1;
@@ -79,7 +82,7 @@ export function doctorSheet(sheet, homes, { catalog, roles, tiers }) {
     }
     return [check("machine sheet", false, "none, so every role runs on its skill's defaults", SETUP_HINT, true)];
   }
-  const problems = checkSheet(parseSheet(readFileSync(sheet, "utf8")), { roles, defaults: tiers, catalog });
+  const problems = checkSheet(parseSheet(readFileSync(sheet, "utf8")), { models, catalog });
   const shadowing = old.filter((path) => !resolvesTo(path, sheet) && !sameBytes(path, sheet));
   return [
     check(

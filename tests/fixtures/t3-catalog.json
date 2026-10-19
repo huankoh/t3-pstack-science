@@ -9,31 +9,15 @@
         {
           "id": "gpt-6.1-sol",
           "options": [
-            {
-              "id": "reasoningEffort",
-              "type": "select",
-              "options": [{ "id": "low" }, { "id": "medium" }, { "id": "high" }, { "id": "xhigh" }, { "id": "max" }, { "id": "ultra" }]
-            },
-            {
-              "id": "serviceTier",
-              "type": "select",
-              "options": [{ "id": "default" }, { "id": "priority" }]
-            }
+            { "id": "reasoningEffort", "type": "select", "options": [{ "id": "low" }, { "id": "medium" }, { "id": "high" }, { "id": "xhigh" }, { "id": "max" }, { "id": "ultra" }] },
+            { "id": "serviceTier", "type": "select", "options": [{ "id": "default" }, { "id": "priority" }] }
           ]
         },
         {
           "id": "gpt-6-astra",
           "options": [
-            {
-              "id": "reasoningEffort",
-              "type": "select",
-              "options": [{ "id": "low" }, { "id": "medium" }, { "id": "high" }, { "id": "xhigh" }, { "id": "max" }, { "id": "ultra" }]
-            },
-            {
-              "id": "serviceTier",
-              "type": "select",
-              "options": [{ "id": "default" }, { "id": "priority" }]
-            }
+            { "id": "reasoningEffort", "type": "select", "options": [{ "id": "low" }, { "id": "medium" }, { "id": "high" }, { "id": "xhigh" }, { "id": "max" }, { "id": "ultra" }] },
+            { "id": "serviceTier", "type": "select", "options": [{ "id": "default" }, { "id": "priority" }] }
           ]
         }
       ],
@@ -47,13 +31,7 @@
       "models": [
         {
           "id": "claude-opus-5-5",
-          "options": [
-            {
-              "id": "reasoningEffort",
-              "type": "select",
-              "options": [{ "id": "low" }, { "id": "medium" }, { "id": "high" }, { "id": "xhigh" }, { "id": "max" }]
-            }
-          ]
+          "options": [{ "id": "reasoningEffort", "type": "select", "options": [{ "id": "low" }, { "id": "medium" }, { "id": "high" }, { "id": "xhigh" }, { "id": "max" }] }]
         }
       ],
       "canRunChildTask": true,
@@ -67,36 +45,15 @@
         {
           "id": "claude-opus-5-5",
           "options": [
-            {
-              "id": "effort",
-              "type": "select",
-              "options": [{ "id": "low" }, { "id": "medium" }, { "id": "high" }, { "id": "xhigh" }, { "id": "max" }]
-            },
-            {
-              "id": "fastMode",
-              "type": "boolean"
-            }
+            { "id": "effort", "type": "select", "options": [{ "id": "low" }, { "id": "medium" }, { "id": "high" }, { "id": "xhigh" }, { "id": "max" }] },
+            { "id": "fastMode", "type": "boolean" }
           ]
         },
         {
           "id": "claude-fable-5-1",
-          "options": [
-            {
-              "id": "effort",
-              "type": "select",
-              "options": [{ "id": "low" }, { "id": "medium" }, { "id": "high" }, { "id": "xhigh" }, { "id": "max" }]
-            }
-          ]
+          "options": [{ "id": "effort", "type": "select", "options": [{ "id": "low" }, { "id": "medium" }, { "id": "high" }, { "id": "xhigh" }, { "id": "max" }] }]
         },
-        {
-          "id": "claude-haiku-4-5",
-          "options": [
-            {
-              "id": "thinking",
-              "type": "boolean"
-            }
-          ]
-        }
+        { "id": "claude-haiku-4-5", "options": [{ "id": "thinking", "type": "boolean" }] }
       ],
       "canRunChildTask": true,
       "canRunCrossProviderChildTask": true,
@@ -109,39 +66,9 @@
         {
           "id": "grok-4.7",
           "options": [
-            {
-              "id": "reasoning_effort",
-              "type": "select",
-              "options": [{ "id": "low" }, { "id": "medium" }, { "id": "high" }, { "id": "xhigh" }]
-            },
-            {
-              "id": "fastMode",
-              "type": "boolean"
-            },
-            {
-              "id": "contextWindow",
-              "type": "select",
-              "options": [{ "id": "256k" }, { "id": "500k" }]
-            }
-          ]
-        }
-      ],
-      "canRunChildTask": true,
-      "canRunCrossProviderChildTask": true,
-      "constraints": []
-    },
-    {
-      "providerInstanceId": "grok",
-      "driverKind": "grok",
-      "models": [
-        {
-          "id": "grok-4.7",
-          "options": [
-            {
-              "id": "reasoningEffort",
-              "type": "select",
-              "options": [{ "id": "xhigh" }, { "id": "high" }, { "id": "medium" }, { "id": "low" }]
-            }
+            { "id": "reasoning_effort", "type": "select", "options": [{ "id": "low" }, { "id": "medium" }, { "id": "high" }, { "id": "xhigh" }] },
+            { "id": "fastMode", "type": "boolean" },
+            { "id": "contextWindow", "type": "select", "options": [{ "id": "256k" }, { "id": "500k" }] }
           ]
         }
       ],
@@ -152,17 +79,23 @@
     {
       "providerInstanceId": "antigravity",
       "driverKind": "antigravity",
-      "models": [
-        {
-          "id": "gemini-4-argon",
-          "options": []
-        }
-      ],
+      "models": [{ "id": "gemini-4-argon", "options": [] }],
       "canRunChildTask": false,
       "canRunCrossProviderChildTask": false,
-      "constraints": [
-        "Provider is not authenticated."
-      ]
+      "constraints": ["Provider is not authenticated."]
+    },
+    {
+      "providerInstanceId": "grok",
+      "driverKind": "grok",
+      "models": [
+        {
+          "id": "grok-4.7",
+          "options": [{ "id": "reasoningEffort", "type": "select", "options": [{ "id": "xhigh" }, { "id": "high" }, { "id": "medium" }, { "id": "low" }] }]
+        }
+      ],
+      "canRunChildTask": true,
+      "canRunCrossProviderChildTask": true,
+      "constraints": []
     }
   ]
 }

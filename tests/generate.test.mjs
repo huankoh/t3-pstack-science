@@ -345,7 +345,9 @@ describe("plan, changes, apply", () => {
   };
   const repoCopy = () => {
     const dir = scratch("pstack-generate-");
-    cpSync(repoRoot, dir, { recursive: true, filter: (src) => ![".git", "node_modules"].includes(basename(src)) });
+    for (const entry of readdirSync(repoRoot).filter((name) => ![".git", "node_modules"].includes(name))) {
+      cpSync(join(repoRoot, entry), join(dir, entry), { recursive: true, filter: (src) => basename(src) !== "node_modules" });
+    }
     symlinkSync(join(repoRoot, "node_modules"), join(dir, "node_modules"));
     git(dir, "init", "-q");
     git(dir, "add", "-A");
@@ -398,7 +400,7 @@ describe("plan, changes, apply", () => {
     const how = "plugins/pstack/skills/how/SKILL.md";
     const setup = "plugins/pstack/skills/setup-pstack/SKILL.md";
     const text = (rel) => readFileSync(join(root, rel), "utf8");
-    writeFileSync(join(root, how), text(how).replace(/^- how explorer: .*$/m, "- how explorer: stale"));
+    writeFileSync(join(root, how), text(how).replace(/^\| how explorer \|.*$/m, "| how explorer | stale | stale |"));
     writeFileSync(join(root, setup), text(setup).replace(/^bug-fix: .*$/m, "bug-fix: stale"));
     const { files } = plan(root);
     for (const rel of [how, setup]) expect(files[rel]).toBe(readFileSync(join(repoRoot, rel), "utf8"));
