@@ -1,0 +1,64 @@
+--- tools/install/common.mjs:11
+export const MARKETPLACE = "t3-pstack";
+--- tools/install/common.mjs:12
+export const HOME_REPO = "chhoumann/t3-pstack";
+--- plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs:20
+export const SHEET_DIR = "t3-pstack";
+--- plugins/pstack/hooks/session-start.sh:8
+    home_sheet="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/t3-pstack-models.md"
+--- plugins/pstack/hooks/session-start.sh:12
+    home_sheet="${CODEX_HOME:-$HOME/.codex}/t3-pstack-models.md"
+--- plugins/pstack/hooks/session-start.sh:23
+sheet="${XDG_CONFIG_HOME:-$HOME/.config}/t3-pstack/models.md"
+--- plugins/pstack/hooks/session-start.ps1:9
+$sheet = Join-Path $configRoot 't3-pstack\models.md'
+--- plugins/pstack/hooks/session-start.ps1:15
+    $sheet = Join-Path $sheetRoot 't3-pstack-models.md'
+--- plugins/pstack/hooks/session-start-context.md:4
+Invoke the `t3-pstack:poteto-mode` skill and follow its instructions when a task meets any of these:
+--- plugins/pstack/hooks/session-start-context.md:12
+When the intent is already specific, such as TDD, a design sketch, how or why something works, an arena, or an adversarial review, still enter through `t3-pstack:poteto-mode` and open that skill from the bundled path it names. The other pstack skills run only from poteto-mode or when the user types them.
+--- plugins/pstack/hooks/session-start-context.md:14
+This runs on T3: before the first subagent or panel in a session, read the model sheet, `~/.config/t3-pstack/models.md` (`$XDG_CONFIG_HOME/t3-pstack/models.md` when that is set), or `t3-pstack-models.md` in this host's config directory when that file is missing. This chat runs the playbook itself. A step it says to delegate goes through `delegate_task` to that role's sheet entry, and the reply lists which provider and model ran each step.
+--- tools/derive-t3.mjs:82
+  "When it is missing, read `t3-pstack-models.md` in the host's config directory (`$CLAUDE_CONFIG_DIR` or " +
+--- package.json:10
+  "homepage": "https://github.com/chhoumann/t3-pstack",
+--- package.json:11
+  "repository": "https://github.com/chhoumann/t3-pstack",
+--- package.json:14
+    "t3-pstack": "tools/install.mjs"
+--- plugins/pstack/.claude-plugin/plugin.json:3
+  "displayName": "t3-pstack (pstack for T3 Code)",
+--- plugins/pstack/.claude-plugin/plugin.json:10
+  "homepage": "https://github.com/chhoumann/t3-pstack",
+--- plugins/pstack/.claude-plugin/plugin.json:11
+  "repository": "https://github.com/chhoumann/t3-pstack",
+--- plugins/pstack/.codex-plugin/plugin.json:9
+  "homepage": "https://github.com/chhoumann/t3-pstack",
+--- plugins/pstack/.codex-plugin/plugin.json:10
+  "repository": "https://github.com/chhoumann/t3-pstack",
+--- plugins/pstack/.codex-plugin/plugin.json:31
+    "displayName": "t3-pstack",
+--- plugins/pstack/.codex-plugin/plugin.json:45
+    "websiteURL": "https://github.com/chhoumann/t3-pstack",
+--- tools/substitutions.json:41
+      "replacement": "`https://github.com/chhoumann/t3-pstack/blob/main/plugins/pstack/` followed by its path",
+--- tools/substitutions.json:59
+      "replacement": "1. Install t3-pstack per its [README](https://github.com/chhoumann/t3-pstack#readme), once per harness that T3 runs.",
+--- tools/substitutions.json:71
+      "replacement": "[README](https://github.com/chhoumann/t3-pstack/blob/main/README.md)",
+--- tools/substitutions.json:609
+      "replacement": "in the root's store, `${XDG_STATE_HOME:-~/.local/state}/t3-pstack/` (T3 names no agent store),",
+--- tools/substitutions.json:752
+      "replacement": "in `${XDG_STATE_HOME:-~/.local/state}/t3-pstack/` (T3 names no agent store).",
+--- .agents/plugins/marketplace.json:2
+  "name": "t3-pstack",
+--- .agents/plugins/marketplace.json:4
+    "displayName": "t3-pstack"
+--- .agents/plugins/marketplace.json:8
+      "name": "t3-pstack",
+--- .claude-plugin/marketplace.json:2
+  "name": "t3-pstack",
+--- .claude-plugin/marketplace.json:10
+      "name": "t3-pstack",
