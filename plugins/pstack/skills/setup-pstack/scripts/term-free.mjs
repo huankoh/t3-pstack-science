@@ -19,7 +19,7 @@ export function parseGlossary(text) {
 }
 
 // Keep source offsets so a hit across a case hump retains its original spelling.
-function splitIdentifier(source, acronyms) {
+function splitIdentifier(source, acronyms, digits) {
   let text = "";
   const offsets = [];
   for (let i = 0; i < source.length; i++) {
@@ -30,7 +30,7 @@ function splitIdentifier(source, acronyms) {
     const hump = /\p{Lu}/u.test(current) && (/\p{Ll}/u.test(previous) ||
       (acronyms && /\p{Lu}/u.test(previous) && /\p{Ll}/u.test(next) && !plural));
     const digit = /\p{L}/u.test(previous) && /\p{N}/u.test(current) || /\p{N}/u.test(previous) && /\p{L}/u.test(current);
-    if (i && (hump || digit)) {
+    if (i && (hump || digits && digit)) {
       text += " ";
       offsets.push(i);
     }
@@ -41,30 +41,40 @@ function splitIdentifier(source, acronyms) {
 }
 
 export function findTerms(brief, terms) {
-  const patterns = [...new Set(terms)].map((term) => {
-    const words = term.split(" ");
+  const uniqueTerms = [...new Set(terms)];
+  const collect = (source, offset, normalize = (term) => term) => uniqueTerms.flatMap((term) => {
+    const words = normalize(term).split(/\s+/);
     const last = words.pop();
     const ending = /[^aeiou]y$/.test(last) ? `(?:${last}(?:e?s)?|${last.slice(0, -1)}ies)` : `${last}(?:e?s)?`;
     const pattern = [...words, ending].join("[\\s_-]*");
-    return { term, regex: new RegExp(`(?<![\\p{L}\\p{N}])${pattern}(?![\\p{L}\\p{N}])`, "giu") };
+    const regex = new RegExp(`(?<![\\p{L}\\p{N}])${pattern}(?![\\p{L}\\p{N}])`, "giu");
+    return [...source.matchAll(regex)].map((match) => {
+      const index = offset(match.index);
+      const end = offset(match.index + match[0].length - 1) + 1;
+      return { term, found: brief.slice(index, end), index, end };
+    });
   });
-  const collect = (source, offset) => patterns.flatMap(({ term, regex }) => [...source.matchAll(regex)].map((match) => {
-    const index = offset(match.index);
-    const end = offset(match.index + match[0].length - 1) + 1;
-    return { term, found: brief.slice(index, end), index, end };
-  }));
   const hits = collect(brief, (index) => index);
   // Preserve whole spellings such as mRNA and RNAseq before splitting acronym humps.
-  for (const acronyms of [false, true]) {
-    const { text, offsets } = splitIdentifier(brief, acronyms);
-    const split = collect(text, (index) => offsets[index]).filter((hit) =>
-      !hits.some((word) => word.index <= hit.index && word.end >= hit.end),
-    );
-    hits.push(...split);
+  for (const digits of [false, true]) {
+    for (const acronyms of [false, true]) {
+      const { text, offsets } = splitIdentifier(brief, acronyms, digits);
+      const split = collect(text, (index) => offsets[index], (term) => splitIdentifier(term, acronyms, digits).text).filter((hit) =>
+        !hits.some((word) => word.index <= hit.index && word.end >= hit.end),
+      );
+      hits.push(...split);
+    }
   }
-  return hits.sort((a, b) => a.index - b.index).map(({ index, end, ...hit }) => ({
-    line: brief.slice(0, index).split("\n").length, ...hit,
-  }));
+  const spans = new Set();
+  return hits.sort((a, b) => a.index - b.index || b.end - a.end || b.term.length - a.term.length)
+    .filter(({ index, end }) => {
+      const span = `${index}:${end}`;
+      if (spans.has(span)) return false;
+      spans.add(span);
+      return true;
+    }).map(({ index, end, ...hit }) => ({
+      line: brief.slice(0, index).split("\n").length, ...hit,
+    }));
 }
 
 function main(args) {

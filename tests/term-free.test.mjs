@@ -76,6 +76,14 @@ describe("findTerms", () => {
     expect(findTerms("Cell cancellation", ["cell"])).toEqual([{ line: 1, term: "cell", found: "Cell" }]);
   });
 
+  test.each([["proteomic", "proteomics"], ["proteomics", "proteomic"]])("reports the longer term once for the same span with %j first", async (first, second) => {
+    const { findTerms } = await checker();
+    expect(findTerms("proteomics readProteomicsCount", [first, second])).toEqual([
+      { line: 1, term: "proteomics", found: "proteomics" },
+      { line: 1, term: "proteomics", found: "Proteomics" },
+    ]);
+  });
+
   test("reports each occurrence, including repeated terms on one line and CRLF lines", async () => {
     const { findTerms } = await checker();
     expect(findTerms("protein gene protein\r\nGENES", ["gene", "protein"])).toEqual([
@@ -107,7 +115,7 @@ describe("parseGlossary", () => {
     const { GLOSSARY, parseGlossary } = await checker();
     expect(parseGlossary(readFileSync(GLOSSARY, "utf8"))).toEqual([
       "amino acid", "antibody", "antigen", "assay", "bioassay", "binding affinity", "binding site", "biological", "biologically", "biology",
-      "biomarker", "chromosome", "codon", "cytokine", "dna", "enzyme", "enzymatic", "epitope", "gene", "genetic", "genome",
+      "biomarker", "chromosome", "codon", "cytokine", "dna", "enzymatic", "epitope", "gene", "genome",
       "genomic", "genomics", "glycan", "glycoprotein", "glycosylation", "inhibitor", "kinase", "ligand", "metabolite",
       "microbiome", "mrna", "nucleotide", "oligosaccharide", "pathogen", "peptide", "phenotype",
       "protein", "proteome", "proteomic", "proteomics", "receptor", "rna", "rna seq", "small molecule", "tissue", "transcriptome",
@@ -140,10 +148,9 @@ describe("term-free.mjs CLI", () => {
     ["scRNAseq", "rna seq", "RNAseq"],
     ["biological", "biological", "biological"],
     ["biologically", "biologically", "biologically"],
-    ["proteomics", ["proteomic", "proteomics"], "proteomics"],
+    ["proteomics", "proteomics", "proteomics"],
     ["proteomic", "proteomic", "proteomic"],
-    ["genomics", ["genomic", "genomics"], "genomics"],
-    ["genetic", "genetic", "genetic"],
+    ["genomics", "genomics", "genomics"],
     ["enzymatic", "enzymatic", "enzymatic"],
   ])("exits 1 with the term and original spelling for %j", (input, term, found) => {
     expect(run(brief(`Sort rows.\n${input}\n`))).toEqual({
@@ -153,6 +160,7 @@ describe("term-free.mjs CLI", () => {
 
   test.each([
     "general", "generator", "generic", "cancellation", "excellent", "eigenvalue matrix vector",
+    "genetic algorithm", "import { mount } from 'enzyme'; enzyme.mount(<App/>)",
     "useMutation(Q)", "new MutationObserver(cb)", "mutation testing", "import pdb; pdb.set_trace()", "docking layout", "he smiles",
   ])("exits 0 for ordinary code and prose %j", (input) => {
     const file = brief(input);
@@ -173,6 +181,25 @@ describe("term-free.mjs CLI", () => {
   ])("--term %j detects normalized task terms and plurals", (extra, input, term) => {
     expect(run(brief(input), "--term", extra)).toEqual({
       status: 1, stdout: `line 1: ${term} (${JSON.stringify(input)})\n`, stderr: "",
+    });
+  });
+
+  test.each([
+    ["BRCA1", "readBRCA1Count", "brca1", "BRCA1"],
+    ["BRCA1", "brca1Status", "brca1", "brca1"],
+    ["BRCA1", "loadBRCA1", "brca1", "BRCA1"],
+    ["FOXP3", "getFOXP3", "foxp3", "FOXP3"],
+    ["CD4", "cd4Count", "cd4", "cd4"],
+    ["IL6", "il6Level", "il6", "il6"],
+    ["IL6", "loadIL6Count", "il6", "IL6"],
+    ["IL6", "IL-6", "il6", "IL-6"],
+    ["Cas9", "dCas9", "cas9", "Cas9"],
+    ["Cas9", "spCas9", "cas9", "Cas9"],
+    ["Cas9", "readCas9", "cas9", "Cas9"],
+    ["CRISPR-Cas9", "readCRISPRCas9Count", "crispr cas9", "CRISPRCas9"],
+  ])("--term %j detects numbered terms in %j", (extra, input, term, found) => {
+    expect(run(brief(input), "--term", extra)).toEqual({
+      status: 1, stdout: `line 1: ${term} (${JSON.stringify(found)})\n`, stderr: "",
     });
   });
 

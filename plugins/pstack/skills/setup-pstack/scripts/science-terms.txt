@@ -16,11 +16,9 @@ chromosome
 codon
 cytokine
 dna
-enzyme
 enzymatic
 epitope
 gene
-genetic
 genome
 genomic
 genomics
