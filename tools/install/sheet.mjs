@@ -65,7 +65,10 @@ export function moveSheet(sheet, homes) {
 
 export function doctorSheet(sheet, homes, { catalog, models }) {
   if (!models?.domains) {
-    return [check("model policy", false, "models.json predates domains; install a t3-pstack-science source", INSTALL_HINT)];
+    return [check(
+      "model policy", false, "models.json predates domains; install a t3-pstack-science source",
+      "rerun `npx -y github:chhoumann/t3-pstack install --source huankoh/t3-pstack-science` (or set --source to a t3-pstack-science checkout)",
+    )];
   }
   const old = homeSheets(homes).filter(isFile);
   if (!isFile(sheet)) {

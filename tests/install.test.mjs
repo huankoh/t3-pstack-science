@@ -522,7 +522,7 @@ describe("the model sheet", () => {
   test("doctor reports a source policy that predates domains without throwing", () => {
     const { homes, sheet } = machine();
     expect(doctorSheet(sheet, homes, { catalog: null, models: { tiers: {}, roles: [] } })).toEqual([
-      { name: "model policy", ok: false, detail: "models.json predates domains; install a t3-pstack-science source", fix: "rerun `npx -y github:chhoumann/t3-pstack install`" },
+      { name: "model policy", ok: false, detail: "models.json predates domains; install a t3-pstack-science source", fix: "rerun `npx -y github:chhoumann/t3-pstack install --source huankoh/t3-pstack-science` (or set --source to a t3-pstack-science checkout)" },
     ]);
   });
 
