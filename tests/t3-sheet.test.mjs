@@ -263,6 +263,10 @@ describe("the T3 session-start context", () => {
 });
 
 describe("seats", () => {
+  test("exports the router's fixed domain pair", () => {
+    expect([sheetApi.GENERAL, sheetApi.SCIENCE, sheetApi.DOMAINS]).toEqual(["general", "science", ["general", "science"]]);
+  });
+
   test("lists 17 general seats then 17 science seats in role order", () => {
     const keys = sheetApi.seats(models).map((s) => s.key);
     expect(keys).toHaveLength(34);
@@ -326,6 +330,17 @@ describe("domain sheet keys", () => {
 });
 
 describe("standard speed", () => {
+  test.each([
+    ["fastMode=true", 'bug-fix: claudeAgent/claude-fable-5-1: no option "fastMode" (has effort); delete fastMode'],
+    ["fastMode=false", 'bug-fix: claudeAgent/claude-fable-5-1: no option "fastMode" (has effort); delete fastMode'],
+    ["serviceTier=priority", 'bug-fix: claudeAgent/claude-fable-5-1: no option "serviceTier" (has effort); delete serviceTier'],
+    ["serviceTier=default", 'bug-fix: claudeAgent/claude-fable-5-1: no option "serviceTier" (has effort); delete serviceTier'],
+  ])("an unsupported speed option %s is deleted, not set to a standard value", (pair, expected) => {
+    expect(check(`bug-fix: claudeAgent/claude-fable-5-1 effort=xhigh ${pair}`)).toEqual([
+      expected,
+    ]);
+  });
+
   test("speed validation reports every nonstandard option without catalog duplicates", () => {
     expect(sheetApi.speedProblems(parseEntry("a/gpt-a fastMode=true serviceTier=priority"))).toEqual([
       "fastMode=true is not standard speed, and this router never runs fast; write fastMode=false",

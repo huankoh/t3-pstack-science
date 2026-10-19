@@ -122,6 +122,13 @@ describe("parseModels", () => {
     expect(parse((p) => p.domains.general.covers = "everything")).toThrow('models.json: domain "general" takes no covers; unprefixed v2 sheet lines set it, and they had no term rule');
   });
 
+  test("malformed policy containers keep their boundary diagnostics", () => {
+    expect(parse((p) => p.roles = {})).toThrow('models.json: "roles" must be a list');
+    expect(parse((p) => p.domains.science = null)).toThrow('models.json: domain "science" must be an object');
+    expect(parse((p) => p.domains.general.tiers = {})).toThrow('models.json: domain "general" needs a non-empty "tiers" object');
+    expect(parse((p) => p.domains.science.tiers.code = 7)).toThrow('models.json: domain "science" tier "code" must be one entry, a list, or null');
+  });
+
   test("every column names every tier", () => {
     expect(parse((p) => delete p.domains.science.tiers.code)).toThrow('models.json: domain "science" has no tier "code"; write null if it has no such seat');
     expect(parse((p) => p.domains.science.tiers.extra = "b/gpt-b")).toThrow('models.json: domain "science" names tier "extra", which "general" does not');

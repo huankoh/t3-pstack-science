@@ -15,12 +15,14 @@ import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 export const GENERAL = "general";
+export const SCIENCE = "science";
+export const DOMAINS = [GENERAL, SCIENCE];
 export const SHEET_DIR = "t3-pstack";
 const STANDARD_SPEED = { fastMode: "false", serviceTier: "default" };
 
 /**
  * @typedef {object} Models
- * @property {Record<string, Domain>} domains Ordered columns, general then science.
+ * @property {{ general: Domain, science: Domain }} domains Ordered columns, general then science.
  * @property {Role[]} roles Ordered labels shared by every column.
  * @typedef {object} Domain
  * @property {string} [covers]
@@ -83,8 +85,9 @@ export function speedProblems({ options }) {
 
 /** @param {Models} models Validated at build time by parseModels. @returns {Seat[]} */
 export function seats(models) {
-  return Object.entries(models.domains).flatMap(([domain, { tiers, termReaders }]) =>
-    models.roles.flatMap((role) => {
+  return DOMAINS.flatMap((domain) => {
+    const { tiers, termReaders } = models.domains[domain];
+    return models.roles.flatMap((role) => {
       const value = tiers[role.tier];
       if (value === null) return [];
       return [{
@@ -99,8 +102,8 @@ export function seats(models) {
           termFree: !!termReaders && !termReaders.includes(family(parseEntry(entry).model)),
         })),
       }];
-    }),
-  );
+    });
+  });
 }
 
 // Every line but blank lines and `#` headings, as `{ line, key, value }`, with
@@ -189,42 +192,37 @@ function unknownKey(key, all, models) {
   if (elsewhere && !all.some((s) => s.domain === GENERAL && s.role === key)) {
     return `"${key}" has no general seat; write "${elsewhere.key}"`;
   }
-  for (const domain of Object.keys(models.domains).filter((d) => d !== GENERAL)) {
-    const role = models.roles.find((r) => r.alias && key === `${domain} ${r.alias}`);
-    if (role) return `"${key}": write "${domain} ${role.role}"; the old name counts only on an unprefixed line`;
-  }
+  const role = models.roles.find((r) => r.alias && key === `${SCIENCE} ${r.alias}`);
+  if (role) return `"${key}": write "${SCIENCE} ${role.role}"; the old name counts only on an unprefixed line`;
   return `"${key}" is not a pstack role`;
 }
 
 function entryProblems(target, catalog) {
-  const at = `${target.providerInstanceId}/${target.model}`;
-  const skip = new Set(Object.keys(target.options).filter((id) => Object.hasOwn(STANDARD_SPEED, id) && target.options[id] !== STANDARD_SPEED[id]));
-  return [...speedProblems(target).map((p) => `${at}: ${p}`), ...checkTarget(target, catalog, { skip })];
-}
-
-function checkTarget({ providerInstanceId, model, options }, catalog, { skip }) {
-  if (!catalog) return [];
+  const { providerInstanceId, model, options } = target;
   const at = `${providerInstanceId}/${model}`;
+  const speed = speedProblems(target).map((p) => `${at}: ${p}`);
+  if (!catalog) return speed;
   const provider = catalog.providers.find((p) => p.providerInstanceId === providerInstanceId);
-  if (!provider) return [`${at}: no provider instance "${providerInstanceId}" in this T3`];
+  if (!provider) return [...speed, `${at}: no provider instance "${providerInstanceId}" in this T3`];
   if (!provider.canRunChildTask || provider.canRunCrossProviderChildTask === false) {
     const why = (provider.constraints ?? []).join(" ");
-    return [`${at}: "${providerInstanceId}" cannot run child tasks${why ? ` (${why})` : ""}`];
+    return [...speed, `${at}: "${providerInstanceId}" cannot run child tasks${why ? ` (${why})` : ""}`];
   }
   const listed = provider.models.find((m) => m.id === model);
-  if (!listed) return [`${at}: "${providerInstanceId}" does not list model "${model}"`];
+  if (!listed) return [...speed, `${at}: "${providerInstanceId}" does not list model "${model}"`];
   const known = listed.options ?? [];
-  const problems = [];
+  const supported = Object.fromEntries(Object.entries(options).filter(([id]) => known.some((o) => o.id === id)));
+  const problems = speedProblems({ options: supported }).map((p) => `${at}: ${p}`);
   for (const option of known) {
     if (Object.hasOwn(STANDARD_SPEED, option.id) && !Object.hasOwn(options, option.id)) {
       problems.push(`${at}: sets no ${option.id}; this router never runs fast, so write ${option.id}=${STANDARD_SPEED[option.id]}`);
     }
   }
   for (const [id, value] of Object.entries(options)) {
-    if (skip.has(id)) continue;
     const option = known.find((o) => o.id === id);
     const allowed = option?.type === "boolean" ? ["true", "false"] : (option?.options ?? []).map((o) => o.id);
-    if (!option) problems.push(`${at}: no option "${id}" (has ${known.map((o) => o.id).join(", ") || "none"})`);
+    if (!option) problems.push(`${at}: no option "${id}" (has ${known.map((o) => o.id).join(", ") || "none"})${Object.hasOwn(STANDARD_SPEED, id) ? `; delete ${id}` : ""}`);
+    else if (Object.hasOwn(STANDARD_SPEED, id) && value !== STANDARD_SPEED[id]) continue;
     else if (!allowed.includes(value)) problems.push(`${at}: ${id}=${value} is not one of ${allowed.join(", ")}`);
   }
   return problems;

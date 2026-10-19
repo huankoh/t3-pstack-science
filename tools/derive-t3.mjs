@@ -4,7 +4,7 @@
 // themselves live in the text, as substitutions, so nothing here stamps a
 // runtime preamble.
 
-import { GENERAL, SHEET_DIR, seats } from "../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
+import { DOMAINS, GENERAL, SCIENCE, SHEET_DIR, seats } from "../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
 import { code } from "./plugin.mjs";
 
 // Split a Markdown file into its YAML frontmatter and the text after it.
@@ -77,52 +77,41 @@ export const fenceUnder = (title, lang) => (lines) => {
   return close === -1 ? null : [open + 1, close];
 };
 
-const sheetProse = (models) => {
-  const prefixed = Object.keys(models.domains)
-    .filter((domain) => domain !== GENERAL)
-    .map((domain) => `\`${domain} <role>: <entry>\` sets the ${domain} column`)
-    .join(", and ");
-  return `A line in the model sheet overrides each default. \`<role>: <entry>\` sets the ${GENERAL} column, as in every sheet written before domains, and ${prefixed}. ` +
-    `The sheet is \`~/.config/${SHEET_DIR}/models.md\` (\`$XDG_CONFIG_HOME/${SHEET_DIR}/models.md\` when that is set), one per machine, and \`/setup-pstack\` writes it. ` +
-    "When it is missing, read `t3-pstack-models.md` in the host's config directory (`$CLAUDE_CONFIG_DIR` or " +
-    "`~/.claude` on Claude Code, `$CODEX_HOME` or `~/.codex` on Codex). An entry is `<providerInstanceId>/<modelId>` plus `<optionId>=<value>` pairs, and it " +
-    "maps onto `delegate_task`'s `target`, with the provider instance as `providerInstanceId`, the model as `model`, " +
-    "and the pairs as `options`. It splits at its first `/`, so a model ID with its own `/`, such as OpenCode's " +
-    "`<provider>/<model>`, is written whole after it. Option IDs differ per provider, so take them from " +
-    "`orchestrator_capabilities`. `inherit-parent` or `auto` omits `target`.";
-};
+const sheetProse = () =>
+  `A line in the model sheet overrides each default. \`<role>: <entry>\` sets the ${GENERAL} column, as in every sheet written before domains, and \`${SCIENCE} <role>: <entry>\` sets the ${SCIENCE} column. ` +
+  `The sheet is \`~/.config/${SHEET_DIR}/models.md\` (\`$XDG_CONFIG_HOME/${SHEET_DIR}/models.md\` when that is set), one per machine, and \`/setup-pstack\` writes it. ` +
+  "When it is missing, read `t3-pstack-models.md` in the host's config directory (`$CLAUDE_CONFIG_DIR` or " +
+  "`~/.claude` on Claude Code, `$CODEX_HOME` or `~/.codex` on Codex). An entry is `<providerInstanceId>/<modelId>` plus `<optionId>=<value>` pairs, and it " +
+  "maps onto `delegate_task`'s `target`, with the provider instance as `providerInstanceId`, the model as `model`, " +
+  "and the pairs as `options`. It splits at its first `/`, so a model ID with its own `/`, such as OpenCode's " +
+  "`<provider>/<model>`, is written whole after it. Option IDs differ per provider, so take them from " +
+  "`orchestrator_capabilities`. `inherit-parent` or `auto` omits `target`.";
 
 const defaultCell = (value) => value ? `${code(value.entry)}${value.termFree ? " (term-free brief)" : ""}` : "none";
 const cell = (seat) => seat ? seat.defaults.map(defaultCell).join(", ") : "none";
 
 export function modelsSection(models, roles) {
   const byRole = Map.groupBy(seats(models), (s) => s.role);
-  const domains = Object.keys(models.domains);
-  const header = `| Role | ${domains.join(" | ")} |\n| --- |${" --- |".repeat(domains.length)}`;
+  const header = `| Role | ${DOMAINS.join(" | ")} |\n| --- |${" --- |".repeat(DOMAINS.length)}`;
   const rows = roles.map((role) => {
     const label = role.role + (role.alias ? ` (a \`${role.alias}\` line counts as this role)` : "");
-    return `| ${label} | ${domains.map((domain) => cell(byRole.get(role.role)?.find((s) => s.domain === domain))).join(" | ")} |`;
+    return `| ${label} | ${DOMAINS.map((domain) => cell(byRole.get(role.role)?.find((s) => s.domain === domain))).join(" | ")} |`;
   });
-  return `Role defaults on T3, stamped from \`plugins/pstack/models.json\`, one column per domain. ${sheetProse(models)}\n\n${header}\n${rows.join("\n")}`;
+  return `Role defaults on T3, stamped from \`plugins/pstack/models.json\`, one column per domain. ${sheetProse()}\n\n${header}\n${rows.join("\n")}`;
 }
 
 export function reviewerRows(models) {
   const reviewers = seats(models).filter((s) => s.role === "interrogate reviewers");
-  const domains = Object.keys(models.domains);
   const count = Math.max(...reviewers.map((s) => s.defaults.length));
   return Array.from({ length: count }, (_, i) =>
-    `| Reviewer ${String.fromCharCode(65 + i)} | ${domains.map((domain) => `${domain} ${defaultCell(reviewers.find((s) => s.domain === domain)?.defaults[i])}`).join("; ")} |`,
+    `| Reviewer ${String.fromCharCode(65 + i)} | ${DOMAINS.map((domain) => `${domain} ${defaultCell(reviewers.find((s) => s.domain === domain)?.defaults[i])}`).join("; ")} |`,
   );
 }
 
 export function sheetBlock(models) {
-  const prefixed = Object.keys(models.domains)
-    .filter((domain) => domain !== GENERAL)
-    .map((domain) => `\`${domain} <role>:\` sets the ${domain} column.`)
-    .join(" ");
   return [
     "# pstack model configuration (T3). One line per role and column. Delete a line to fall back to the skill default.",
-    `# \`<role>:\` sets the ${GENERAL} column, as in every sheet before domains. ${prefixed}`,
+    `# \`<role>:\` sets the ${GENERAL} column, as in every sheet before domains. \`${SCIENCE} <role>:\` sets the ${SCIENCE} column.`,
     "# `inherit-parent` or `auto` as a value: the role runs on the parent chat's model (`delegate_task` omits `target`). Alias entries in a panel list still count toward its fan-out.",
     "# budget: large (xhigh)",
     ...seats(models).map((s) => `${s.key}: ${s.defaults.map((d) => d.entry).join(", ")}`),
