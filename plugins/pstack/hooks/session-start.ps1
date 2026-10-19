@@ -1,6 +1,5 @@
 $ErrorActionPreference = 'Stop'
 
-# This fork reads only its machine sheet.
 $configRoot = $env:XDG_CONFIG_HOME
 if (-not $configRoot) {
     $configRoot = Join-Path $env:USERPROFILE '.config'

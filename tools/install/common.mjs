@@ -154,7 +154,6 @@ export function runCli(bin, args, env) {
   }
 }
 
-// A unique path beside the destination for an exclusive temporary write.
 const tempBeside = (path) => join(dirname(path), `.${basename(path)}.${randomUUID()}.t3-pstack-science.tmp`);
 
 // A crash between the write and the rename leaves the old file whole. The
