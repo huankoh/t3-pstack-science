@@ -1,0 +1,24 @@
+---
+description: t3-pstack-science session start for T3 Code
+alwaysApply: true
+---
+
+Follow this rule only when a `<runtime_info>` block says the session runs in T3 Code, and ignore it in any other Cursor session. Cursor does not prefix plugin skill names, and another plugin may ship skills or agents with the same names (such as `setup-pstack`, `poteto-mode`, `poteto-agent`). Each skill below is named by its `SKILL.md` path under `${CURSOR_PLUGIN_ROOT}`: open that file and follow it, never a bare name. In this rule, `poteto-mode` always means `${CURSOR_PLUGIN_ROOT}/skills/poteto-mode/SKILL.md`. A persona is a `delegate_task` brief that names `${CURSOR_PLUGIN_ROOT}/agents/<name>.md`, not a Cursor subagent type.
+
+<EXTREMELY_IMPORTANT>
+You have t3-pstack-science, pstack for T3 Code.
+
+Invoke the `${CURSOR_PLUGIN_ROOT}/skills/poteto-mode/SKILL.md` skill and follow its instructions when a task meets any of these:
+
+- it touches more than one file, or changes a signature other files call
+- it involves a design or architecture choice
+- it is a bug whose cause is not yet known, or a performance issue
+
+It routes to the right pstack skill from there. On Codex, open its SKILL.md whole, in a shell call of its own with `max_output_tokens: 10000`, since a smaller budget cuts out its middle. For smaller tasks, such as a contained change to one file with an obvious test, a question, or a one-line edit, work directly and verify on the real artifact.
+
+When the intent is already specific, such as TDD, a design sketch, how or why something works, an arena, or an adversarial review, still enter through `${CURSOR_PLUGIN_ROOT}/skills/poteto-mode/SKILL.md` and open that skill from the bundled path it names. The other pstack skills run only from poteto-mode or when the user types them.
+
+This runs on T3: before the first subagent or panel in a session, read the model sheet, `~/.config/t3-pstack-science/models.md` (`$XDG_CONFIG_HOME/t3-pstack-science/models.md` when that is set). If it is missing, use the defaults in each skill's Models section. This chat runs the playbook itself. A step it says to delegate goes through `delegate_task` to that role's sheet entry, and the reply lists which provider and model ran each step.
+
+User instructions (CLAUDE.md, AGENTS.md, direct requests) take precedence. Other session-start mandates, such as superpowers, still apply. Their skill checks run as before, and when a task meets the criteria above they route implementation through poteto-mode.
+</EXTREMELY_IMPORTANT>

@@ -27,6 +27,8 @@ import {
   changes,
   frozenHookFaults,
   loadModels,
+  cursorManifest,
+  cursorRule,
   parseFrontmatter,
   plan,
   PORTABLE_ASSETS,
@@ -368,6 +370,33 @@ describe("deriveT3", () => {
   });
 });
 
+describe("cursorRule", () => {
+  const context = readFileSync(join(repoRoot, "plugins/pstack/hooks/session-start-context.md"), "utf8");
+  const pluginName = "t3-pstack-science";
+  const token = `\`${pluginName}:poteto-mode\``;
+  const path = "`${CURSOR_PLUGIN_ROOT}/skills/poteto-mode/SKILL.md`";
+
+  test("rewrites every token and no other byte of the context", () => {
+    const out = cursorRule(context, pluginName);
+    const rewritten = context.replaceAll(token, path);
+    expect(rewritten).not.toBe(context);
+    expect(out.endsWith(`\n\n${rewritten}`)).toBe(true);
+    expect(rewritten.replaceAll(path, token)).toBe(context);
+    expect(out).toContain("description: t3-pstack-science session start for T3 Code\nalwaysApply: true\n");
+    expect(out).toContain("`<runtime_info>`");
+    expect(out).toContain("In this rule, `poteto-mode` always means `${CURSOR_PLUGIN_ROOT}/skills/poteto-mode/SKILL.md`.");
+    expect(out).not.toContain(`${pluginName}:`);
+  });
+
+  test("throws when the context has no token", () => {
+    expect(() => cursorRule("plain context\n", pluginName)).toThrow("no `t3-pstack-science:<skill>` token");
+  });
+
+  test("throws when a prefix the pattern did not rewrite remains", () => {
+    expect(() => cursorRule(`${token} and ${pluginName}:other\n`, pluginName)).toThrow("still names `t3-pstack-science:`");
+  });
+});
+
 describe("plugin agents", () => {
   test("plugin.json lists every agent the plugin ships", () => {
     const listed = JSON.parse(readFileSync(join(repoRoot, "plugins/pstack/.claude-plugin/plugin.json"), "utf8")).agents;
@@ -423,6 +452,33 @@ describe("plan, changes, apply", () => {
 
   test("the working tree is what the plan says", () => {
     expect(changes(repoRoot, plan(repoRoot))).toEqual([]);
+  });
+
+  test("plan writes both Cursor plugin files from the planned Claude manifest", () => {
+    const { files } = plan(repoRoot);
+    const claude = JSON.parse(files["plugins/pstack/.claude-plugin/plugin.json"]);
+    const manifest = "plugins/pstack/.cursor-plugin/plugin.json";
+    const rule = "plugins/pstack/.cursor-plugin/rules/session-start.mdc";
+    expect(JSON.parse(files[manifest])).toEqual(cursorManifest(claude));
+    expect(files[rule]).toBe(cursorRule(readFileSync(join(repoRoot, "plugins/pstack/hooks/session-start-context.md"), "utf8"), claude.name));
+    expect(files[manifest]).not.toContain('"hooks"');
+  });
+
+  test("a stray file in .cursor-plugin is an orphan, and --check fails on a stale rule", () => {
+    const root = repoCopy();
+    const rule = "plugins/pstack/.cursor-plugin/rules/session-start.mdc";
+    const stray = "plugins/pstack/.cursor-plugin/stray.txt";
+    const nested = "plugins/pstack/.cursor-plugin/rules/extra.mdc";
+    writeFileSync(join(root, stray), "orphan\n");
+    writeFileSync(join(root, nested), "orphan\n");
+    writeFileSync(join(root, rule), "stale\n");
+    const before = snapshot(root);
+    const stale = generate(root, "--check");
+    expect(stale.status).toBe(1);
+    expect(stale.stderr).toContain(`write: ${rule}`);
+    expect(stale.stderr).toContain(`remove: ${stray}`);
+    expect(stale.stderr).toContain(`remove: ${nested}`);
+    expect(snapshot(root)).toEqual(before);
   });
 
   test("plan computes from the sources, repeats itself, and writes nothing", () => {

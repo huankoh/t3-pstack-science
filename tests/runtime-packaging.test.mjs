@@ -1,5 +1,6 @@
 // Runtime packaging contracts: manifests and hook commands.
 import { describe, expect, test } from "bun:test";
+import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -49,6 +50,41 @@ describe("manifests", () => {
     expect(codexMarketplace.plugins.map(({ name, source, category }) => [name, source.path, category])).toEqual([
       [codex.name, claudeMarketplace.plugins[0].source, codex.interface.category],
     ]);
+  });
+
+  test("the Cursor manifest copies the Claude manifest's identity and version", () => {
+    const cursor = json("plugins/pstack/.cursor-plugin/plugin.json");
+    for (const key of ["name", "displayName", "version", "description", "author", "homepage", "repository", "license", "keywords"]) {
+      expect(cursor[key]).toEqual(claude[key]);
+    }
+    expect(cursor.skills).toBe("./skills/");
+    expect(cursor.agents).toEqual([]);
+    expect(cursor.rules).toBe("./.cursor-plugin/rules/");
+    expect(cursor.hooks).toBeUndefined();
+    expect(cursor.commands).toBeUndefined();
+    expect(cursor.mcpServers).toBeUndefined();
+  });
+
+  test("the frozen hooks pins are the Claude and Codex files", () => {
+    expect(Object.keys(json("tools/frozen-hooks.json")).sort()).toEqual([
+      "plugins/pstack/hooks/codex-hooks.json",
+      "plugins/pstack/hooks/hooks.json",
+    ]);
+  });
+
+  test("a GitHub install ships the Cursor plugin files", () => {
+    const shipped = ["plugins/pstack/.cursor-plugin/plugin.json", "plugins/pstack/.cursor-plugin/rules/session-start.mdc"];
+    for (const rel of shipped) {
+      expect(existsSync(join(repoRoot, rel)), rel).toBe(true);
+      expect(spawnSync("git", ["-C", repoRoot, "check-ignore", "-q", "--", rel]).status, `${rel} is gitignored`).not.toBe(0);
+      if (Array.isArray(devPackage.files)) {
+        const covered = devPackage.files.some((entry) => {
+          const prefix = entry.endsWith("/") ? entry : `${entry}/`;
+          return rel === entry || rel.startsWith(prefix);
+        });
+        expect(covered, `${rel} is outside package.json files`).toBe(true);
+      }
+    }
   });
 
   // Upstream ships this file, and tools/upstream.json excludes it from the sync.
