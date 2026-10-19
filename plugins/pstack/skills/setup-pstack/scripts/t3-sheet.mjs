@@ -80,9 +80,11 @@ export function panelFamilies(entries) {
 const speedProblem = (id, value) =>
   `${id}=${value} is not standard speed, and this router never runs fast; write ${id}=${STANDARD_SPEED[id]}`;
 
+const isFastSpeed = (id, value) => Object.hasOwn(STANDARD_SPEED, id) && value !== STANDARD_SPEED[id];
+
 export function speedProblems({ options }) {
   return Object.entries(options)
-    .filter(([id, value]) => Object.hasOwn(STANDARD_SPEED, id) && value !== STANDARD_SPEED[id])
+    .filter(([id, value]) => isFastSpeed(id, value))
     .map(([id, value]) => speedProblem(id, value));
 }
 
@@ -200,31 +202,32 @@ function unknownKey(key, all, models) {
   return `"${key}" is not a pstack role`;
 }
 
+function catalogOptions({ providerInstanceId, model }, catalog) {
+  if (!catalog) return { known: null };
+  const at = `${providerInstanceId}/${model}`;
+  const provider = catalog.providers.find((p) => p.providerInstanceId === providerInstanceId);
+  if (!provider) return { known: null, unavailable: `${at}: no provider instance "${providerInstanceId}" in this T3` };
+  if (!provider.canRunChildTask || provider.canRunCrossProviderChildTask === false) {
+    const why = (provider.constraints ?? []).join(" ");
+    return { known: null, unavailable: `${at}: "${providerInstanceId}" cannot run child tasks${why ? ` (${why})` : ""}` };
+  }
+  const listed = provider.models.find((m) => m.id === model);
+  if (!listed) return { known: null, unavailable: `${at}: "${providerInstanceId}" does not list model "${model}"` };
+  return { known: listed.options ?? [] };
+}
+
 function entryProblems(target, catalog) {
   const { providerInstanceId, model, options } = target;
   const at = `${providerInstanceId}/${model}`;
-  let unavailable;
-  let listed;
-  if (catalog) {
-    const provider = catalog.providers.find((p) => p.providerInstanceId === providerInstanceId);
-    if (!provider) unavailable = `${at}: no provider instance "${providerInstanceId}" in this T3`;
-    else if (!provider.canRunChildTask || provider.canRunCrossProviderChildTask === false) {
-      const why = (provider.constraints ?? []).join(" ");
-      unavailable = `${at}: "${providerInstanceId}" cannot run child tasks${why ? ` (${why})` : ""}`;
-    } else {
-      listed = provider.models.find((m) => m.id === model);
-      if (!listed) unavailable = `${at}: "${providerInstanceId}" does not list model "${model}"`;
-    }
-  }
-  const known = listed ? listed.options ?? [] : null;
+  const { known, unavailable } = catalogOptions(target, catalog);
   const problems = [];
   for (const [id, value] of Object.entries(options)) {
     const option = known?.find((o) => o.id === id);
     const speed = Object.hasOwn(STANDARD_SPEED, id);
     if (known && !option) {
       problems.push(`${at}: no option "${id}" (has ${known.map((o) => o.id).join(", ") || "none"})${speed ? `; delete ${id}` : ""}`);
-    } else if (speed && value !== STANDARD_SPEED[id]) {
-      problems.push(`${at}: ${speedProblem(id, value)}${catalog ? "" : `, or delete ${id} if the model lists no such option`}`);
+    } else if (isFastSpeed(id, value)) {
+      problems.push(`${at}: ${speedProblem(id, value)}${known ? "" : `, or delete ${id} if the model lists no such option`}`);
     } else if (option) {
       const allowed = option.type === "boolean" ? ["true", "false"] : (option.options ?? []).map((o) => o.id);
       if (!allowed.includes(value)) problems.push(`${at}: ${id}=${value} is not one of ${allowed.join(", ")}`);

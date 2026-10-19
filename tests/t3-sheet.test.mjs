@@ -336,6 +336,16 @@ describe("domain sheet keys", () => {
 
 describe("standard speed", () => {
   test.each([
+    ["claudeAgent/claude-nonexistent", '"claudeAgent" does not list model "claude-nonexistent"'],
+    ["unlisted/claude-a", 'no provider instance "unlisted" in this T3'],
+  ])("unknown options on %s allow the speed option to be deleted", (target, unavailable) => {
+    expect(check(`bug-fix: ${target} fastMode=true`)).toEqual([
+      `bug-fix: ${target}: fastMode=true is not standard speed, and this router never runs fast; write fastMode=false, or delete fastMode if the model lists no such option`,
+      `bug-fix: ${target}: ${unavailable}`,
+    ]);
+  });
+
+  test.each([
     ["fastMode=true", 'bug-fix: claudeAgent/claude-fable-5-1: no option "fastMode" (has effort); delete fastMode'],
     ["fastMode=false", 'bug-fix: claudeAgent/claude-fable-5-1: no option "fastMode" (has effort); delete fastMode'],
     ["serviceTier=priority", 'bug-fix: claudeAgent/claude-fable-5-1: no option "serviceTier" (has effort); delete serviceTier'],

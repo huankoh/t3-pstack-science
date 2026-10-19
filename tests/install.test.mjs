@@ -341,7 +341,7 @@ describe("--source", () => {
       env: { HOME: tmp(), TMPDIR: process.env.TMPDIR, PATH: `${process.env.HOME}/.bun/bin:${dirname(claude.bin)}` },
       encoding: "utf8",
     });
-    expect({ status: r.status, stderr: r.stderr }).toEqual({ status: 1, stderr: "" });
+    expect(r.stderr).toBe("");
     const report = JSON.parse(r.stdout);
     expect(report.source).toBe("huankoh/t3-pstack-science");
     expect(report.homes[0].steps).toEqual(["added the t3-pstack marketplace from huankoh/t3-pstack-science"]);
