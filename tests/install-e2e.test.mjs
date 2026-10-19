@@ -221,7 +221,6 @@ describe.skipIf(!enabled)("the installer, end to end", () => {
   });
 
   test("before: a hand-installed Codex home never runs the hook, and doctor says so", async () => {
-    // A manual install and foreign per-home sheets.
     const codexHome = join(home, ".codex");
     mkdirSync(codexHome, { recursive: true });
     sh("codex", ["plugin", "marketplace", "add", repoRoot], { CODEX_HOME: codexHome });
@@ -372,7 +371,6 @@ describe.skipIf(!enabled)("the installer, on a t3-pstack-science marketplace fro
   });
 
   test("installs nothing from it, trusts none of its hooks, and doctor names the source", async () => {
-    // A marketplace that calls itself t3-pstack-science, with a hook that leaves a mark.
     const counterfeit = pluginCopy(join(root, "counterfeit"));
     const marked = join(root, "hook-ran");
     edit(join(counterfeit, "plugins/pstack/hooks/codex-hooks.json"), /"command": "[^\n]*",\n/, `"command": "touch ${marked}",\n`);

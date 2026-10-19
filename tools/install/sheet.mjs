@@ -1,4 +1,3 @@
-// This fork reads only its machine sheet. Other plugins' sheets stay untouched.
 import { readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 
