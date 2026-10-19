@@ -28,14 +28,14 @@ describe("committed models.json", () => {
     expect(raw.roles.find((r) => r.alias === "strongest judgment")?.role).toBe("hardest tasks");
   });
 
-  test("the domain policy keeps the 17 released roles and six U1 tiers", () => {
+  test("the domain policy promises 19 roles and eight tiers", () => {
     expect(Object.keys(models.domains)).toEqual(["general", "science"]);
-    expect(models.roles).toHaveLength(17);
-    expect(Object.keys(models.domains.general.tiers)).toEqual(["code", "explore", "judgment", "runners", "judges", "reviewers"]);
-    expect(Object.keys(models.domains.science.tiers)).toEqual(["code", "explore", "judgment", "runners", "judges", "reviewers"]);
+    expect(models.roles).toHaveLength(19);
+    expect(Object.keys(models.domains.general.tiers)).toEqual(["code", "explore", "judgment", "mechanical", "final", "runners", "judges", "reviewers"]);
+    expect(Object.keys(models.domains.science.tiers)).toEqual(["code", "explore", "judgment", "mechanical", "final", "runners", "judges", "reviewers"]);
   });
 
-  test("science workers use Grok while research delegates use Sol", () => {
+  test("science workers and research delegates promise Grok defaults", () => {
     const science = sheet.seats(models).filter((s) => s.domain === "science" && !s.panel);
     expect(science.map((s) => [s.role, s.defaults[0].entry])).toEqual([
       ["feature, refactoring", "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"],
@@ -44,17 +44,51 @@ describe("committed models.json", () => {
       ["hillclimb", "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"],
       ["judgment and prose", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
       ["hardest tasks", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
-      ["how explorer", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
+      ["mechanical code", "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"],
+      ["final review", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
+      ["how explorer", "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"],
       ["how explainer", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
-      ["why investigators", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
+      ["why investigators", "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"],
       ["why synthesizer", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
-      ["reflect tooling", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
+      ["reflect tooling", "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"],
       ["reflect judgment, divergent, synthesizer", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
       ["swarm workers", "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"],
     ]);
     expect(models.roles.filter((r) => r.tier === "explore").map((r) => r.role)).toEqual([
       "how explorer", "why investigators", "reflect tooling",
     ]);
+  });
+
+  test("mechanical code and final review promise the same defaults in both columns", () => {
+    expect(sheet.seats(models).filter((s) => ["mechanical code", "final review"].includes(s.role)).map((s) => [s.key, s.defaults])).toEqual([
+      ["mechanical code", [{ entry: "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false", termFree: false }]],
+      ["final review", [{ entry: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default", termFree: false }]],
+      ["science mechanical code", [{ entry: "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false", termFree: false }]],
+      ["science final review", [{ entry: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default", termFree: false }]],
+    ]);
+    expect(["mechanical code", "final review"].map((role) => models.roles.find((r) => r.role === role))).toEqual([
+      { role: "mechanical code", tier: "mechanical", skill: "poteto-mode" },
+      { role: "final review", tier: "final", skill: "poteto-mode" },
+    ]);
+    expect(models.roles.map((r) => r.role)).not.toContain("term-free code");
+  });
+
+  test.each([
+    [["feature, refactoring"], ["grok"], null],
+    [["feature, refactoring", "hardest tasks"], ["gpt", "grok"], {
+      entry: "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", termFree: true,
+    }],
+  ])("science handback selects an independent reviewer for authors %j", (roles, expectedFamilies, expectedExtra) => {
+    const family = (entry) => sheet.family(sheet.parseEntry(entry).model);
+    const science = sheet.seats(models).filter((s) => s.domain === "science");
+    const authors = new Set(roles.map((role) => family(science.find((s) => s.role === role).defaults[0].entry)));
+    expect([...authors].sort()).toEqual(expectedFamilies);
+    const final = science.find((s) => s.role === "final review").defaults[0];
+    expect(final).toEqual({ entry: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default", termFree: false });
+    const extra = authors.has(family(final.entry))
+      ? science.find((s) => s.role === "interrogate reviewers").defaults.find((d) => !authors.has(family(d.entry)))
+      : null;
+    expect(extra).toEqual(expectedExtra);
   });
 
   test("only science panel defaults outside its term readers need term-free briefs", () => {

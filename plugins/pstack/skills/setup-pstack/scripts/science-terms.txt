@@ -1,0 +1,48 @@
+# Terms excluded from term-free briefs. One lowercase term per line.
+# Spaces also match whitespace, hyphens, underscores, or joined words. Plurals include s, es, and y to ies.
+# Words with common code meanings stay out; a task using them in the science sense adds them with --term.
+amino acid
+antibody
+antigen
+assay
+bioassay
+binding affinity
+binding site
+biological
+biologically
+biology
+biomarker
+chromosome
+codon
+cytokine
+dna
+enzymatic
+epitope
+gene
+genome
+genomic
+genomics
+glycan
+glycoprotein
+glycosylation
+inhibitor
+kinase
+ligand
+metabolite
+microbiome
+mrna
+nucleotide
+oligosaccharide
+pathogen
+peptide
+phenotype
+protein
+proteome
+proteomic
+proteomics
+receptor
+rna
+rna seq
+small molecule
+tissue
+transcriptome

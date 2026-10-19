@@ -5,6 +5,8 @@
         "code": "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
         "explore": "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
         "judgment": "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
+        "mechanical": "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
+        "final": "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
         "runners": [
           "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
           "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
@@ -27,8 +29,10 @@
       "termReaders": ["gpt", "grok"],
       "tiers": {
         "code": "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
-        "explore": "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
+        "explore": "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
         "judgment": "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
+        "mechanical": "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
+        "final": "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
         "runners": [
           "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
           "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
@@ -54,6 +58,8 @@
     { "role": "hillclimb", "tier": "code", "skill": "poteto-mode" },
     { "role": "judgment and prose", "tier": "judgment", "skill": "poteto-mode" },
     { "role": "hardest tasks", "alias": "strongest judgment", "tier": "judgment", "skill": "poteto-mode" },
+    { "role": "mechanical code", "tier": "mechanical", "skill": "poteto-mode" },
+    { "role": "final review", "tier": "final", "skill": "poteto-mode" },
     { "role": "how explorer", "tier": "explore", "skill": "how" },
     { "role": "how explainer", "tier": "judgment", "skill": "how" },
     { "role": "why investigators", "tier": "explore", "skill": "why" },

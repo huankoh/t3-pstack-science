@@ -80,7 +80,7 @@ describe("checkSheet against a catalog", () => {
   test("the default sheet setup-pstack writes dispatches", () => {
     const setup = readFileSync(join(root, "plugins/pstack/skills/setup-pstack/SKILL.md"), "utf8");
     const sheet = setup.match(/```markdown\n(# pstack model configuration \(T3\)[\s\S]*?)```/)[1];
-    expect(parseSheet(sheet)).toHaveLength(35);
+    expect(parseSheet(sheet)).toHaveLength(39);
     expect(check(sheet)).toEqual([]);
   });
 
@@ -120,9 +120,10 @@ describe("checkSheet against a catalog", () => {
     const noCursor = structuredClone(catalog);
     noCursor.providers = noCursor.providers.filter((p) => p.providerInstanceId !== "cursor");
     expect(check("session hook: on", noCursor)).toEqual([
-      "feature, refactoring", "bug-fix", "perf-issue", "hillclimb", "how explorer", "why investigators", "reflect tooling",
+      "feature, refactoring", "bug-fix", "perf-issue", "hillclimb", "mechanical code", "how explorer", "why investigators", "reflect tooling",
       "arena runners", "arena cross-judge pool", "swarm workers", "architect runners", "interrogate reviewers",
       "science feature, refactoring", "science bug-fix", "science perf-issue", "science hillclimb",
+      "science mechanical code", "science how explorer", "science why investigators", "science reflect tooling",
       "science arena runners", "science arena cross-judge pool", "science swarm workers", "science architect runners", "science interrogate reviewers",
     ].map((key) => `${key} (no line, tier default): cursor/grok-4.7: no provider instance "cursor" in this T3`));
   });
@@ -266,11 +267,11 @@ describe("seats", () => {
     expect(() => DOMAINS.push("extra")).toThrow(TypeError);
   });
 
-  test("lists 17 general seats then 17 science seats in role order", () => {
+  test("lists 19 general seats then 19 science seats in role order", () => {
     const keys = seats(models).map((s) => s.key);
-    expect(keys).toHaveLength(34);
+    expect(keys).toHaveLength(38);
     expect(keys.slice(0, 3)).toEqual(["feature, refactoring", "bug-fix", "perf-issue"]);
-    expect(keys[17]).toBe("science feature, refactoring");
+    expect(keys[19]).toBe("science feature, refactoring");
     expect(keys.at(-1)).toBe("science interrogate reviewers");
     expect(seats(models).find((s) => s.key === "science bug-fix")).toEqual({
       key: "science bug-fix", alias: null, domain: "science", role: "bug-fix", skill: "poteto-mode", panel: false,
