@@ -21,20 +21,14 @@ export function parseGlossary(text) {
 function tokenize(source) {
   const tokens = [];
   let line = 1;
-  let lineStart = 0;
   let previousEnd = 0;
   for (const word of source.matchAll(/[\p{L}\p{N}]+/gu)) {
-    for (const newline of source.slice(previousEnd, word.index).matchAll(/\n/g)) {
-      line++;
-      lineStart = previousEnd + newline.index + 1;
-    }
+    line += (source.slice(previousEnd, word.index).match(/\n/g) ?? []).length;
     let index = word.index;
     const parts = word[0].split(/(?<=\p{Ll})(?=\p{Lu})|(?<=\p{Lu})(?=\p{Lu}\p{Ll})|(?<=\p{L})(?=\p{N})|(?<=\p{N})(?=\p{L})/u);
     for (const part of parts) {
-      const previous = tokens.at(-1);
-      const touching = previous?.end === index;
-      const digitBreak = touching && /^\p{N}/u.test(part) !== /^\p{N}/u.test(previous.value);
-      tokens.push({ value: part.toLowerCase(), index, end: index + part.length, line, column: index - lineStart + 1, touching, digitBreak });
+      const separator = source.slice(tokens.at(-1)?.end ?? 0, index);
+      tokens.push({ value: part.toLowerCase(), index, end: index + part.length, line, separator });
       index += part.length;
     }
     previousEnd = index;
@@ -49,8 +43,10 @@ export function findTerms(brief, terms) {
     const tokens = tokenize(term);
     const gaps = new Set();
     let spelling = "";
-    for (const token of tokens) {
-      if (!token.touching || token.digitBreak) gaps.add(spelling.length);
+    for (const [i, token] of tokens.entries()) {
+      const previous = tokens[i - 1];
+      const digitBreak = previous && /^\p{N}/u.test(token.value) !== /^\p{N}/u.test(previous.value);
+      if (!previous || token.separator || digitBreak) gaps.add(spelling.length);
       spelling += token.value;
     }
     const variants = [spelling];
@@ -64,7 +60,7 @@ export function findTerms(brief, terms) {
         let candidate = "";
         for (let end = start; end < text.length; end++) {
           const token = text[end];
-          if (end > start && !token.touching && !gaps.has(candidate.length)) break;
+          if (end > start && token.separator && (!gaps.has(candidate.length) || !/^[\s_-]+$/u.test(token.separator))) break;
           candidate += token.value;
           if (!variant.startsWith(candidate)) break;
           if (candidate === variant) {
