@@ -303,7 +303,6 @@ function parseRoles(roles, tierNames, skillExists) {
   }
 }
 
-// Validate the policy once at the build boundary. Shipped consumers trust it.
 export function parseModels(raw, skillExists) {
   const domains = parseDomains(raw);
   const tierNames = parseTiers(domains);
