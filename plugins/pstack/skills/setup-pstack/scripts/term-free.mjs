@@ -18,7 +18,7 @@ export function parseGlossary(text) {
   return [...firstLine.keys()];
 }
 
-// Keep source offsets so a hit across a case hump retains its original spelling.
+// Distinguish inserted breaks from real whitespace and retain source spellings.
 function splitIdentifier(source, acronyms, digits) {
   let text = "";
   const offsets = [];
@@ -31,10 +31,10 @@ function splitIdentifier(source, acronyms, digits) {
       (acronyms && /\p{Lu}/u.test(previous) && /\p{Ll}/u.test(next) && !plural));
     const digit = /\p{L}/u.test(previous) && /\p{N}/u.test(current) || /\p{N}/u.test(previous) && /\p{L}/u.test(current);
     if (i && (hump || digits && digit)) {
-      text += " ";
+      text += "\0";
       offsets.push(i);
     }
-    text += current === "_" ? " " : current;
+    text += current;
     offsets.push(i);
   }
   return { text, offsets };
@@ -46,7 +46,7 @@ export function findTerms(brief, terms) {
     const words = normalize(term).toLowerCase().split(/\s+/);
     const last = words.pop();
     const ending = /[^aeiou]y$/.test(last) ? `(?:${last}(?:e?s)?|${last.slice(0, -1)}ies)` : `${last}(?:e?s)?`;
-    const pattern = [...words, ending].join("[\\s_-]*");
+    const pattern = [...words, ending].map((word) => word.replaceAll("\0", "[\\0_-]?")).join("[\\s\\0_-]*");
     const regex = new RegExp(`(?<![\\p{L}\\p{N}])${pattern}(?![\\p{L}\\p{N}])`, "giu");
     return [...source.matchAll(regex)].map((match) => {
       const index = offset(match.index);
@@ -59,18 +59,14 @@ export function findTerms(brief, terms) {
   for (const digits of [false, true]) {
     for (const acronyms of [false, true]) {
       const { text, offsets } = splitIdentifier(brief, acronyms, digits);
-      const split = collect(text, (index) => offsets[index], (term) => splitIdentifier(term, acronyms, digits).text).filter((hit) =>
-        !hits.some((word) => word.index <= hit.index && word.end >= hit.end),
-      );
-      hits.push(...split);
+      hits.push(...collect(text, (index) => offsets[index], (term) => splitIdentifier(term, acronyms, digits).text));
     }
   }
-  const spans = new Set();
+  let previousEnd = -1;
   return hits.sort((a, b) => a.index - b.index || b.end - a.end || b.term.length - a.term.length)
-    .filter(({ index, end }) => {
-      const span = `${index}:${end}`;
-      if (spans.has(span)) return false;
-      spans.add(span);
+    .filter(({ end }) => {
+      if (end <= previousEnd) return false;
+      previousEnd = end;
       return true;
     }).map(({ index, end, ...hit }) => ({
       line: brief.slice(0, index).split("\n").length, ...hit,

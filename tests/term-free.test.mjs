@@ -71,7 +71,6 @@ describe("findTerms", () => {
     const { findTerms } = await checker();
     expect(findTerms("Handle cancellation and excellent cases.\nsingle\ncell", ["cell", "single cell"])).toEqual([
       { line: 2, term: "single cell", found: "single\ncell" },
-      { line: 3, term: "cell", found: "cell" },
     ]);
     expect(findTerms("Cell cancellation", ["cell"])).toEqual([{ line: 1, term: "cell", found: "Cell" }]);
   });
@@ -81,6 +80,15 @@ describe("findTerms", () => {
     expect(findTerms("proteomics readProteomicsCount", [first, second])).toEqual([
       { line: 1, term: "proteomics", found: "proteomics" },
       { line: 1, term: "proteomics", found: "Proteomics" },
+    ]);
+  });
+
+  test.each([["rna", "rna seq"], ["rna seq", "rna"]])("drops contained spans across passes with %j first", async (first, second) => {
+    const { findTerms } = await checker();
+    expect(findTerms("RNA-seq data; rnaSeqData; rna", [first, second])).toEqual([
+      { line: 1, term: "rna seq", found: "RNA-seq" },
+      { line: 1, term: "rna seq", found: "rnaSeq" },
+      { line: 1, term: "rna", found: "rna" },
     ]);
   });
 
@@ -146,6 +154,7 @@ describe("term-free.mjs CLI", () => {
     ["rnaseq", "rna seq", "rnaseq"],
     ["RNAseq", "rna seq", "RNAseq"],
     ["scRNAseq", "rna seq", "RNAseq"],
+    ["RNA-seq data", "rna seq", "RNA-seq"],
     ["biological", "biological", "biological"],
     ["biologically", "biologically", "biologically"],
     ["proteomics", "proteomics", "proteomics"],
@@ -207,6 +216,28 @@ describe("term-free.mjs CLI", () => {
   test("--term preserves case humps in task terms before matching numbered identifiers", () => {
     expect(run(brief("readRowGroup2Count"), "--term", "RowGroup2")).toEqual({
       status: 1, stdout: 'line 1: rowgroup2 ("RowGroup2")\n', stderr: "",
+    });
+  });
+
+  test.each([
+    ["mAb", "x = m - abs(y)"],
+    ["pKa", "p - ka"],
+  ])("--term %j does not join separate code tokens in %j", (extra, input) => {
+    const file = brief(input);
+    expect(run(file, "--term", extra)).toEqual({ status: 0, stdout: `ok: no listed term in ${file}\n`, stderr: "" });
+  });
+
+  test.each([
+    ["mAb", "mAbTiter", "mab", "mAb"],
+    ["mAb", "mAb_titer", "mab", "mAb"],
+    ["mAb", "m_AbTiter", "mab", "m_Ab"],
+    ["mAb", "m-AbTiter", "mab", "m-Ab"],
+    ["pKa", "pKaValue", "pka", "pKa"],
+    ["pKa", "pKa_value", "pka", "pKa"],
+    ["mAb titer", "mAb\n titer", "mab titer", "mAb\n titer"],
+  ])("--term %j keeps case humps inside tokens in %j", (extra, input, term, found) => {
+    expect(run(brief(input), "--term", extra)).toEqual({
+      status: 1, stdout: `line 1: ${term} (${JSON.stringify(found)})\n`, stderr: "",
     });
   });
 
