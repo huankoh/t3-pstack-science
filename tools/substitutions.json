@@ -9,7 +9,7 @@
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",
       "pattern": "Prose and judgment read `judgment and prose`.",
-      "replacement": "Prose and judgment read `judgment and prose`. Trivial mechanical edits read `mechanical code`. Each line is the one in the todolist's `domain:` column ([Models](#models)). In `science`, the hardest changes still read `hardest tasks`, trivial mechanical edits read `mechanical code`, and the rest read their playbook's line.",
+      "replacement": "Prose and judgment read `judgment and prose`. Trivial mechanical edits read `mechanical code`. Each line is the one in the todolist's `domain:` column ([Models](#models)). In `science`, the hardest changes still read `hardest tasks`, and the rest read their playbook's line.",
       "rationale": "router: every role follows its column and keeps the playbook difficulty tiering"
     },
     {
@@ -27,7 +27,7 @@
     {
       "files": "^skills/show-me-your-work/SKILL\\.md$",
       "pattern": "Before handing back, spawn a subagent on a different model family from the one that did the work.",
-      "replacement": "Before handing back, spawn a subagent on a different model family from the one that did the work. \"The work\" is the change being handed back. Count the chat's family when it edited the change itself and every delegate's family whose output is in the change. The `final review` line always reviews (default in poteto-mode's [Models](../poteto-mode/SKILL.md#models)). When that line's family is among those families, the first entry of the same column's `interrogate reviewers` whose family is outside them also reviews. Both verdicts must pass. When that reviewer's family does not read the column's terms, give it a term-free brief and stage term-free copies of the diff and the trail, per [Models](../poteto-mode/SKILL.md#models). In `general`, every family reads the terms. Only when no such reviewer exists, record `BLOCKED: independent review` and keep the handback closed.",
+      "replacement": "Before handing back, spawn a subagent on a different model family from the one that did the work. \"The work\" is the change being handed back. Count the chat's family when it edited the change itself and every delegate's family whose output is in the change. The `final review` line always reviews (default in poteto-mode's [Models](../poteto-mode/SKILL.md#models)). When that line's family is among those families, the first entry of the same column's `interrogate reviewers` whose family is outside them also reviews. Both verdicts must pass. When that reviewer's family does not read the column's terms, give it a term-free brief, stage term-free copies of the diff, the trail, and the transcript excerpts it needs, and have it read only those copies in place of the trail and the run's transcript, per [Models](../poteto-mode/SKILL.md#models). In `general`, every family reads the terms. Only when no such reviewer exists, record `BLOCKED: independent review` and keep the handback closed.",
       "rationale": "router: final review owns handback and preserves the different-family requirement"
     },
     {

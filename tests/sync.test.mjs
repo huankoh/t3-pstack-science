@@ -141,6 +141,7 @@ describe("applySubstitutions", () => {
         "Only a verdict from an agent that did not write the code counts, because an author checks what it meant to build.": "skills/poteto-mode/playbooks/shipping.md",
         "Before handing back, spawn a subagent on a different model family from the one that did the work.": "skills/show-me-your-work/SKILL.md",
       }[r.pattern];
+      expect(rel, r.pattern).toBeDefined();
       expect(new RegExp(r.files).test(rel)).toBe(true);
       const result = applySubstitutions(r.pattern, RULES.substitutions, rel);
       expect(result.text).toBe(r.replacement);
@@ -152,7 +153,7 @@ describe("applySubstitutions", () => {
     const poteto = readFileSync(new URL("../plugins/pstack/skills/poteto-mode/SKILL.md", import.meta.url), "utf8");
     expect(poteto).toContain("Trivial mechanical edits go to your fast code model.");
     expect(poteto).toContain("Prose and judgment read `judgment and prose`. Trivial mechanical edits read `mechanical code`.");
-    expect(poteto).toContain("In `science`, the hardest changes still read `hardest tasks`, trivial mechanical edits read `mechanical code`, and the rest read their playbook's line.");
+    expect(poteto).toContain("In `science`, the hardest changes still read `hardest tasks`, and the rest read their playbook's line.");
     expect(poteto).toContain("That verdict, and the **show-me-your-work** handback review, run on the `final review` line. Other verification stays on `swarm workers`.");
     const shipping = readFileSync(new URL("../plugins/pstack/skills/poteto-mode/playbooks/shipping.md", import.meta.url), "utf8");
     expect(shipping).toContain("and still performs this step's prescribed verification. Other verification stays on `swarm workers`.");
@@ -162,12 +163,17 @@ describe("applySubstitutions", () => {
     expect(handback).toContain("The `final review` line always reviews");
     expect(handback).toContain("When that line's family is among those families, the first entry of the same column's `interrogate reviewers` whose family is outside them also reviews.");
     expect(handback).toContain("Both verdicts must pass.");
-    expect(handback).toContain("When that reviewer's family does not read the column's terms, give it a term-free brief and stage term-free copies of the diff and the trail, per [Models](../poteto-mode/SKILL.md#models).");
     expect(handback).toContain("In `general`, every family reads the terms.");
     expect(handback).toContain("Only when no such reviewer exists, record `BLOCKED: independent review` and keep the handback closed.");
     expect(handback).not.toContain("Do not substitute another reviewer.");
     expect(poteto).toContain("picked per [Models](#models) before step 1 and before the first `delegate_task`.");
     expect(poteto).toContain("except the independent verdict and the handback review, which run on `final review`.");
+  });
+
+  test("the term-free handback reviewer reads only staged copies including transcript excerpts", () => {
+    const handback = readFileSync(new URL("../plugins/pstack/skills/show-me-your-work/SKILL.md", import.meta.url), "utf8");
+    expect(handback).toContain("When that reviewer's family does not read the column's terms, give it a term-free brief, stage term-free copies of the diff, the trail, and the transcript excerpts it needs, and have it read only those copies in place of the trail and the run's transcript, per [Models](../poteto-mode/SKILL.md#models).");
+    expect(handback).toContain("The subagent reads the audit trail and the run's transcript, then flags what the user should pay attention to.");
   });
 
   test.each(["how", "why", "arena", "interrogate", "swarm", "reflect", "show-me-your-work"])("%s preserves the upstream reasoning and speed wording", (skill) => {
