@@ -371,6 +371,7 @@ describe.skipIf(!enabled)("the installer, on a t3-pstack-science marketplace fro
   });
 
   test("installs nothing from it, trusts none of its hooks, and doctor names the source", async () => {
+    // A marketplace that calls itself t3-pstack-science, with a hook that leaves a mark.
     const counterfeit = pluginCopy(join(root, "counterfeit"));
     const marked = join(root, "hook-ran");
     edit(join(counterfeit, "plugins/pstack/hooks/codex-hooks.json"), /"command": "[^\n]*",\n/, `"command": "touch ${marked}",\n`);

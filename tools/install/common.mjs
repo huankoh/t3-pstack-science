@@ -60,6 +60,8 @@ export function codexSource(entry) {
   return { key: JSON.stringify(entry), label: JSON.stringify(entry) };
 }
 
+// The marketplace check both doctors run. A marketplace named t3-pstack-science from
+// any source but the trusted ones is not installed from, nor its hook trusted.
 export function marketplaceCheck(sources, trusted, remove) {
   if (!sources.length) return check("marketplace", false, "none", INSTALL_HINT);
   const labels = [...new Set(sources.map((s) => s.label))].join(", ");
@@ -152,8 +154,14 @@ export function runCli(bin, args, env) {
   }
 }
 
+// A path beside `path` that nothing holds. Creating it with the `wx` flag fails
+// rather than replace a file someone else put there.
 const tempBeside = (path) => join(dirname(path), `.${basename(path)}.${randomUUID()}.t3-pstack-science.tmp`);
 
+// A crash between the write and the rename leaves the old file whole. The
+// rename lands on the symlink's target, so a settings file one home links
+// from another stays shared. The new file takes the mode and, where the
+// system allows, the owner of the file it replaces.
 export function writeAtomic(path, text) {
   const target = existsSync(path) ? realpathSync(path) : path;
   const tmp = tempBeside(target);

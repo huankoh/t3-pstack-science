@@ -1,3 +1,5 @@
+// Each runtime's shipped SessionStart command, run for real: the mandate is
+// injected unless this plugin's machine sheet turns it off.
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
