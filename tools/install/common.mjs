@@ -9,6 +9,7 @@ import { basename, delimiter, dirname, extname, join, resolve } from "node:path"
 
 export const PLUGIN_ID = "t3-pstack-science@t3-pstack-science";
 export const FOREIGN_PLUGIN_ID = "t3-pstack@t3-pstack";
+const FOREIGN_NAME = FOREIGN_PLUGIN_ID.split("@")[0];
 export const MARKETPLACE = "t3-pstack-science";
 export const HOME_REPO = "huankoh/t3-pstack-science";
 export const INSTALL_HINT = "rerun `npx -y github:huankoh/t3-pstack-science install`";
@@ -184,5 +185,5 @@ export const updated = (from, to, version) => (from === to ? `the marketplace ha
 export const check = (name, ok, detail, fix, warn = false) => ({ name, ok, detail, ...(ok ? {} : { fix }), ...(warn && { warn }) });
 
 export const coexistingHooks = (enabled) => enabled ? [
-  check("session hooks", false, "t3-pstack is also enabled, and its session hook runs too", `disable ${FOREIGN_PLUGIN_ID} in this home`, true),
+  check("session hooks", false, `${FOREIGN_NAME} is also enabled, and its session hook runs too`, `disable ${FOREIGN_PLUGIN_ID} in this home`, true),
 ] : [];

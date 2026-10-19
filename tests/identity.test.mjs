@@ -17,13 +17,12 @@ const sheetPatterns = [
   new RegExp(`\\b${oldName}-models\\.md\\b`, "g"),
 ];
 const bareNamePattern = new RegExp(`\\b${oldName}\\b(?!-science)`, "g");
-const versionedNamePattern = new RegExp(`\\b${oldName}\\b(?= \\d+\\.\\d+\\.\\d+)`, "g");
 const verdictsPath = "plugins/pstack/skills/poteto-mode/scripts/watch-pr/verdicts.test.ts";
 const carriedBy = `// Michael Denyer's watch-pr fixes from pstack-claude, carried by ${oldName}:`;
 const allowedLines = [
+  { path: "CONTRIBUTING.md", line: "- **Substitutions.** [`tools/substitutions.json`](tools/substitutions.json) rewrites each upstream sentence that names a Cursor mechanism: the `Task` tool, `subagent_type`, model slugs, the `pstack-models.mdc` rule, cloud agents, `/loop`, Cursor paths. Most T3 behavior the port adds, such as the dispatch ledger or the review loop, is an anchored insert: a rule whose pattern is an upstream sentence and whose replacement keeps that sentence and appends the T3 text. A substitution leaves upstream's later edits elsewhere in the file mechanical, so the port prefers it to a fork. Each rule's `rationale` names why it exists, and most cite the section of " + oldName + " 1.0.14's `t3-tools.md` it replaces." },
   { path: verdictsPath, line: carriedBy },
   { path: "tools/install/common.mjs", line: `export const FOREIGN_PLUGIN_ID = "${oldName}@${oldName}";` },
-  { path: "tools/install/common.mjs", line: `  check("session hooks", false, "${oldName} is also enabled, and its session hook runs too", ` + "`disable ${FOREIGN_PLUGIN_ID} in this home`, true)," },
 ];
 const legacyPath = "tests/fixtures/identity/legacy-install.json";
 const upstreamPath = "tests/fixtures/identity/upstream-lines.txt";
@@ -39,8 +38,7 @@ function identityProblems(files) {
       if (path === "tools/substitutions.json" && /^\s*"rationale":/.test(line)) continue;
       if (allowedLines.some((allowance) => allowance.path === path && allowance.line === line)) continue;
       const patterns = path.startsWith("tests/") ? identityPatterns : [...identityPatterns, ...sheetPatterns, bareNamePattern];
-      const current = line.replace(versionedNamePattern, "");
-      const found = new Set(patterns.flatMap((pattern) => [...current.matchAll(pattern)].map((match) => match[0])));
+      const found = new Set(patterns.flatMap((pattern) => [...line.matchAll(pattern)].map((match) => match[0])));
       for (const value of found) problems.push(`${path}:${index + 1}: ${value}`);
     }
   }
@@ -117,12 +115,20 @@ describe("plugin identity", () => {
     ]);
   });
 
-  test("allows this fork's name and versioned history in a non-allowlisted file", () => {
+  test("allows this fork's name in a non-allowlisted file", () => {
     const name = `${oldName}-science`;
     const text = [`${name}@${name}`, `chhoumann/${name}`, `${name}:how`, `"${name}"`,
-      `${name}/models.md`, `${name}\\models.md`, `${name}-models.md`,
-      `${oldName} 1.0.14`, `${oldName} 2.0.0-rc.11`].join("\n");
+      `${name}/models.md`, `${name}\\models.md`, `${name}-models.md`].join("\n");
     expect(identityProblems([{ path: "docs/example.md", text }])).toEqual([]);
+  });
+
+  test.each([
+    ["README.md", `You have ${oldName} 2.0.0-rc.11-science.1, pstack for T3 Code.`],
+    ["README.md", `npx -y github:chhoumann/${oldName} 2.0.0`],
+    ["tests/x.mjs", `const src = 'chhoumann/${oldName} 2.0.0';`],
+    ["docs/example.md", `${oldName} 1.0.14`],
+  ])("flags versioned old identity in %s", (path, text) => {
+    expect(identityProblems([{ path, text }]).length).toBeGreaterThan(0);
   });
 
   test.each(allowedLines)("allows only the exact foreign or provenance line in $path", ({ path, line }) => {
