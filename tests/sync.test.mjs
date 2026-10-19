@@ -97,6 +97,12 @@ describe("applySubstitutions", () => {
     expect(applySubstitutions("(default `true`)", RULES.substitutions, "skills/reflect/SKILL.md").text).toBe("(default `true`)");
   });
 
+  test("the effort port rule names cursor's option ID and keeps speed standard", () => {
+    expect(applySubstitutions("Change only the effort level and whether the slug is fast,", RULES.substitutions, "skills/poteto-mode/SKILL.md").text).toBe(
+      "Change only the entry's reasoning option (`effort` on Claude, `reasoningEffort` on Codex, `reasoning_effort` on `cursor` targets),",
+    );
+  });
+
   test("every rule's replacement is free of the denylist", () => {
     for (const rule of RULES.substitutions) {
       expect(denylistHits("rule", rule.replacement, RULES.denylist)).toEqual([]);
@@ -139,7 +145,7 @@ describe("applySubstitutions", () => {
     [
       "skills/poteto-mode/SKILL.md",
       "Otherwise use standard speed, the same slug without `-fast`. Verification is the exception and stays on the `swarm workers` model and speed (`grok-4.7-xhigh-fast` by default).",
-      "Otherwise use standard speed, the entry without that option. Verification is the exception and stays on the `swarm workers` model and speed (default in the **swarm** skill's Models section).",
+      "Otherwise use standard speed, the entry's speed option at its standard value. This router never uses fast mode, urgent or not. Every dispatch sets each speed option its model lists to the standard value, as the defaults in [Models](#models) do, and `t3-sheet.mjs` rejects a fast one. Verification is the exception and stays on the `swarm workers` model and speed (default in the **swarm** skill's Models section).",
     ],
     [
       "skills/poteto-mode/SKILL.md",

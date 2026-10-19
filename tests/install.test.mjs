@@ -30,7 +30,7 @@ import { discoverHomes } from "../tools/install/homes.mjs";
 import { doctorSheet, moveSheet } from "../tools/install/sheet.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
-const { roles, tiers } = JSON.parse(readFileSync(join(repoRoot, "plugins/pstack/models.json"), "utf8"));
+const models = JSON.parse(readFileSync(join(repoRoot, "plugins/pstack/models.json"), "utf8"));
 const FIX = "rerun `npx -y github:chhoumann/t3-pstack install`";
 
 const scratch = [];
@@ -399,7 +399,7 @@ describe("the model sheet", () => {
     expect(existsSync(join(root, ".claude-never-run"))).toBe(false);
 
     expect(moveSheet(sheet, homes)).toEqual([]);
-    expect(doctorSheet(sheet, homes, { catalog: null, roles, tiers })).toEqual([
+    expect(doctorSheet(sheet, homes, { catalog: null, models })).toEqual([
       { name: "machine sheet valid", ok: true, detail: "every line parses (pass --catalog to check targets)" },
       { name: "home sheets", ok: true, detail: "none differ from it" },
     ]);
@@ -457,7 +457,7 @@ describe("the model sheet", () => {
 
     expect(moveSheet(sheet, homes)).toEqual([]);
     expect(existsSync(sheet)).toBe(false);
-    expect(doctorSheet(sheet, homes, { catalog: null, roles, tiers })).toEqual([
+    expect(doctorSheet(sheet, homes, { catalog: null, models })).toEqual([
       {
         name: "machine sheet",
         ok: false,
@@ -479,7 +479,7 @@ describe("the model sheet", () => {
       `linked ${join(root, ".codex-pool/t3-pstack-models.md")} to it`,
     ]);
     expect(lstatSync(join(root, ".codex/t3-pstack-models.md")).isSymbolicLink()).toBe(false);
-    expect(doctorSheet(sheet, homes, { catalog: null, roles, tiers })[1]).toEqual({
+    expect(doctorSheet(sheet, homes, { catalog: null, models })[1]).toEqual({
       name: "home sheets",
       ok: false,
       detail: `${join(root, ".codex/t3-pstack-models.md")} differ from the machine sheet`,
@@ -489,7 +489,7 @@ describe("the model sheet", () => {
 
   test("doctor warns without a sheet and fails on a malformed one", () => {
     const { homes, sheet } = machine();
-    expect(doctorSheet(sheet, homes, { catalog: null, roles, tiers })).toEqual([
+    expect(doctorSheet(sheet, homes, { catalog: null, models })).toEqual([
       {
         name: "machine sheet",
         ok: false,
@@ -500,11 +500,30 @@ describe("the model sheet", () => {
     ]);
     mkdirSync(join(sheet, ".."), { recursive: true });
     writeFileSync(sheet, "bug-fix: claude-opus\nhow critics: inherit-parent\n");
-    expect(doctorSheet(sheet, homes, { catalog: null, roles, tiers })[0]).toEqual({
+    expect(doctorSheet(sheet, homes, { catalog: null, models })[0]).toEqual({
       name: "machine sheet valid",
       ok: false,
       detail: 'bug-fix: "claude-opus" does not start with <providerInstanceId>/<modelId>; "how critics" is not a pstack role',
       fix: "run /t3-pstack:setup-pstack in a T3 thread",
     });
   });
+
+  test("doctor names a science line that does not parse", () => {
+    const { homes, sheet } = machine();
+    mkdirSync(join(sheet, ".."), { recursive: true });
+    writeFileSync(sheet, "science bug-fix: opus\n");
+    expect(doctorSheet(sheet, homes, { catalog: null, models })[0]).toEqual({
+      name: "machine sheet valid", ok: false,
+      detail: 'science bug-fix: "opus" does not start with <providerInstanceId>/<modelId>',
+      fix: "run /t3-pstack:setup-pstack in a T3 thread",
+    });
+  });
+
+  test("doctor reports a source policy that predates domains without throwing", () => {
+    const { homes, sheet } = machine();
+    expect(doctorSheet(sheet, homes, { catalog: null, models: { tiers: {}, roles: [] } })).toEqual([
+      { name: "model policy", ok: false, detail: "models.json predates domains; install a t3-pstack-science source", fix: "rerun `npx -y github:chhoumann/t3-pstack install`" },
+    ]);
+  });
+
 });
