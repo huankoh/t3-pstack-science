@@ -26,7 +26,7 @@ import { parseArgs } from "node:util";
 
 import { doctorClaude, installClaude } from "./install/claude.mjs";
 import { doctorCodex, installCodex } from "./install/codex.mjs";
-import { check, hasCli, HOME_REPO, INSTALL_HINT, MARKETPLACE, parseSource, readJson } from "./install/common.mjs";
+import { check, hasCli, HOME_REPO, INSTALL_HINT, MARKETPLACE, parseSource, PLUGIN_ID, readJson } from "./install/common.mjs";
 import { discoverHomes } from "./install/homes.mjs";
 import { doctorSheet, sheetPath } from "./install/sheet.mjs";
 import { FROZEN_HOOKS } from "./plugin.mjs";
@@ -45,12 +45,21 @@ const USAGE =
 // maps each skill to its SKILL.md, and `codexHook` is the hooks file the
 // Codex manifest names, with its pinned digest.
 function pluginFacts(root) {
+  const pluginName = PLUGIN_ID.split("@")[0];
   for (const file of [".claude-plugin/marketplace.json", ".agents/plugins/marketplace.json"]) {
     const path = join(root, file);
-    const name = readJson(path)?.name;
+    const manifest = readJson(path);
+    const name = manifest?.name;
     if (name !== MARKETPLACE) throw new Error(`${path}: found marketplace name ${JSON.stringify(name) ?? "missing"}, expected "${MARKETPLACE}"`);
+    const names = manifest.plugins?.map((plugin) => plugin.name);
+    if (!names?.includes(pluginName)) throw new Error(`${path}: found plugin names ${JSON.stringify(names) ?? "missing"}, expected "${pluginName}"`);
   }
   const plugin = join(root, "plugins/pstack");
+  for (const file of [".claude-plugin/plugin.json", ".codex-plugin/plugin.json"]) {
+    const path = join(plugin, file);
+    const name = readJson(path)?.name;
+    if (name !== pluginName) throw new Error(`${path}: found plugin name ${JSON.stringify(name) ?? "missing"}, expected "${pluginName}"`);
+  }
   const modelsPath = join(plugin, "models.json");
   const models = readJson(modelsPath);
   if (!models?.domains) throw new Error(`${modelsPath}: source "${MARKETPLACE}" is missing "domains"`);

@@ -420,13 +420,22 @@ describe("--source", () => {
     [".agents/plugins/marketplace.json", legacy.name],
     [".claude-plugin/marketplace.json", null],
     ["plugins/pstack/models.json", "domains"],
+    [".claude-plugin/marketplace.json", "plugin entry"],
+    [".agents/plugins/marketplace.json", "plugin entry"],
+    ["plugins/pstack/.claude-plugin/plugin.json", legacy.name],
+    ["plugins/pstack/.codex-plugin/plugin.json", legacy.name],
   ])("rejects an incompatible %s before calling a CLI or changing homes", (file, found) => {
     const source = tmp();
     for (const path of [".claude-plugin/marketplace.json", ".agents/plugins/marketplace.json"]) {
+      writeJson(join(source, path), { name: "t3-pstack-science", plugins: [{ name: "t3-pstack-science" }] });
+    }
+    for (const path of ["plugins/pstack/.claude-plugin/plugin.json", "plugins/pstack/.codex-plugin/plugin.json"]) {
       writeJson(join(source, path), { name: "t3-pstack-science" });
     }
     writeJson(join(source, "plugins/pstack/models.json"), models);
-    writeJson(join(source, file), file.endsWith("models.json") ? { tiers: {}, roles: [] } : { name: found });
+    const staleEntry = found === "plugin entry";
+    writeJson(join(source, file), file.endsWith("models.json") ? { tiers: {}, roles: [] }
+      : staleEntry ? { name: "t3-pstack-science", plugins: [{ name: legacy.name }] } : { name: found });
     const home = tmp();
     const claude = fakeClaude();
     const r = spawnSync(process.execPath, [join(repoRoot, "tools/install.mjs"), "install", "--source", source], {
@@ -436,7 +445,7 @@ describe("--source", () => {
     });
     expect(r.status).toBe(2);
     expect(r.stderr).toContain(join(source, file));
-    expect(r.stderr).toContain(JSON.stringify(found));
+    expect(r.stderr).toContain(JSON.stringify(staleEntry ? legacy.name : found));
     expect(claude.calls()).toEqual([]);
     expect(readdirSync(home)).toEqual([]);
   });
