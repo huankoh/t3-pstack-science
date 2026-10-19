@@ -1,3 +1,6 @@
+# Terms excluded from term-free briefs. One lowercase term per line.
+# Spaces also match whitespace, hyphens, underscores, or joined words. Plurals include s, es, and y to ies.
+# Words with common code meanings stay out; a task using them in the science sense adds them with --term.
 amino acid
 antibody
 antigen

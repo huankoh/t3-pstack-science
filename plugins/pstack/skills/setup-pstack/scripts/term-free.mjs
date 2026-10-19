@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 
 export const GLOSSARY = new URL("./science-terms.txt", import.meta.url);
 const TERM = /^[\p{L}\p{N}]+(?: [\p{L}\p{N}]+)*$/u;
+const GAP_SEPARATOR = /^[\s_-]+$/u;
+const PLURALIZABLE_LAST_TOKEN = /^\p{L}{3,}$/u;
 const USAGE = "usage: term-free.mjs <brief-file> [--term <word>]...";
 
 export function parseGlossary(text) {
@@ -36,38 +38,47 @@ function tokenize(source) {
   return tokens;
 }
 
+function termPattern(term) {
+  const tokens = tokenize(term);
+  const gaps = new Set();
+  let spelling = "";
+  for (const [i, token] of tokens.entries()) {
+    const previous = tokens[i - 1];
+    const digitBreak = previous && /^\p{N}/u.test(token.value) !== /^\p{N}/u.test(previous.value);
+    if (!previous || token.separator || digitBreak) gaps.add(spelling.length);
+    spelling += token.value;
+  }
+  const variants = [spelling];
+  const last = tokens.at(-1).value;
+  if (PLURALIZABLE_LAST_TOKEN.test(last)) {
+    variants.push(spelling + "s", spelling + "es");
+    if (last.endsWith("y")) variants.push(spelling.slice(0, -1) + "ies");
+  }
+  return { variants, gaps };
+}
+
+function matchAt(text, start, pattern, variant) {
+  let candidate = "";
+  for (let end = start; end < text.length; end++) {
+    const token = text[end];
+    if (end > start && token.separator && (!pattern.gaps.has(candidate.length) || !GAP_SEPARATOR.test(token.separator))) return null;
+    candidate += token.value;
+    if (!variant.startsWith(candidate)) return null;
+    if (candidate === variant) return token.end;
+  }
+  return null;
+}
+
 export function findTerms(brief, terms) {
   const text = tokenize(brief);
   const hits = [];
   for (const term of new Set(terms)) {
-    const tokens = tokenize(term);
-    const gaps = new Set();
-    let spelling = "";
-    for (const [i, token] of tokens.entries()) {
-      const previous = tokens[i - 1];
-      const digitBreak = previous && /^\p{N}/u.test(token.value) !== /^\p{N}/u.test(previous.value);
-      if (!previous || token.separator || digitBreak) gaps.add(spelling.length);
-      spelling += token.value;
-    }
-    const variants = [spelling];
-    const last = tokens.at(-1).value;
-    if (/^\p{L}{3,}$/u.test(last)) {
-      variants.push(spelling + "s", spelling + "es");
-      if (last.endsWith("y")) variants.push(spelling.slice(0, -1) + "ies");
-    }
+    const pattern = termPattern(term);
     for (let start = 0; start < text.length; start++) {
-      for (const variant of variants) {
-        let candidate = "";
-        for (let end = start; end < text.length; end++) {
-          const token = text[end];
-          if (end > start && token.separator && (!gaps.has(candidate.length) || !/^[\s_-]+$/u.test(token.separator))) break;
-          candidate += token.value;
-          if (!variant.startsWith(candidate)) break;
-          if (candidate === variant) {
-            hits.push({ term: term.toLowerCase(), index: text[start].index, end: token.end, line: text[start].line });
-            break;
-          }
-        }
+      for (const variant of pattern.variants) {
+        const end = matchAt(text, start, pattern, variant);
+        if (end === null) continue;
+        hits.push({ term: term.toLowerCase(), index: text[start].index, end, line: text[start].line });
       }
     }
   }

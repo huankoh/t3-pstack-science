@@ -1,3 +1,8 @@
+// The T3 form of an upstream file, as tools/sync.mjs derives it after the
+// substitutions and tools/generate.mjs stamps it: the port's frontmatter, then
+// the regions rendered from plugins/pstack/models.json. Models sections carry
+// the column gate and term rule. Anchored dispatch hooks live in substitutions.
+
 import { DOMAINS, GENERAL, SCIENCE, SHEET_DIR, seats } from "../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
 import { code } from "./plugin.mjs";
 
