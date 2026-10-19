@@ -11,7 +11,6 @@ export const PLUGIN_ID = "t3-pstack-science@t3-pstack-science";
 export const FOREIGN_PLUGIN_ID = "t3-pstack@t3-pstack";
 export const MARKETPLACE = "t3-pstack-science";
 export const HOME_REPO = "huankoh/t3-pstack-science";
-export const SCIENCE_REPO = "huankoh/t3-pstack-science";
 export const INSTALL_HINT = "rerun `npx -y github:huankoh/t3-pstack-science install`";
 
 // `~`, `~/` and `~\` expand as T3 expands them (provider-core
@@ -154,19 +153,18 @@ export function runCli(bin, args, env) {
   }
 }
 
-// A path beside `path` that nothing holds. Creating it with the `wx` flag or
-// symlinkSync fails rather than replace a file someone else put there.
-export const tempBeside = (path) => join(dirname(path), `.${basename(path)}.${randomUUID()}.t3-pstack-science.tmp`);
+// A unique path beside the destination for an exclusive temporary write.
+const tempBeside = (path) => join(dirname(path), `.${basename(path)}.${randomUUID()}.t3-pstack-science.tmp`);
 
 // A crash between the write and the rename leaves the old file whole. The
 // rename lands on the symlink's target, so a settings file one home links
 // from another stays shared. The new file takes the mode and, where the
-// system allows, the owner of the file it replaces, or of `like`.
-export function writeAtomic(path, text, like = path) {
+// system allows, the owner of the file it replaces.
+export function writeAtomic(path, text) {
   const target = existsSync(path) ? realpathSync(path) : path;
   const tmp = tempBeside(target);
   writeFileSync(tmp, text, { flag: "wx" });
-  const old = statSync(like, { throwIfNoEntry: false });
+  const old = statSync(path, { throwIfNoEntry: false });
   if (old) {
     chmodSync(tmp, old.mode & 0o7777);
     try {
@@ -186,5 +184,5 @@ export const updated = (from, to, version) => (from === to ? `the marketplace ha
 export const check = (name, ok, detail, fix, warn = false) => ({ name, ok, detail, ...(ok ? {} : { fix }), ...(warn && { warn }) });
 
 export const coexistingHooks = (enabled) => enabled ? [
-  check("session hooks", false, "t3-pstack is also enabled; both session hooks fire", `disable ${FOREIGN_PLUGIN_ID} in this home`, true),
+  check("session hooks", false, "t3-pstack is also enabled, and its session hook runs too", `disable ${FOREIGN_PLUGIN_ID} in this home`, true),
 ] : [];

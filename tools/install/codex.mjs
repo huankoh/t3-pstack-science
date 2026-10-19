@@ -144,9 +144,9 @@ async function pluginState(server, dir, skills) {
   };
 }
 
-async function pluginHooks(server) {
+async function pluginHooks(server, pluginId = PLUGIN_ID) {
   const { data } = await server.request("hooks/list", {});
-  return data.flatMap((entry) => entry.hooks).filter((hook) => hook.pluginId === PLUGIN_ID);
+  return data.flatMap((entry) => entry.hooks).filter((hook) => hook.pluginId === pluginId);
 }
 
 // A file's text, read once without following a symlink, or null when it is a
@@ -263,6 +263,7 @@ export async function doctorCodex(home, { version, skills, trusted, codexHook })
   return withServer(home, async (server) => {
     const state = await pluginState(server, home.dir, skills);
     const hooks = await pluginHooks(server);
+    const foreignHooks = await pluginHooks(server, FOREIGN_PLUGIN_ID);
     const listed = (await server.request("skills/list", { cwds: [neutralCwd()] })).data.flatMap((entry) => entry.skills);
     const plain = listed.filter((skill) => isPlainCopy(skill.name, skill.path, skills)).map((skill) => skill.path);
     const installed = state.versions.join(", ");
@@ -282,7 +283,7 @@ export async function doctorCodex(home, { version, skills, trusted, codexHook })
         INSTALL_HINT,
       ),
       check("enabled", state.enabled, state.enabled ? "yes" : "no", INSTALL_HINT),
-      ...coexistingHooks(state.enabled && state.foreignEnabled),
+      ...coexistingHooks(state.enabled && state.foreignEnabled && foreignHooks.some((h) => h.trustStatus === "trusted")),
       check(
         "session-start hook trusted",
         hooks.length > 0 && hooks.every(good),

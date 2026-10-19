@@ -143,7 +143,7 @@ function isolate(providerInstances) {
 describe.skipIf(!enabled)("side-by-side plugin identities", () => {
   isolate({});
 
-  test("install and update preserve the enabled foreign plugin and doctor warns once per home", () => {
+  test("install and update preserve the foreign plugin and warn when its hook runs", async () => {
     const legacy = JSON.parse(readFileSync(join(repoRoot, "tests/fixtures/identity/legacy-install.json"), "utf8"));
     const foreign = pluginCopy(join(root, "foreign"));
     for (const file of [".claude-plugin/marketplace.json", ".agents/plugins/marketplace.json",
@@ -164,11 +164,13 @@ describe.skipIf(!enabled)("side-by-side plugin identities", () => {
     expect(installed.status).toBe(0);
     expect(installed.report.failed).toBe(0);
     const warnings = installed.report.homes.flatMap((h) => h.checks.filter((c) => c.warn));
-    expect(warnings).toEqual([1, 2].map(() => ({
+    expect(warnings).toEqual([{
       name: "session hooks", ok: false, warn: true,
-      detail: "t3-pstack is also enabled; both session hooks fire",
+      detail: "t3-pstack is also enabled, and its session hook runs too",
       fix: `disable ${legacy.pluginId} in this home`,
-    })));
+    }]);
+    expect(row(installed.report, ".claude").checks.filter((c) => c.warn)).toEqual(warnings);
+    expect(row(installed.report, ".codex").checks.filter((c) => c.warn)).toEqual([]);
     expect(records()).toEqual(before);
     expect(JSON.parse(readFileSync(join(home, ".claude/settings.json"), "utf8")).enabledPlugins[legacy.pluginId]).toBe(true);
     expect(readFileSync(join(home, ".codex/config.toml"), "utf8")).toContain(`[plugins."${legacy.pluginId}"]\nenabled = true`);
@@ -177,8 +179,31 @@ describe.skipIf(!enabled)("side-by-side plugin identities", () => {
     const doctor = installer("doctor");
     expect(doctor.status).toBe(0);
     expect(doctor.report.homes.flatMap((h) => h.checks.filter((c) => c.warn))).toEqual(warnings);
-    console.log("side-by-side doctor JSON:", JSON.stringify(doctor));
-    console.log("side-by-side doctor output:\n" + sh("node", [join(repoRoot, "tools/install.mjs"), "doctor", "--source", repoRoot]));
+    console.log("side-by-side doctor, foreign Codex hook untrusted:\n" + sh("node", [join(repoRoot, "tools/install.mjs"), "doctor", "--source", repoRoot]));
+
+    const server = await AppServer.start({ dir: join(home, ".codex"), bin: "codex" });
+    try {
+      const { layers } = await server.request("config/read", { includeLayers: true });
+      const { data } = await server.request("hooks/list", {});
+      const hooks = data.flatMap((entry) => entry.hooks).filter((hook) => hook.pluginId === legacy.pluginId);
+      expect(hooks.length).toBeGreaterThan(0);
+      expect(hooks.every((hook) => hook.trustStatus === "untrusted")).toBe(true);
+      await server.request("config/value/write", {
+        keyPath: "hooks.state",
+        mergeStrategy: "upsert",
+        value: Object.fromEntries(hooks.map((hook) => [hook.key, { trusted_hash: hook.currentHash }])),
+        expectedVersion: layers.find((layer) => layer.name.type === "user").version,
+      });
+      const trusted = await server.request("hooks/list", {});
+      expect(trusted.data.flatMap((entry) => entry.hooks).filter((hook) => hook.pluginId === legacy.pluginId)
+        .every((hook) => hook.trustStatus === "trusted")).toBe(true);
+    } finally {
+      server.close();
+    }
+    const trustedDoctor = installer("doctor");
+    expect(trustedDoctor.status).toBe(0);
+    expect(trustedDoctor.report.homes.flatMap((h) => h.checks.filter((c) => c.warn))).toEqual([...warnings, ...warnings]);
+    console.log("side-by-side doctor, foreign Codex hook trusted:\n" + sh("node", [join(repoRoot, "tools/install.mjs"), "doctor", "--source", repoRoot]));
     sh("claude", ["plugin", "disable", legacy.pluginId, "--scope", "user"], { CLAUDE_CONFIG_DIR: join(home, ".claude") });
     edit(join(home, ".codex/config.toml"), `[plugins."${legacy.pluginId}"]\nenabled = true`, `[plugins."${legacy.pluginId}"]\nenabled = false`);
     const disabled = installer("doctor");

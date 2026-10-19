@@ -3,7 +3,7 @@ import { readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { checkSheet, parseSheet, SHEET_DIR } from "../../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
-import { check, MARKETPLACE, SCIENCE_REPO } from "./common.mjs";
+import { check } from "./common.mjs";
 
 const SETUP_HINT = "run /t3-pstack-science:setup-pstack in a T3 thread";
 
@@ -13,12 +13,6 @@ export const sheetPath = (env, home) =>
 const isFile = (path) => statSync(path, { throwIfNoEntry: false })?.isFile() ?? false;
 
 export function doctorSheet(sheet, { catalog, models }) {
-  if (!models?.domains) {
-    return [check(
-      "model policy", false, "models.json predates domains; install a t3-pstack-science source",
-      `remove the existing \`${MARKETPLACE}\` marketplace from each affected home, then run \`npx -y github:${SCIENCE_REPO} install --source ${SCIENCE_REPO}\` (or set --source to a t3-pstack-science checkout)`,
-    )];
-  }
   if (!isFile(sheet)) {
     return [check("machine sheet", false, "none, so every role runs on its skill's defaults", SETUP_HINT, true)];
   }

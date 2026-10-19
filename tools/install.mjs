@@ -26,7 +26,7 @@ import { parseArgs } from "node:util";
 
 import { doctorClaude, installClaude } from "./install/claude.mjs";
 import { doctorCodex, installCodex } from "./install/codex.mjs";
-import { check, hasCli, HOME_REPO, INSTALL_HINT, parseSource, readJson } from "./install/common.mjs";
+import { check, hasCli, HOME_REPO, INSTALL_HINT, MARKETPLACE, parseSource, readJson } from "./install/common.mjs";
 import { discoverHomes } from "./install/homes.mjs";
 import { doctorSheet, sheetPath } from "./install/sheet.mjs";
 import { FROZEN_HOOKS } from "./plugin.mjs";
@@ -45,8 +45,15 @@ const USAGE =
 // maps each skill to its SKILL.md, and `codexHook` is the hooks file the
 // Codex manifest names, with its pinned digest.
 function pluginFacts(root) {
+  for (const file of [".claude-plugin/marketplace.json", ".agents/plugins/marketplace.json"]) {
+    const path = join(root, file);
+    const name = readJson(path)?.name;
+    if (name !== MARKETPLACE) throw new Error(`${path}: found marketplace name ${JSON.stringify(name) ?? "missing"}, expected "${MARKETPLACE}"`);
+  }
   const plugin = join(root, "plugins/pstack");
-  const models = readJson(join(plugin, "models.json"));
+  const modelsPath = join(plugin, "models.json");
+  const models = readJson(modelsPath);
+  if (!models?.domains) throw new Error(`${modelsPath}: source "${MARKETPLACE}" is missing "domains"`);
   const hooks = readJson(join(plugin, ".codex-plugin/plugin.json")).hooks.replace(/^\.\//, "");
   const skills = readdirSync(join(plugin, "skills"), { withFileTypes: true }).filter((entry) => entry.isDirectory());
   return {

@@ -2,7 +2,7 @@
 // finds, how it repairs a stale Claude Code record, how it moves the model
 // sheet, and what doctor reports. tests/install-e2e.test.mjs drives the real
 // CLIs.
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import {
   chmodSync,
@@ -23,7 +23,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { doctorClaude, installClaude, syncScopedRecords } from "../tools/install/claude.mjs";
-import { AppServer } from "../tools/install/codex.mjs";
+import { AppServer, doctorCodex } from "../tools/install/codex.mjs";
 import { parseSource, writeAtomic } from "../tools/install/common.mjs";
 import { discoverHomes } from "../tools/install/homes.mjs";
 import { doctorSheet } from "../tools/install/sheet.mjs";
@@ -309,10 +309,40 @@ describe("side-by-side Claude plugins", () => {
     const warnings = doctorClaude(home, context).filter((c) => c.warn);
     expect(warnings).toEqual(foreignEnabled ? [{
       name: "session hooks", ok: false, warn: true,
-      detail: "t3-pstack is also enabled; both session hooks fire",
+      detail: "t3-pstack is also enabled, and its session hook runs too",
       fix: `disable ${legacy.pluginId} in this home`,
     }] : []);
     expect(readFileSync(path, "utf8")).toBe(before);
+  });
+});
+
+describe("side-by-side Codex plugins", () => {
+  test.each(["trusted", "untrusted", "modified"])("warns only when the foreign hook is trusted (%s)", async (trustStatus) => {
+    const start = spyOn(AppServer, "start").mockResolvedValue({
+      request: async (method) => ({
+        "config/read": { config: {} },
+        "plugin/list": { marketplaces: [{ plugins: [
+          { id: "t3-pstack-science@t3-pstack-science", enabled: true },
+          { id: legacy.pluginId, enabled: true },
+        ] }] },
+        "hooks/list": { data: [{ hooks: [
+          { pluginId: legacy.pluginId, trustStatus },
+          { pluginId: "another@market", trustStatus: "trusted" },
+        ] }] },
+        "skills/list": { data: [{ skills: [] }] },
+      })[method],
+      close() {},
+    });
+    try {
+      const checks = await doctorCodex({ dir: tmp(), bin: "codex" }, context);
+      expect(checks.filter((c) => c.warn)).toEqual(trustStatus === "trusted" ? [{
+        name: "session hooks", ok: false, warn: true,
+        detail: "t3-pstack is also enabled, and its session hook runs too",
+        fix: `disable ${legacy.pluginId} in this home`,
+      }] : []);
+    } finally {
+      start.mockRestore();
+    }
   });
 });
 
@@ -383,6 +413,32 @@ describe("--source", () => {
     expect(report.source).toBe("huankoh/t3-pstack-science");
     expect(report.homes[0].steps).toEqual(["added the t3-pstack-science marketplace from huankoh/t3-pstack-science"]);
     expect(claude.calls()).toEqual(["plugin marketplace add huankoh/t3-pstack-science"]);
+  });
+
+  test.each([
+    [".claude-plugin/marketplace.json", legacy.name],
+    [".agents/plugins/marketplace.json", legacy.name],
+    [".claude-plugin/marketplace.json", null],
+    ["plugins/pstack/models.json", "domains"],
+  ])("rejects an incompatible %s before calling a CLI or changing homes", (file, found) => {
+    const source = tmp();
+    for (const path of [".claude-plugin/marketplace.json", ".agents/plugins/marketplace.json"]) {
+      writeJson(join(source, path), { name: "t3-pstack-science" });
+    }
+    writeJson(join(source, "plugins/pstack/models.json"), models);
+    writeJson(join(source, file), file.endsWith("models.json") ? { tiers: {}, roles: [] } : { name: found });
+    const home = tmp();
+    const claude = fakeClaude();
+    const r = spawnSync(process.execPath, [join(repoRoot, "tools/install.mjs"), "install", "--source", source], {
+      cwd: repoRoot,
+      env: { HOME: home, TMPDIR: process.env.TMPDIR, PATH: dirname(claude.bin) },
+      encoding: "utf8",
+    });
+    expect(r.status).toBe(2);
+    expect(r.stderr).toContain(join(source, file));
+    expect(r.stderr).toContain(JSON.stringify(found));
+    expect(claude.calls()).toEqual([]);
+    expect(readdirSync(home)).toEqual([]);
   });
 
   test("reads owner/repo as GitHub even where that relative directory exists, and a URL to the same repository as the same source", () => {
@@ -503,12 +559,4 @@ describe("the model sheet", () => {
       fix: "run /t3-pstack-science:setup-pstack in a T3 thread",
     });
   });
-
-  test("doctor reports a source policy that predates domains without throwing", () => {
-    const { homes, sheet } = machine();
-    expect(doctorSheet(sheet, { catalog: null, models: { tiers: {}, roles: [] } })).toEqual([
-      { name: "model policy", ok: false, detail: "models.json predates domains; install a t3-pstack-science source", fix: "remove the existing `t3-pstack-science` marketplace from each affected home, then run `npx -y github:huankoh/t3-pstack-science install --source huankoh/t3-pstack-science` (or set --source to a t3-pstack-science checkout)" },
-    ]);
-  });
-
 });
