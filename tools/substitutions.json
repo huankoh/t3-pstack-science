@@ -92,7 +92,7 @@
     },
     {
       "pattern": "- Enter on `/poteto-mode` attaches the skill to one message. It fades as the chat moves on.\n- Option+Enter on Mac or Alt+Enter on Windows, or Use as Mode from the skill entry, makes it a Custom Mode. It stays in context every turn until the user exits the mode, and it stays out of casual turns.\n- Cursor's docs list Custom Modes in the Agents Window and the CLI. Elsewhere, start each new task with `/poteto-mode`.",
-      "replacement": "- Invoking `/poteto-mode` attaches the skill to one message. It fades as the chat moves on, so start each new task with it.\n- Where the harness runs t3-pstack-science's session-start hook, each new chat is told when to enter `/poteto-mode` on its own.\n- Skill names differ by harness: `/t3-pstack-science:poteto-mode` on Claude Code, `$poteto-mode` on Codex. This file writes every skill as `/<name>`.",
+      "replacement": "- Invoking `/poteto-mode` attaches the skill to one message. It fades as the chat moves on, so start each new task with it.\n- Where the harness runs t3-pstack-science's session-start hook, each new chat is told when to enter `/poteto-mode` on its own.\n- Skill names differ by harness: `/t3-pstack-science:poteto-mode` on Claude Code, `$t3-pstack-science:poteto-mode` on Codex. This file writes every skill as `/<name>`.",
       "rationale": "harness-specific invocation (Per-skill notes: poteto-help)",
       "files": "^skills/poteto-help/SKILL\\.md$"
     },

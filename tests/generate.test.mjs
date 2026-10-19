@@ -347,7 +347,7 @@ describe("deriveT3", () => {
   test("appends and stamps a Models section when upstream has none, naming the sheet and the entry grammar", () => {
     const out = deriveT3("plugins/pstack/skills/how/SKILL.md", front(""), models);
     expect(out).toContain("body\n\n## Models\n\nRole defaults on T3, stamped from `plugins/pstack/models.json`, one column per domain.");
-    expect(out).toContain("When it is missing, use the defaults in `models.json`.");
+    expect(out).toContain("When it is missing, use the defaults in the table below.");
     expect(out).not.toContain("t3-pstack-models.md");
     expect(out).toContain("It splits at its first `/`");
     expect(out).toEndWith("| how explainer | `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |\n");

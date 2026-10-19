@@ -15,7 +15,7 @@ Call `orchestrator_capabilities`, or `acp-mcp-call orchestrator_capabilities '{}
 
 ### 2. Load current state
 
-The default role-to-target mapping is the sheet shape in step 5 below. If the sheet already exists, read it and treat its `# budget` line and its role values as the current choices. If it does not exist, start from those defaults. Read only this fork's machine sheet. A line whose role is not in step 5, such as `how critics`, is from a retired role. Drop it. Carry a `strongest judgment` value over to `hardest tasks`, its new name. Also drop any value that is not a T3 entry, such as a bare family name, a `claude-` slug, or an `@<level>` suffix, and a `default effort` line.
+The default role-to-target mapping is the sheet shape in step 5 below. If the sheet already exists, read it and treat its `# budget` line and its role values as the current choices. If it does not exist, start from those defaults. A line whose role is not in step 5, such as `how critics`, is from a retired role. Drop it. Carry a `strongest judgment` value over to `hardest tasks`, its new name. Also drop any value that is not a T3 entry, such as a bare family name, a `claude-` slug, or an `@<level>` suffix, and a `default effort` line.
 
 ### 3. Budget, map, and confirm
 

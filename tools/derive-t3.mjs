@@ -79,7 +79,7 @@ export const fenceUnder = (title, lang) => (lines) => {
 const sheetProse =
   `A line in the model sheet overrides each default. \`<role>: <entry>\` sets the ${GENERAL} column, as in every sheet written before domains, and \`${SCIENCE} <role>: <entry>\` sets the ${SCIENCE} column. ` +
   `The sheet is \`~/.config/${SHEET_DIR}/models.md\` (\`$XDG_CONFIG_HOME/${SHEET_DIR}/models.md\` when that is set), one per machine, and \`/setup-pstack\` writes it. ` +
-  "When it is missing, use the defaults in `models.json`. Read only this fork's machine sheet. " +
+  "When it is missing, use the defaults in the table below. " +
   "An entry is `<providerInstanceId>/<modelId>` plus `<optionId>=<value>` pairs, and it " +
   "maps onto `delegate_task`'s `target`, with the provider instance as `providerInstanceId`, the model as `model`, " +
   "and the pairs as `options`. It splits at its first `/`, so a model ID with its own `/`, such as OpenCode's " +

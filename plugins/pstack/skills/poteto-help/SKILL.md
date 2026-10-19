@@ -52,7 +52,7 @@ Whether `/poteto-mode` stays on depends on how the user starts it:
 
 - Invoking `/poteto-mode` attaches the skill to one message. It fades as the chat moves on, so start each new task with it.
 - Where the harness runs t3-pstack-science's session-start hook, each new chat is told when to enter `/poteto-mode` on its own.
-- Skill names differ by harness: `/t3-pstack-science:poteto-mode` on Claude Code, `$poteto-mode` on Codex. This file writes every skill as `/<name>`.
+- Skill names differ by harness: `/t3-pstack-science:poteto-mode` on Claude Code, `$t3-pstack-science:poteto-mode` on Codex. This file writes every skill as `/<name>`.
 
 Mid-chat, "new task" makes the mode match a fresh playbook. `/poteto-mode` already uses `poteto-agent` for the subagents its playbook steps spawn. To get the same style from a subagent of your own, open its `delegate_task` brief the way poteto-mode's Subagents section briefs a `poteto-agent`.
 
