@@ -43,7 +43,7 @@ function splitIdentifier(source, acronyms, digits) {
 export function findTerms(brief, terms) {
   const uniqueTerms = [...new Set(terms)];
   const collect = (source, offset, normalize = (term) => term) => uniqueTerms.flatMap((term) => {
-    const words = normalize(term).split(/\s+/);
+    const words = normalize(term).toLowerCase().split(/\s+/);
     const last = words.pop();
     const ending = /[^aeiou]y$/.test(last) ? `(?:${last}(?:e?s)?|${last.slice(0, -1)}ies)` : `${last}(?:e?s)?`;
     const pattern = [...words, ending].join("[\\s_-]*");
@@ -51,7 +51,7 @@ export function findTerms(brief, terms) {
     return [...source.matchAll(regex)].map((match) => {
       const index = offset(match.index);
       const end = offset(match.index + match[0].length - 1) + 1;
-      return { term, found: brief.slice(index, end), index, end };
+      return { term: term.toLowerCase(), found: brief.slice(index, end), index, end };
     });
   });
   const hits = collect(brief, (index) => index);
@@ -79,7 +79,7 @@ export function findTerms(brief, terms) {
 
 function main(args) {
   const [file, ...flags] = args;
-  const extra = flags.filter((_, i) => i % 2 === 1).map((term) => term.toLowerCase().replace(/[-_]/g, " ").trim().replace(/\s+/g, " "));
+  const extra = flags.filter((_, i) => i % 2 === 1).map((term) => term.replace(/[-_]/g, " ").trim().replace(/\s+/g, " "));
   if (!file || file.startsWith("--") || flags.length % 2 || flags.some((value, i) => i % 2 === 0 && value !== "--term") || extra.some((term) => !TERM.test(term))) {
     console.error(USAGE);
     return 2;

@@ -169,6 +169,7 @@ describe("term-free.mjs CLI", () => {
 
   test.each([
     ["category", "categories", "category"],
+    ["CATEGORY", "categories", "category"],
     ["activity", "activities", "activity"],
     ["IL-6", "IL-6", "il 6"],
     ["CRISPR-Cas9", "CRISPR-Cas9", "crispr cas9"],
@@ -200,6 +201,12 @@ describe("term-free.mjs CLI", () => {
   ])("--term %j detects numbered terms in %j", (extra, input, term, found) => {
     expect(run(brief(input), "--term", extra)).toEqual({
       status: 1, stdout: `line 1: ${term} (${JSON.stringify(found)})\n`, stderr: "",
+    });
+  });
+
+  test("--term preserves case humps in task terms before matching numbered identifiers", () => {
+    expect(run(brief("readRowGroup2Count"), "--term", "RowGroup2")).toEqual({
+      status: 1, stdout: 'line 1: rowgroup2 ("RowGroup2")\n', stderr: "",
     });
   });
 
