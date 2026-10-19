@@ -4,6 +4,7 @@
 // themselves live in the text, as substitutions, so nothing here stamps a
 // runtime preamble.
 
+import { DOMAINS, GENERAL, SCIENCE, SHEET_DIR, seats } from "../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
 import { code } from "./plugin.mjs";
 
 // Split a Markdown file into its YAML frontmatter and the text after it.
@@ -76,9 +77,9 @@ export const fenceUnder = (title, lang) => (lines) => {
   return close === -1 ? null : [open + 1, close];
 };
 
-const SHEET =
-  "A role line in the model sheet overrides each one. The sheet is `~/.config/t3-pstack/models.md` " +
-  "(`$XDG_CONFIG_HOME/t3-pstack/models.md` when that is set), one per machine, and `/setup-pstack` writes it. " +
+const sheetProse =
+  `A line in the model sheet overrides each default. \`<role>: <entry>\` sets the ${GENERAL} column, as in every sheet written before domains, and \`${SCIENCE} <role>: <entry>\` sets the ${SCIENCE} column. ` +
+  `The sheet is \`~/.config/${SHEET_DIR}/models.md\` (\`$XDG_CONFIG_HOME/${SHEET_DIR}/models.md\` when that is set), one per machine, and \`/setup-pstack\` writes it. ` +
   "When it is missing, read `t3-pstack-models.md` in the host's config directory (`$CLAUDE_CONFIG_DIR` or " +
   "`~/.claude` on Claude Code, `$CODEX_HOME` or `~/.codex` on Codex). An entry is `<providerInstanceId>/<modelId>` plus `<optionId>=<value>` pairs, and it " +
   "maps onto `delegate_task`'s `target`, with the provider instance as `providerInstanceId`, the model as `model`, " +
@@ -86,24 +87,35 @@ const SHEET =
   "`<provider>/<model>`, is written whole after it. Option IDs differ per provider, so take them from " +
   "`orchestrator_capabilities`. `inherit-parent` or `auto` omits `target`.";
 
-export const entries = (models, role) => [models.tiers[role.tier]].flat();
-
-const roleLine = (models, r) =>
-  `- ${r.role}: ${entries(models, r).map(code).join(", ")}` +
-  (r.alias ? ` (a \`${r.alias}\` line counts as this role)` : "");
+const defaultCell = (value) => value ? `${code(value.entry)}${value.termFree ? " (term-free brief)" : ""}` : "none";
+const cell = (seat) => seat ? seat.defaults.map(defaultCell).join(", ") : "none";
 
 export function modelsSection(models, roles) {
-  return `Role defaults on T3, stamped from \`plugins/pstack/models.json\`. ${SHEET}\n\n${roles.map((r) => roleLine(models, r)).join("\n")}`;
+  const byRole = Map.groupBy(seats(models), (s) => s.role);
+  const header = `| Role | ${DOMAINS.join(" | ")} |\n| --- |${" --- |".repeat(DOMAINS.length)}`;
+  const rows = roles.map((role) => {
+    const label = role.role + (role.alias ? ` (a \`${role.alias}\` line counts as this role)` : "");
+    const columns = DOMAINS.map((domain) => cell(byRole.get(role.role).find((s) => s.domain === domain)));
+    return `| ${label} | ${columns.join(" | ")} |`;
+  });
+  return `Role defaults on T3, stamped from \`plugins/pstack/models.json\`, one column per domain. ${sheetProse}\n\n${header}\n${rows.join("\n")}`;
 }
 
-// The sheet setup-pstack writes when the user keeps every default.
+export function reviewerRows(models) {
+  const reviewers = seats(models).filter((s) => s.role === "interrogate reviewers");
+  const count = Math.max(...reviewers.map((s) => s.defaults.length));
+  return Array.from({ length: count }, (_, i) =>
+    `| Reviewer ${String.fromCharCode(65 + i)} | ${DOMAINS.map((domain) => `${domain} ${defaultCell(reviewers.find((s) => s.domain === domain)?.defaults[i])}`).join("; ")} |`,
+  );
+}
+
 export function sheetBlock(models) {
-  const rows = models.roles.map((r) => `${r.role}: ${entries(models, r).join(", ")}`);
   return [
-    "# pstack model configuration (T3). One line per role. Delete a line to fall back to the skill default.",
+    "# pstack model configuration (T3). One line per role and column. Delete a line to fall back to the skill default.",
+    `# \`<role>:\` sets the ${GENERAL} column, as in every sheet before domains. \`${SCIENCE} <role>:\` sets the ${SCIENCE} column.`,
     "# `inherit-parent` or `auto` as a value: the role runs on the parent chat's model (`delegate_task` omits `target`). Alias entries in a panel list still count toward its fan-out.",
     "# budget: large (xhigh)",
-    ...rows,
+    ...seats(models).map((s) => `${s.key}: ${s.defaults.map((d) => d.entry).join(", ")}`),
     "session hook: on",
   ];
 }
@@ -115,7 +127,6 @@ const padded = (text) => ["", ...text.split("\n"), ""];
 // with `appendHeading` is added as the last H2 when the file lacks it.
 export function t3Regions(models) {
   const bySkill = Map.groupBy(models.roles, (r) => r.skill);
-  const reviewers = entries(models, models.roles.find((r) => r.role === "interrogate reviewers"));
   return [
     ...[...bySkill].map(([skill, roles]) => ({
       file: skillFile(skill),
@@ -128,7 +139,7 @@ export function t3Regions(models) {
       file: skillFile("interrogate"),
       name: "reviewer table",
       locate: tableRows("| Subagent | Default model |", "| Reviewer "),
-      render: () => reviewers.map((m, i) => `| Reviewer ${String.fromCharCode(65 + i)} | ${code(m)} |`),
+      render: () => reviewerRows(models),
     },
     {
       file: skillFile("setup-pstack"),

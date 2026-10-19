@@ -97,6 +97,24 @@ describe("applySubstitutions", () => {
     expect(applySubstitutions("(default `true`)", RULES.substitutions, "skills/reflect/SKILL.md").text).toBe("(default `true`)");
   });
 
+  test("the effort port rule names cursor's option ID and keeps speed standard", () => {
+    expect(applySubstitutions("Change only the effort level and whether the slug is fast,", RULES.substitutions, "skills/poteto-mode/SKILL.md").text).toBe(
+      "Change only the entry's reasoning option (`effort` on Claude, `reasoningEffort` on Codex, `reasoning_effort` on `cursor` targets),",
+    );
+  });
+
+  test("the shipped policy fork carries the amended speed and reasoning rules", () => {
+    const text = readFileSync(new URL("../plugins/pstack/skills/poteto-mode/SKILL.md", import.meta.url), "utf8");
+    expect(text).toContain("Every dispatch sets each speed option its model lists to its standard value (`fastMode=false` on Claude and `cursor`, `serviceTier=default` on Codex), as the defaults in [Models](#models) do. This router never uses fast mode, urgent or not, and `t3-sheet.mjs` rejects a fast entry.");
+    expect(text).not.toContain("only when the job is urgent");
+    expect(text).not.toContain("fastMode=true");
+    expect(text).not.toContain("and speed the job needs");
+    expect(text).not.toContain("or no speed option");
+    expect(text).toContain("pick the reasoning level the job needs.");
+    expect(text).toContain("If the model has no value at that reasoning level, use its nearest one in `orchestrator_capabilities`. Omit a speed option the model does not list.");
+    expect(text).toContain("Change only the entry's reasoning option (`effort` on Claude, `reasoningEffort` on Codex, `reasoning_effort` on `cursor` targets),");
+  });
+
   test("every rule's replacement is free of the denylist", () => {
     for (const rule of RULES.substitutions) {
       expect(denylistHits("rule", rule.replacement, RULES.denylist)).toEqual([]);
@@ -116,6 +134,16 @@ describe("applySubstitutions", () => {
 
   // Upstream's own sentences at the pin, and the one form the port writes for each.
   test.each([
+    [
+      "skills/poteto-mode/SKILL.md",
+      "Before each spawn, start from the role's line or default and pick the reasoning level and speed the job needs.",
+      "Before each spawn, start from the role's line or default and pick the reasoning level the job needs.",
+    ],
+    [
+      "skills/poteto-mode/SKILL.md",
+      "If the family has no slug at that level and speed, use its nearest slug.",
+      "If the model has no value at that reasoning level, use its nearest one in `orchestrator_capabilities`. Omit a speed option the model does not list.",
+    ],
     [
       "skills/how/SKILL.md",
       "Every spawn is a Task subagent with `subagent_type: generalPurpose` and `readonly: true`.",
@@ -138,8 +166,8 @@ describe("applySubstitutions", () => {
     ],
     [
       "skills/poteto-mode/SKILL.md",
-      "Otherwise use standard speed, the same slug without `-fast`. Verification is the exception and stays on the `swarm workers` model and speed (`grok-4.7-xhigh-fast` by default).",
-      "Otherwise use standard speed, the entry without that option. Verification is the exception and stays on the `swarm workers` model and speed (default in the **swarm** skill's Models section).",
+      "Use fast mode only when the job is urgent, meaning CI or trunk is red or a person is blocked on the result right now. Otherwise use standard speed, the same slug without `-fast`. Verification is the exception and stays on the `swarm workers` model and speed (`grok-4.7-xhigh-fast` by default).",
+      "Every dispatch sets each speed option its model lists to its standard value (`fastMode=false` on Claude and `cursor`, `serviceTier=default` on Codex), as the defaults in [Models](#models) do. This router never uses fast mode, urgent or not, and `t3-sheet.mjs` rejects a fast entry. Verification is the exception and stays on the `swarm workers` model and speed (default in the **swarm** skill's Models section).",
     ],
     [
       "skills/poteto-mode/SKILL.md",

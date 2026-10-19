@@ -40,7 +40,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { Type } from "typebox";
 import { Value } from "typebox/value";
 
-import { panelFamilies, parseEntry } from "../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
+import { DOMAINS, GENERAL, SCIENCE, panelFamilies, parseEntry, speedProblems } from "../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
 import { applyRegions, parseFrontmatter, ROUTED_SKILL, t3Regions } from "./derive-t3.mjs";
 import { FROZEN_HOOKS, hookDigest, PLUGIN, SKILLS } from "./plugin.mjs";
 import { pathIsInside, validateSkillsTree, walk } from "./validate-skills.mjs";
@@ -200,50 +200,113 @@ export function validatePluginLayout(pluginRoot) {
   }
 }
 
-const TIERS = ["default", "strongest", "panel"];
+const RESERVED_KEYS = ["session hook", "default effort"];
+const isObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
+const failModels = (message) => {
+  throw new Error(`models.json: ${message}`);
+};
 
-// Check models.json's shape, throwing with the offending tier, role, or entry
-// named. `skillExists(skill)` reports whether a role's skill directory carries
-// a SKILL.md. Every tier holds T3 entries in the sheet grammar of
-// setup-pstack's t3-sheet.mjs, and the panel spans two model families.
-export function parseModels(raw, skillExists) {
-  const fail = (message) => {
-    throw new Error(`models.json: ${message}`);
-  };
-  const isObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
-  if (!isObject(raw.tiers)) fail('"tiers" must be an object');
-  if (!Array.isArray(raw.roles)) fail('"roles" must be a list');
-  for (const tier of TIERS) if (!Object.hasOwn(raw.tiers, tier)) fail(`tiers has no "${tier}"`);
-  for (const [tier, value] of Object.entries(raw.tiers)) {
-    if (!TIERS.includes(tier)) fail(`tiers names "${tier}", which is not one of ${TIERS.join(", ")}`);
-    if (tier !== "panel" && typeof value !== "string") fail(`tier "${tier}" must be one entry, not a list`);
-    if (tier === "panel" && !Array.isArray(value)) fail('tier "panel" must be a list');
-    const list = [value].flat();
-    if (new Set(list).size !== list.length) fail(`tier "${tier}" lists an entry twice`);
-    const parsed = list.map((entry) => {
-      if (typeof entry !== "string" || entry !== entry.trim().split(/\s+/).join(" ")) {
-        fail(`tier "${tier}": ${JSON.stringify(entry)} is not one entry written with single spaces`);
-      }
-      let target;
-      try {
-        target = parseEntry(entry);
-      } catch (err) {
-        fail(`tier "${tier}": ${err.message}`);
-      }
-      if (!target) fail(`tier "${tier}" must name a target, not inherit the parent`);
-      return target;
-    });
-    if (tier === "panel" && panelFamilies(parsed).size < 2) fail("the panel needs at least two model families");
+function parseDomains(raw) {
+  const domainNames = isObject(raw) && isObject(raw.domains) ? Object.keys(raw.domains) : [];
+  if (domainNames.length !== DOMAINS.length || domainNames.some((domain, i) => domain !== DOMAINS[i])) {
+    failModels('"domains" must hold "general" then "science"');
   }
-  const labels = new Set();
-  for (const role of raw.roles) {
-    for (const label of [role.role, role.alias].filter(Boolean)) {
-      if (labels.has(label)) fail(`role "${label}" appears twice`);
-      labels.add(label);
+  for (const domain of DOMAINS) {
+    const policy = raw.domains[domain];
+    if (!isObject(policy)) failModels(`domain "${domain}" must be an object`);
+    for (const field of Object.keys(policy)) {
+      if (!["tiers", "covers", "termReaders"].includes(field)) failModels(`domain "${domain}" has unknown field "${field}"`);
+      if (domain === GENERAL && field !== "tiers") {
+        failModels(`domain "${domain}" takes no ${field}; unprefixed v2 sheet lines set it, and they had no term rule`);
+      }
     }
-    if (!TIERS.includes(role.tier)) fail(`role "${role.role}" names tier "${role.tier}", which tiers does not define`);
-    if (!skillExists(role.skill)) fail(`role "${role.role}" names skill "${role.skill}", which has no SKILL.md`);
+    if (domain === SCIENCE) {
+      if (typeof policy.covers !== "string" || !policy.covers.trim()) {
+        failModels(`domain "${domain}" needs "covers", the task class the gate routes to it`);
+      }
+      const readers = policy.termReaders;
+      if (
+        !Array.isArray(readers) || !readers.length || new Set(readers).size !== readers.length ||
+        readers.some((f) => typeof f !== "string" || !/^[a-z]+$/.test(f))
+      ) {
+        failModels(`domain "${domain}" needs "termReaders", the families that may read its terms`);
+      }
+    }
+    if (!isObject(policy.tiers) || !Object.keys(policy.tiers).length) failModels(`domain "${domain}" needs a non-empty "tiers" object`);
   }
+  return raw.domains;
+}
+
+function parseTier(value, where) {
+  if (value === null) return;
+  if (typeof value !== "string" && !Array.isArray(value)) failModels(`${where} must be one entry, a list, or null`);
+  const list = [value].flat();
+  if (new Set(list).size !== list.length) failModels(`${where} lists an entry twice`);
+  const parsed = list.map((entry) => {
+    if (typeof entry !== "string" || entry !== entry.trim().split(/\s+/).join(" ")) {
+      failModels(`${where}: ${JSON.stringify(entry)} is not one entry written with single spaces`);
+    }
+    let target;
+    try {
+      target = parseEntry(entry);
+    } catch (err) {
+      failModels(`${where}: ${err.message}`);
+    }
+    if (!target) failModels(`${where} must name a target, not inherit the parent`);
+    const speed = speedProblems(target);
+    if (speed.length) failModels(`${where}: ${speed[0]}`);
+    return target;
+  });
+  if (Array.isArray(value) && panelFamilies(parsed).size < 2) failModels(`${where}: the panel needs at least two model families`);
+}
+
+function parseTiers(domains) {
+  const tierNames = Object.keys(domains[GENERAL].tiers);
+  for (const domain of DOMAINS) {
+    const { tiers } = domains[domain];
+    for (const tier of tierNames) {
+      if (!Object.hasOwn(tiers, tier)) failModels(`domain "${domain}" has no tier "${tier}"; write null if it has no such seat`);
+    }
+    for (const tier of Object.keys(tiers)) {
+      if (!tierNames.includes(tier)) failModels(`domain "${domain}" names tier "${tier}", which "${GENERAL}" does not`);
+    }
+  }
+  for (const tier of tierNames) {
+    const present = DOMAINS.filter((domain) => domains[domain].tiers[tier] !== null);
+    if (!present.length) failModels(`tier "${tier}" has no seat in any domain`);
+    const list = present.find((domain) => Array.isArray(domains[domain].tiers[tier]));
+    const single = present.find((domain) => typeof domains[domain].tiers[tier] === "string");
+    if (list && single) failModels(`tier "${tier}" is a list in "${list}" but one entry in "${single}"`);
+  }
+  for (const domain of DOMAINS) {
+    for (const [tier, value] of Object.entries(domains[domain].tiers)) {
+      parseTier(value, `domain "${domain}" tier "${tier}"`);
+    }
+  }
+  return tierNames;
+}
+
+function parseRoles(roles, tierNames, skillExists) {
+  if (!Array.isArray(roles)) failModels('"roles" must be a list');
+  const labels = new Set();
+  for (const role of roles) {
+    for (const label of [role.role, role.alias].filter(Boolean)) {
+      if (labels.has(label)) failModels(`role "${label}" appears twice`);
+      labels.add(label);
+      if (RESERVED_KEYS.includes(label)) failModels(`role "${label}" is a reserved sheet key`);
+      if (label.startsWith(`${SCIENCE} `)) {
+        failModels(`role "${label}" starts with the domain name "${SCIENCE}", so its sheet line would be ambiguous`);
+      }
+    }
+    if (!tierNames.includes(role.tier)) failModels(`role "${role.role}" names tier "${role.tier}", which no domain defines`);
+    if (!skillExists(role.skill)) failModels(`role "${role.role}" names skill "${role.skill}", which has no SKILL.md`);
+  }
+}
+
+export function parseModels(raw, skillExists) {
+  const domains = parseDomains(raw);
+  const tierNames = parseTiers(domains);
+  parseRoles(raw.roles, tierNames, skillExists);
   return raw;
 }
 

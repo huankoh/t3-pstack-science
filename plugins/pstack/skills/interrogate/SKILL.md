@@ -28,9 +28,9 @@ Launch all reviewers in a single response with `delegate_task`, one per entry on
 
 | Subagent | Default model |
 |----------|---------------|
-| Reviewer A | `claudeAgent/claude-opus-5-5 effort=xhigh` |
-| Reviewer B | `codex/gpt-6.1-sol reasoningEffort=xhigh` |
-| Reviewer C | `grok/grok-4.7 reasoningEffort=xhigh` |
+| Reviewer A | general `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false`; science `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |
+| Reviewer B | general `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false`; science `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` (term-free brief) |
+| Reviewer C | general `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default`; science `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` |
 
 Each reviewer gets `role: "review"`, a brief that says to inspect only and change no file, and `target` set from its configured entry, or from its table default when there is no configured line. Omit `target` for an `auto` or `inherit-parent` entry, so that reviewer runs on the parent model.
 
@@ -76,6 +76,8 @@ You are the lead reviewer, a pragmatic senior engineer, not a neutral aggregator
 
 ## Models
 
-Role defaults on T3, stamped from `plugins/pstack/models.json`. A role line in the model sheet overrides each one. The sheet is `~/.config/t3-pstack/models.md` (`$XDG_CONFIG_HOME/t3-pstack/models.md` when that is set), one per machine, and `/setup-pstack` writes it. When it is missing, read `t3-pstack-models.md` in the host's config directory (`$CLAUDE_CONFIG_DIR` or `~/.claude` on Claude Code, `$CODEX_HOME` or `~/.codex` on Codex). An entry is `<providerInstanceId>/<modelId>` plus `<optionId>=<value>` pairs, and it maps onto `delegate_task`'s `target`, with the provider instance as `providerInstanceId`, the model as `model`, and the pairs as `options`. It splits at its first `/`, so a model ID with its own `/`, such as OpenCode's `<provider>/<model>`, is written whole after it. Option IDs differ per provider, so take them from `orchestrator_capabilities`. `inherit-parent` or `auto` omits `target`.
+Role defaults on T3, stamped from `plugins/pstack/models.json`, one column per domain. A line in the model sheet overrides each default. `<role>: <entry>` sets the general column, as in every sheet written before domains, and `science <role>: <entry>` sets the science column. The sheet is `~/.config/t3-pstack/models.md` (`$XDG_CONFIG_HOME/t3-pstack/models.md` when that is set), one per machine, and `/setup-pstack` writes it. When it is missing, read `t3-pstack-models.md` in the host's config directory (`$CLAUDE_CONFIG_DIR` or `~/.claude` on Claude Code, `$CODEX_HOME` or `~/.codex` on Codex). An entry is `<providerInstanceId>/<modelId>` plus `<optionId>=<value>` pairs, and it maps onto `delegate_task`'s `target`, with the provider instance as `providerInstanceId`, the model as `model`, and the pairs as `options`. It splits at its first `/`, so a model ID with its own `/`, such as OpenCode's `<provider>/<model>`, is written whole after it. Option IDs differ per provider, so take them from `orchestrator_capabilities`. `inherit-parent` or `auto` omits `target`.
 
-- interrogate reviewers: `claudeAgent/claude-opus-5-5 effort=xhigh`, `codex/gpt-6.1-sol reasoningEffort=xhigh`, `grok/grok-4.7 reasoningEffort=xhigh`
+| Role | general | science |
+| --- | --- | --- |
+| interrogate reviewers | `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false`, `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false`, `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default`, `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` (term-free brief), `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` |

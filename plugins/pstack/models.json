@@ -1,30 +1,69 @@
 {
-  "tiers": {
-    "default": "claudeAgent/claude-opus-5-5 effort=xhigh",
-    "strongest": "claudeAgent/claude-fable-5-1 effort=xhigh",
-    "panel": [
-      "claudeAgent/claude-opus-5-5 effort=xhigh",
-      "codex/gpt-6.1-sol reasoningEffort=xhigh",
-      "grok/grok-4.7 reasoningEffort=xhigh"
-    ]
+  "domains": {
+    "general": {
+      "tiers": {
+        "code": "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
+        "explore": "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
+        "judgment": "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
+        "runners": [
+          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
+          "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
+          "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"
+        ],
+        "judges": [
+          "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
+          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
+          "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"
+        ],
+        "reviewers": [
+          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
+          "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
+          "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"
+        ]
+      }
+    },
+    "science": {
+      "covers": "biology or other scientific work",
+      "termReaders": ["gpt", "grok"],
+      "tiers": {
+        "code": "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
+        "explore": "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
+        "judgment": "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
+        "runners": [
+          "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
+          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
+          "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"
+        ],
+        "judges": [
+          "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
+          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
+          "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"
+        ],
+        "reviewers": [
+          "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
+          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
+          "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"
+        ]
+      }
+    }
   },
   "roles": [
-    { "role": "feature, refactoring", "tier": "default", "skill": "poteto-mode" },
-    { "role": "bug-fix", "tier": "strongest", "skill": "poteto-mode" },
-    { "role": "perf-issue", "tier": "strongest", "skill": "poteto-mode" },
-    { "role": "hillclimb", "tier": "strongest", "skill": "poteto-mode" },
-    { "role": "judgment and prose", "tier": "default", "skill": "poteto-mode" },
-    { "role": "hardest tasks", "alias": "strongest judgment", "tier": "strongest", "skill": "poteto-mode" },
-    { "role": "how explorer", "tier": "default", "skill": "how" },
-    { "role": "how explainer", "tier": "default", "skill": "how" },
-    { "role": "why investigators", "tier": "default", "skill": "why" },
-    { "role": "why synthesizer", "tier": "default", "skill": "why" },
-    { "role": "reflect tooling", "tier": "default", "skill": "reflect" },
-    { "role": "reflect judgment, divergent, synthesizer", "tier": "default", "skill": "reflect" },
-    { "role": "arena runners", "tier": "panel", "skill": "arena" },
-    { "role": "arena cross-judge pool", "tier": "panel", "skill": "arena" },
-    { "role": "swarm workers", "tier": "default", "skill": "swarm" },
-    { "role": "architect runners", "tier": "panel", "skill": "architect" },
-    { "role": "interrogate reviewers", "tier": "panel", "skill": "interrogate" }
+    { "role": "feature, refactoring", "tier": "code", "skill": "poteto-mode" },
+    { "role": "bug-fix", "tier": "code", "skill": "poteto-mode" },
+    { "role": "perf-issue", "tier": "code", "skill": "poteto-mode" },
+    { "role": "hillclimb", "tier": "code", "skill": "poteto-mode" },
+    { "role": "judgment and prose", "tier": "judgment", "skill": "poteto-mode" },
+    { "role": "hardest tasks", "alias": "strongest judgment", "tier": "judgment", "skill": "poteto-mode" },
+    { "role": "how explorer", "tier": "explore", "skill": "how" },
+    { "role": "how explainer", "tier": "judgment", "skill": "how" },
+    { "role": "why investigators", "tier": "explore", "skill": "why" },
+    { "role": "why synthesizer", "tier": "judgment", "skill": "why" },
+    { "role": "reflect tooling", "tier": "explore", "skill": "reflect" },
+    { "role": "reflect judgment, divergent, synthesizer", "tier": "judgment", "skill": "reflect" },
+    { "role": "arena runners", "tier": "runners", "skill": "arena" },
+    { "role": "arena cross-judge pool", "tier": "judges", "skill": "arena" },
+    { "role": "swarm workers", "tier": "code", "skill": "swarm" },
+    { "role": "architect runners", "tier": "runners", "skill": "architect" },
+    { "role": "interrogate reviewers", "tier": "reviewers", "skill": "interrogate" }
   ]
 }

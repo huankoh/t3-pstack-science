@@ -10,14 +10,14 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { loadModels } from "../tools/generate.mjs";
-import { checkSheet, family, parseEntry, parseSheet } from "../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
+import { DOMAINS, GENERAL, SCIENCE, SHEET_DIR, checkSheet, family, parseEntry, parseSheet, seats, speedProblems } from "../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const script = join(root, "plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs");
 const catalogPath = join(root, "tests/fixtures/t3-catalog.json");
 const catalog = JSON.parse(readFileSync(catalogPath, "utf8"));
-const { roles, tiers: defaults } = loadModels();
-const check = (text, over = catalog) => checkSheet(parseSheet(text), { roles, defaults, catalog: over });
+const models = loadModels();
+const check = (text, over = catalog) => checkSheet(parseSheet(text), { models, catalog: over });
 const PANEL = "interrogate reviewers";
 
 describe("parseEntry", () => {
@@ -80,7 +80,7 @@ describe("checkSheet against a catalog", () => {
   test("the default sheet setup-pstack writes dispatches", () => {
     const setup = readFileSync(join(root, "plugins/pstack/skills/setup-pstack/SKILL.md"), "utf8");
     const sheet = setup.match(/```markdown\n(# pstack model configuration \(T3\)[\s\S]*?)```/)[1];
-    expect(parseSheet(sheet)).toHaveLength(roles.length + 1);
+    expect(parseSheet(sheet)).toHaveLength(35);
     expect(check(sheet)).toEqual([]);
   });
 
@@ -89,20 +89,20 @@ describe("checkSheet against a catalog", () => {
       check(
         [
           "bug-fix: claudeCode/claude-opus-5-5",
-          "how explorer: cursor/grok-4.7",
+          "how explorer: antigravity/gemini-4-argon",
           "why synthesizer: grok/grok-9",
-          "swarm workers: claudeAgent/claude-opus-5-5 reasoningEffort=high",
-          "feature, refactoring: codex/gpt-6.1-sol reasoningEffort=extreme",
+          "swarm workers: claudeAgent/claude-opus-5-5 reasoningEffort=high fastMode=false",
+          "feature, refactoring: codex/gpt-6.1-sol reasoningEffort=extreme serviceTier=default",
           "hillclimb: claudeAgent/claude-opus-5-5 fastMode=yes",
         ].join("\n"),
       ),
     ).toEqual([
       'bug-fix: claudeCode/claude-opus-5-5: no provider instance "claudeCode" in this T3',
-      'how explorer: cursor/grok-4.7: "cursor" cannot run child tasks (Provider is not authenticated.)',
+      'how explorer: antigravity/gemini-4-argon: "antigravity" cannot run child tasks (Provider is not authenticated.)',
       'why synthesizer: grok/grok-9: "grok" does not list model "grok-9"',
       'swarm workers: claudeAgent/claude-opus-5-5: no option "reasoningEffort" (has effort, fastMode)',
       "feature, refactoring: codex/gpt-6.1-sol: reasoningEffort=extreme is not one of low, medium, high, xhigh, max, ultra",
-      "hillclimb: claudeAgent/claude-opus-5-5: fastMode=yes is not one of true, false",
+      "hillclimb: claudeAgent/claude-opus-5-5: fastMode=yes is not standard speed, and this router never runs fast; write fastMode=false",
     ]);
   });
 
@@ -116,22 +116,22 @@ describe("checkSheet against a catalog", () => {
     }
   });
 
-  test("a role with no line is checked on its tier default, as on a machine without grok", () => {
-    const noGrok = structuredClone(catalog);
-    noGrok.providers = noGrok.providers.filter((p) => p.providerInstanceId !== "grok");
-    const panelRoles = roles.filter((r) => r.tier === "panel").map((r) => r.role);
-    expect(check("session hook: on", noGrok)).toEqual(
-      panelRoles.map((role) => `${role} (no line, tier default): grok/grok-4.7: no provider instance "grok" in this T3`),
-    );
-    const lines = panelRoles.map((role) => `${role}: claudeAgent/claude-opus-5-5, codex/gpt-6.1-sol`).join("\n");
-    expect(check(lines, noGrok)).toEqual([]);
+  test("a missing line checks its column default on a machine without cursor", () => {
+    const noCursor = structuredClone(catalog);
+    noCursor.providers = noCursor.providers.filter((p) => p.providerInstanceId !== "cursor");
+    expect(check("session hook: on", noCursor)).toEqual([
+      "feature, refactoring", "bug-fix", "perf-issue", "hillclimb", "how explorer", "why investigators", "reflect tooling",
+      "arena runners", "arena cross-judge pool", "swarm workers", "architect runners", "interrogate reviewers",
+      "science feature, refactoring", "science bug-fix", "science perf-issue", "science hillclimb",
+      "science arena runners", "science arena cross-judge pool", "science swarm workers", "science architect runners", "science interrogate reviewers",
+    ].map((key) => `${key} (no line, tier default): cursor/grok-4.7: no provider instance "cursor" in this T3`));
   });
 
   test("a panel on one family fails, whatever providers serve it", () => {
-    expect(check(`${PANEL}: claudeAgent/claude-opus-5-5, codex_pool/claude-opus-5-5`)).toEqual([
+    expect(check(`${PANEL}: claudeAgent/claude-opus-5-5 fastMode=false, codex_pool/claude-opus-5-5`)).toEqual([
       `${PANEL}: a panel needs at least two model families among its targets (inherit-parent does not count), got claude`,
     ]);
-    expect(check(`${PANEL}: claudeAgent/claude-opus-5-5, grok/grok-4.7`)).toEqual([]);
+    expect(check(`${PANEL}: claudeAgent/claude-opus-5-5 fastMode=false, grok/grok-4.7`)).toEqual([]);
   });
 
   test("inherit-parent does not count toward a panel's two families", () => {
@@ -142,13 +142,13 @@ describe("checkSheet against a catalog", () => {
   });
 
   test("an option named like an Object prototype key is checked, not dropped", () => {
-    expect(check("bug-fix: claudeAgent/claude-opus-5-5 __proto__=bogus")).toEqual([
+    expect(check("bug-fix: claudeAgent/claude-opus-5-5 __proto__=bogus fastMode=false")).toEqual([
       'bug-fix: claudeAgent/claude-opus-5-5: no option "__proto__" (has effort, fastMode)',
     ]);
   });
 
   test("a panel that repeats a target fails", () => {
-    expect(check(`${PANEL}: claudeAgent/claude-opus-5-5, grok/grok-4.7, claudeAgent/claude-opus-5-5`)).toEqual([
+    expect(check(`${PANEL}: claudeAgent/claude-opus-5-5 fastMode=false, grok/grok-4.7, claudeAgent/claude-opus-5-5 fastMode=false`)).toEqual([
       `${PANEL}: lists the same target twice`,
     ]);
   });
@@ -156,11 +156,9 @@ describe("checkSheet against a catalog", () => {
   test("a provider that cannot run cross-provider children fails, and its entries do not count as a family", () => {
     const noCross = structuredClone(catalog);
     noCross.providers.find((p) => p.providerInstanceId === "grok").canRunCrossProviderChildTask = false;
-    const otherPanels = roles.filter((r) => r.tier === "panel" && r.role !== PANEL).map((r) => r.role);
-    expect(check(`${PANEL}: claudeAgent/claude-opus-5-5, grok/grok-4.7`, noCross)).toEqual([
+    expect(check(`${PANEL}: claudeAgent/claude-opus-5-5 fastMode=false, grok/grok-4.7`, noCross)).toEqual([
       `${PANEL}: grok/grok-4.7: "grok" cannot run child tasks`,
       `${PANEL}: a panel needs at least two model families among its targets (inherit-parent does not count), got claude`,
-      ...otherPanels.map((role) => `${role} (no line, tier default): grok/grok-4.7: "grok" cannot run child tasks`),
     ]);
   });
 
@@ -240,8 +238,9 @@ describe("t3-sheet.mjs CLI", () => {
     }
   }, CLI_TIMEOUT);
 
-  test("exits 0 on a sheet that dispatches", () => {
-    expect(run(script, "bug-fix: grok/grok-4.7 reasoningEffort=xhigh\n").status).toBe(0);
+  test("reads a science line from the two-column policy", () => {
+    const result = run(script, "science bug-fix: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default\n");
+    expect({ status: result.status, stdout: result.stdout }).toEqual({ status: 0, stdout: "ok: every role line parses and dispatches on this T3\n" });
   }, CLI_TIMEOUT);
 });
 
@@ -259,4 +258,135 @@ describe("the T3 session-start context", () => {
       expect(result.stdout).toContain(phrase);
     }
   });
+});
+
+describe("seats", () => {
+  test("exports the router's fixed domain pair", () => {
+    expect([GENERAL, SCIENCE, DOMAINS]).toEqual(["general", "science", ["general", "science"]]);
+    expect(() => DOMAINS.push("extra")).toThrow(TypeError);
+  });
+
+  test("lists 17 general seats then 17 science seats in role order", () => {
+    const keys = seats(models).map((s) => s.key);
+    expect(keys).toHaveLength(34);
+    expect(keys.slice(0, 3)).toEqual(["feature, refactoring", "bug-fix", "perf-issue"]);
+    expect(keys[17]).toBe("science feature, refactoring");
+    expect(keys.at(-1)).toBe("science interrogate reviewers");
+    expect(seats(models).find((s) => s.key === "science bug-fix")).toEqual({
+      key: "science bug-fix", alias: null, domain: "science", role: "bug-fix", skill: "poteto-mode", panel: false,
+      defaults: [{ entry: "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false", termFree: false }],
+    });
+  });
+
+  test("a null tier omits that seat, and aliases exist only in general", () => {
+    const policy = { domains: { general: { tiers: { code: null } }, science: { termReaders: ["gpt"], tiers: { code: "a/claude-a" } } }, roles: [{ role: "code unit", alias: "old code", tier: "code", skill: "how" }] };
+    expect(seats(policy)).toEqual([{ key: "science code unit", alias: null, domain: "science", role: "code unit", skill: "how", panel: false, defaults: [{ entry: "a/claude-a", termFree: true }] }]);
+    expect(checkSheet(parseSheet("code unit: a/claude-a"), { models: policy, catalog: null })).toEqual(['"code unit" has no general seat; write "science code unit"']);
+  });
+});
+
+describe("domain sheet keys", () => {
+  const v2 = "# pstack model configuration (T3). One line per role. Delete a line to fall back to the skill default.\n# `inherit-parent` or `auto` as a value: the role runs on the parent chat's model (`delegate_task` omits `target`). Alias entries in a panel list still count toward its fan-out.\n# budget: large (xhigh)\nfeature, refactoring: claudeAgent/claude-opus-5-5 effort=xhigh\nbug-fix: claudeAgent/claude-fable-5-1 effort=xhigh\nperf-issue: claudeAgent/claude-fable-5-1 effort=xhigh\nhillclimb: claudeAgent/claude-fable-5-1 effort=xhigh\njudgment and prose: claudeAgent/claude-opus-5-5 effort=xhigh\nhardest tasks: claudeAgent/claude-fable-5-1 effort=xhigh\nhow explorer: claudeAgent/claude-opus-5-5 effort=xhigh\nhow explainer: claudeAgent/claude-opus-5-5 effort=xhigh\nwhy investigators: claudeAgent/claude-opus-5-5 effort=xhigh\nwhy synthesizer: claudeAgent/claude-opus-5-5 effort=xhigh\nreflect tooling: claudeAgent/claude-opus-5-5 effort=xhigh\nreflect judgment, divergent, synthesizer: claudeAgent/claude-opus-5-5 effort=xhigh\narena runners: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh\narena cross-judge pool: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh\nswarm workers: claudeAgent/claude-opus-5-5 effort=xhigh\narchitect runners: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh\ninterrogate reviewers: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh\nsession hook: on\n";
+  test("a literal v2 sheet passes the grammar check", () => {
+    expect(check(v2, null)).toEqual([]);
+    expect(check("bug-fix: claudeAgent/claude-fable-5-1 effort=xhigh\nscience bug-fix: claudeAgent/claude-fable-5-1 effort=xhigh")).toEqual([]);
+  });
+
+  test("catalog validation reports v2 entries that omit a listed speed option", () => {
+    expect(check(v2)).toEqual([
+      'feature, refactoring: claudeAgent/claude-opus-5-5: sets no fastMode; this router never runs fast, so write fastMode=false',
+      'judgment and prose: claudeAgent/claude-opus-5-5: sets no fastMode; this router never runs fast, so write fastMode=false',
+      'how explorer: claudeAgent/claude-opus-5-5: sets no fastMode; this router never runs fast, so write fastMode=false',
+      'how explainer: claudeAgent/claude-opus-5-5: sets no fastMode; this router never runs fast, so write fastMode=false',
+      'why investigators: claudeAgent/claude-opus-5-5: sets no fastMode; this router never runs fast, so write fastMode=false',
+      'why synthesizer: claudeAgent/claude-opus-5-5: sets no fastMode; this router never runs fast, so write fastMode=false',
+      'reflect tooling: claudeAgent/claude-opus-5-5: sets no fastMode; this router never runs fast, so write fastMode=false',
+      'reflect judgment, divergent, synthesizer: claudeAgent/claude-opus-5-5: sets no fastMode; this router never runs fast, so write fastMode=false',
+      'arena runners: claudeAgent/claude-opus-5-5: sets no fastMode; this router never runs fast, so write fastMode=false',
+      'arena runners: codex/gpt-6.1-sol: sets no serviceTier; this router never runs fast, so write serviceTier=default',
+      'arena runners: a panel needs at least two model families among its targets (inherit-parent does not count), got grok',
+      'arena cross-judge pool: claudeAgent/claude-opus-5-5: sets no fastMode; this router never runs fast, so write fastMode=false',
+      'arena cross-judge pool: codex/gpt-6.1-sol: sets no serviceTier; this router never runs fast, so write serviceTier=default',
+      'arena cross-judge pool: a panel needs at least two model families among its targets (inherit-parent does not count), got grok',
+      'swarm workers: claudeAgent/claude-opus-5-5: sets no fastMode; this router never runs fast, so write fastMode=false',
+      'architect runners: claudeAgent/claude-opus-5-5: sets no fastMode; this router never runs fast, so write fastMode=false',
+      'architect runners: codex/gpt-6.1-sol: sets no serviceTier; this router never runs fast, so write serviceTier=default',
+      'architect runners: a panel needs at least two model families among its targets (inherit-parent does not count), got grok',
+      'interrogate reviewers: claudeAgent/claude-opus-5-5: sets no fastMode; this router never runs fast, so write fastMode=false',
+      'interrogate reviewers: codex/gpt-6.1-sol: sets no serviceTier; this router never runs fast, so write serviceTier=default',
+      'interrogate reviewers: a panel needs at least two model families among its targets (inherit-parent does not count), got grok',
+    ]);
+  });
+
+  test.each([
+    ["science bug-fix: grok/grok-9", ['science bug-fix: grok/grok-9: "grok" does not list model "grok-9"']],
+    ["general bug-fix: grok/grok-4.7", ['"general bug-fix": unprefixed lines set the general column; write "bug-fix"']],
+    ["science strongest judgment: grok/grok-4.7", ['"science strongest judgment": write "science hardest tasks"; the old name counts only on an unprefixed line']],
+    ["science session hook: on", ['"science session hook" is not a pstack role']],
+    ["science swarm workers: grok/grok-4.7\nscience swarm workers: grok/grok-4.7", ['"science swarm workers" appears twice; only one line may set it']],
+    ["science interrogate reviewers: codex/gpt-6-astra serviceTier=default, codex/gpt-6.1-sol serviceTier=default", ['science interrogate reviewers: a panel needs at least two model families among its targets (inherit-parent does not count), got gpt']],
+  ])("checks %s", (text, expected) => expect(check(text)).toEqual(expected));
+});
+
+describe("standard speed", () => {
+  test.each([
+    ["claudeAgent/claude-nonexistent", '"claudeAgent" does not list model "claude-nonexistent"'],
+    ["unlisted/claude-a", 'no provider instance "unlisted" in this T3'],
+  ])("unknown options on %s allow the speed option to be deleted", (target, unavailable) => {
+    expect(check(`bug-fix: ${target} fastMode=true`)).toEqual([
+      `bug-fix: ${target}: fastMode=true is not standard speed, and this router never runs fast; write fastMode=false, or delete fastMode if the model lists no such option`,
+      `bug-fix: ${target}: ${unavailable}`,
+    ]);
+  });
+
+  test.each([
+    ["fastMode=true", 'bug-fix: claudeAgent/claude-fable-5-1: no option "fastMode" (has effort); delete fastMode'],
+    ["fastMode=false", 'bug-fix: claudeAgent/claude-fable-5-1: no option "fastMode" (has effort); delete fastMode'],
+    ["serviceTier=priority", 'bug-fix: claudeAgent/claude-fable-5-1: no option "serviceTier" (has effort); delete serviceTier'],
+    ["serviceTier=default", 'bug-fix: claudeAgent/claude-fable-5-1: no option "serviceTier" (has effort); delete serviceTier'],
+  ])("an unsupported speed option %s is deleted, not set to a standard value", (pair, expected) => {
+    expect(check(`bug-fix: claudeAgent/claude-fable-5-1 effort=xhigh ${pair}`)).toEqual([
+      expected,
+    ]);
+  });
+
+  test("speed validation reports every nonstandard option without catalog duplicates", () => {
+    expect(speedProblems(parseEntry("a/gpt-a fastMode=true serviceTier=priority"))).toEqual([
+      "fastMode=true is not standard speed, and this router never runs fast; write fastMode=false",
+      "serviceTier=priority is not standard speed, and this router never runs fast; write serviceTier=default",
+    ]);
+    expect(check("bug-fix: claudeAgent/claude-opus-5-5 fastMode=true")).toEqual([
+      "bug-fix: claudeAgent/claude-opus-5-5: fastMode=true is not standard speed, and this router never runs fast; write fastMode=false",
+    ]);
+    expect(check("science bug-fix: codex/gpt-6.1-sol serviceTier=priority")).toEqual([
+      "science bug-fix: codex/gpt-6.1-sol: serviceTier=priority is not standard speed, and this router never runs fast; write serviceTier=default",
+    ]);
+  });
+
+  test("without a catalog speed advice allows an option the model does not list to be deleted", () => {
+    expect(check("bug-fix: claudeAgent/claude-fable-5-1 effort=xhigh fastMode=true serviceTier=priority", null)).toEqual([
+      "bug-fix: claudeAgent/claude-fable-5-1: fastMode=true is not standard speed, and this router never runs fast; write fastMode=false, or delete fastMode if the model lists no such option",
+      "bug-fix: claudeAgent/claude-fable-5-1: serviceTier=priority is not standard speed, and this router never runs fast; write serviceTier=default, or delete serviceTier if the model lists no such option",
+    ]);
+  });
+
+  test("each option reports its catalog or speed problem once, in entry order", () => {
+    expect(check("bug-fix: claudeAgent/claude-opus-5-5 effort=extreme fastMode=true serviceTier=priority")).toEqual([
+      "bug-fix: claudeAgent/claude-opus-5-5: effort=extreme is not one of low, medium, high, xhigh, max",
+      "bug-fix: claudeAgent/claude-opus-5-5: fastMode=true is not standard speed, and this router never runs fast; write fastMode=false",
+      'bug-fix: claudeAgent/claude-opus-5-5: no option "serviceTier" (has effort, fastMode); delete serviceTier',
+    ]);
+  });
+
+  test("requires all listed speed options on concrete targets, but not inherit aliases", () => {
+    expect(check("bug-fix: cursor/grok-4.7 reasoning_effort=xhigh")).toEqual([
+      "bug-fix: cursor/grok-4.7: sets no fastMode; this router never runs fast, so write fastMode=false",
+    ]);
+    expect(check("science bug-fix: inherit-parent")).toEqual([]);
+    expect(check("science bug-fix: codex/gpt-6.1-sol", null)).toEqual([]);
+  });
+});
+
+test("the session hook reads the sheet directory the installer writes", () => {
+  expect(readFileSync(join(root, "plugins/pstack/hooks/session-start.sh"), "utf8")).toContain(`/${SHEET_DIR}/models.md`);
 });

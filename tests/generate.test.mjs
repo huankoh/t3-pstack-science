@@ -20,7 +20,7 @@ import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { applyRegions, deriveT3, fenceUnder, section, tableRows, t3Regions } from "../tools/derive-t3.mjs";
+import { applyRegions, deriveT3, fenceUnder, section, sheetBlock, tableRows, t3Regions } from "../tools/derive-t3.mjs";
 import {
   apply,
   assertChangesHeading,
@@ -73,16 +73,35 @@ describe("locators", () => {
 });
 
 describe("regions", () => {
-  test("every skill a role names gets that role's tier default stamped in its Models section", () => {
-    const marked = { ...models, tiers: { default: "x/marker-default", strongest: "x/marker-strongest", panel: ["a/claude-p", "b/gpt-p"] } };
-    for (const skill of new Set(models.roles.map((r) => r.skill))) {
-      const file = `plugins/pstack/skills/${skill}/SKILL.md`;
-      const stamped = applyRegions(file, readFileSync(join(repoRoot, file), "utf8"), marked, { strict: true });
-      for (const role of models.roles.filter((r) => r.skill === skill)) {
-        const expected = { default: "`x/marker-default`", strongest: "`x/marker-strongest`", panel: "`a/claude-p`, `b/gpt-p`" }[role.tier];
-        expect(stamped).toContain(`- ${role.role}: ${expected}`);
-      }
+  test("each role gets a table row in its own skill with both domain columns", () => {
+    for (const role of models.roles) {
+      const file = `plugins/pstack/skills/${role.skill}/SKILL.md`;
+      const stamped = applyRegions(file, readFileSync(join(repoRoot, file), "utf8"), models, { strict: true });
+      expect(stamped).toContain("| Role | general | science |");
+      expect(stamped).toContain(`\n| ${role.role}`);
     }
+    const file = "plugins/pstack/skills/poteto-mode/SKILL.md";
+    expect(applyRegions(file, "## Models\n", models)).toContain("| bug-fix | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` |");
+  });
+
+  test("the setup sheet lists 17 general seats then 17 science seats", () => {
+    const block = sheetBlock(models);
+    expect(block[0]).toBe("# pstack model configuration (T3). One line per role and column. Delete a line to fall back to the skill default.");
+    expect(block[1]).toBe("# `<role>:` sets the general column, as in every sheet before domains. `science <role>:` sets the science column.");
+    expect(block[4]).toBe("feature, refactoring: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false");
+    expect(block[21]).toBe("science feature, refactoring: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false");
+    expect(block).toContain("science how explorer: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default");
+    expect(block).toContain("science why investigators: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default");
+    expect(block).toContain("science reflect tooling: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default");
+    expect(block.at(-1)).toBe("session hook: on");
+    expect(block).toHaveLength(39);
+  });
+
+  test("a missing seat renders none and panels mark term-free defaults", () => {
+    const policy = structuredClone(models);
+    policy.domains.general.tiers.explore = null;
+    expect(applyRegions("plugins/pstack/skills/how/SKILL.md", "## Models\n", policy)).toContain("| how explorer | none | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |");
+    expect(applyRegions("plugins/pstack/skills/arena/SKILL.md", "## Models\n", models)).toContain("| arena runners | `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false`, `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false`, `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default`, `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` (term-free brief), `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` |");
   });
 
   test("applyRegions stamps in place and is idempotent", () => {
@@ -91,7 +110,7 @@ describe("regions", () => {
     const once = applyRegions(file, text, models, { strict: true });
     expect(once).not.toContain("stale");
     expect(once).toContain("## After\nkeep\n");
-    expect(once).toContain("- how explorer: `claudeAgent/claude-opus-5-5 effort=xhigh`");
+    expect(once).toContain("| how explorer | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |");
     expect(applyRegions(file, once, models, { strict: true })).toBe(once);
   });
 
@@ -107,7 +126,11 @@ describe("regions", () => {
     const text = "| Subagent | Default model |\n| --- | --- |\n| Reviewer A | `old` |\n";
     const stamped = applyRegions("plugins/pstack/skills/interrogate/SKILL.md", text, models);
     expect(stamped).toContain(
-      "| Reviewer A | `claudeAgent/claude-opus-5-5 effort=xhigh` |\n| Reviewer B | `codex/gpt-6.1-sol reasoningEffort=xhigh` |\n| Reviewer C | `grok/grok-4.7 reasoningEffort=xhigh` |",
+      [
+        "| Reviewer A | general `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false`; science `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |",
+        "| Reviewer B | general `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false`; science `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` (term-free brief) |",
+        "| Reviewer C | general `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default`; science `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` |",
+      ].join("\n"),
     );
   });
 
@@ -271,16 +294,19 @@ describe("deriveT3", () => {
 
   test("appends and stamps a Models section when upstream has none, naming the sheet and the entry grammar", () => {
     const out = deriveT3("plugins/pstack/skills/how/SKILL.md", front(""), models);
-    expect(out).toContain("body\n\n## Models\n\nRole defaults on T3, stamped from `plugins/pstack/models.json`.");
+    expect(out).toContain("body\n\n## Models\n\nRole defaults on T3, stamped from `plugins/pstack/models.json`, one column per domain.");
     expect(out).toContain("`t3-pstack-models.md`");
     expect(out).toContain("It splits at its first `/`");
-    expect(out.endsWith("- how explainer: `claudeAgent/claude-opus-5-5 effort=xhigh`\n")).toBe(true);
+    expect(out).toEndWith("| how explainer | `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |\n");
+    expect(out).toContain("`<role>: <entry>` sets the general column, as in every sheet written before domains, and `science <role>: <entry>` sets the science column.");
+    expect(out).not.toContain("Before the first dispatch");
+    expect(out).not.toContain("term-free.mjs");
     expect(deriveT3("plugins/pstack/skills/how/SKILL.md", out, models)).toBe(out);
   });
 
   test("names the alias a released sheet may still use", () => {
     const out = deriveT3("plugins/pstack/skills/poteto-mode/SKILL.md", front("", "poteto-mode"), models);
-    expect(out).toContain("- hardest tasks: `claudeAgent/claude-fable-5-1 effort=xhigh` (a `strongest judgment` line counts as this role)");
+    expect(out).toContain("| hardest tasks (a `strongest judgment` line counts as this role) | `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |");
   });
 
   test("a file no region names passes through", () => {
@@ -322,7 +348,9 @@ describe("plan, changes, apply", () => {
   };
   const repoCopy = () => {
     const dir = scratch("pstack-generate-");
-    cpSync(repoRoot, dir, { recursive: true, filter: (src) => ![".git", "node_modules"].includes(basename(src)) });
+    for (const entry of readdirSync(repoRoot).filter((name) => ![".git", "node_modules"].includes(name))) {
+      cpSync(join(repoRoot, entry), join(dir, entry), { recursive: true, filter: (src) => basename(src) !== "node_modules" });
+    }
     symlinkSync(join(repoRoot, "node_modules"), join(dir, "node_modules"));
     git(dir, "init", "-q");
     git(dir, "add", "-A");
@@ -375,7 +403,7 @@ describe("plan, changes, apply", () => {
     const how = "plugins/pstack/skills/how/SKILL.md";
     const setup = "plugins/pstack/skills/setup-pstack/SKILL.md";
     const text = (rel) => readFileSync(join(root, rel), "utf8");
-    writeFileSync(join(root, how), text(how).replace(/^- how explorer: .*$/m, "- how explorer: stale"));
+    writeFileSync(join(root, how), text(how).replace(/^\| how explorer \|.*$/m, "| how explorer | stale | stale |"));
     writeFileSync(join(root, setup), text(setup).replace(/^bug-fix: .*$/m, "bug-fix: stale"));
     const { files } = plan(root);
     for (const rel of [how, setup]) expect(files[rel]).toBe(readFileSync(join(repoRoot, rel), "utf8"));

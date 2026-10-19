@@ -12,6 +12,13 @@
             { "id": "reasoningEffort", "type": "select", "options": [{ "id": "low" }, { "id": "medium" }, { "id": "high" }, { "id": "xhigh" }, { "id": "max" }, { "id": "ultra" }] },
             { "id": "serviceTier", "type": "select", "options": [{ "id": "default" }, { "id": "priority" }] }
           ]
+        },
+        {
+          "id": "gpt-6-astra",
+          "options": [
+            { "id": "reasoningEffort", "type": "select", "options": [{ "id": "low" }, { "id": "medium" }, { "id": "high" }, { "id": "xhigh" }, { "id": "max" }, { "id": "ultra" }] },
+            { "id": "serviceTier", "type": "select", "options": [{ "id": "default" }, { "id": "priority" }] }
+          ]
         }
       ],
       "canRunChildTask": true,
@@ -55,7 +62,24 @@
     {
       "providerInstanceId": "cursor",
       "driverKind": "cursor",
-      "models": [{ "id": "grok-4.7", "options": [] }],
+      "models": [
+        {
+          "id": "grok-4.7",
+          "options": [
+            { "id": "reasoning_effort", "type": "select", "options": [{ "id": "low" }, { "id": "medium" }, { "id": "high" }, { "id": "xhigh" }] },
+            { "id": "fastMode", "type": "boolean" },
+            { "id": "contextWindow", "type": "select", "options": [{ "id": "256k" }, { "id": "500k" }] }
+          ]
+        }
+      ],
+      "canRunChildTask": true,
+      "canRunCrossProviderChildTask": true,
+      "constraints": []
+    },
+    {
+      "providerInstanceId": "antigravity",
+      "driverKind": "antigravity",
+      "models": [{ "id": "gemini-4-argon", "options": [] }],
       "canRunChildTask": false,
       "canRunCrossProviderChildTask": false,
       "constraints": ["Provider is not authenticated."]

@@ -14,6 +14,35 @@
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
+export const GENERAL = "general";
+export const SCIENCE = "science";
+export const DOMAINS = Object.freeze([GENERAL, SCIENCE]);
+export const SHEET_DIR = "t3-pstack";
+const STANDARD_SPEED = { fastMode: "false", serviceTier: "default" };
+
+/**
+ * @typedef {object} Models
+ * @property {{ general: Domain, science: Domain }} domains Ordered columns, general then science.
+ * @property {Role[]} roles Ordered labels shared by every column.
+ * @typedef {object} Domain
+ * @property {string} [covers]
+ * @property {string[]} [termReaders] Families allowed to read this column's terms.
+ * @property {Record<string, string | string[] | null>} tiers Null omits a seat.
+ * @typedef {object} Role
+ * @property {string} role
+ * @property {string} [alias] Released sheet label, accepted only in general.
+ * @property {string} tier
+ * @property {string} skill
+ * @typedef {object} Seat
+ * @property {string} key
+ * @property {string | null} alias
+ * @property {string} domain
+ * @property {string} role
+ * @property {string} skill
+ * @property {boolean} panel
+ * @property {{ entry: string, termFree: boolean }[]} defaults
+ */
+
 const INHERIT = ["inherit-parent", "auto"];
 const HOOK_VALUES = ["on", "off"];
 
@@ -48,6 +77,40 @@ export function panelFamilies(entries) {
   return new Set(entries.filter(Boolean).map((e) => family(e.model)));
 }
 
+const speedProblem = (id, value) =>
+  `${id}=${value} is not standard speed, and this router never runs fast; write ${id}=${STANDARD_SPEED[id]}`;
+
+const isFastSpeed = (id, value) => Object.hasOwn(STANDARD_SPEED, id) && value !== STANDARD_SPEED[id];
+
+export function speedProblems({ options }) {
+  return Object.entries(options)
+    .filter(([id, value]) => isFastSpeed(id, value))
+    .map(([id, value]) => speedProblem(id, value));
+}
+
+/** @param {Models} models Validated at build time by parseModels. @returns {Seat[]} */
+export function seats(models) {
+  return DOMAINS.flatMap((domain) => {
+    const { tiers, termReaders } = models.domains[domain];
+    return models.roles.flatMap((role) => {
+      const value = tiers[role.tier];
+      if (value === null) return [];
+      return [{
+        key: domain === GENERAL ? role.role : `${domain} ${role.role}`,
+        alias: domain === GENERAL ? role.alias ?? null : null,
+        domain,
+        role: role.role,
+        skill: role.skill,
+        panel: Array.isArray(value),
+        defaults: [value].flat().map((entry) => ({
+          entry,
+          termFree: !!termReaders && !termReaders.includes(family(parseEntry(entry).model)),
+        })),
+      }];
+    });
+  });
+}
+
 // Every line but blank lines and `#` headings, as `{ line, key, value }`, with
 // no key or value when the line is not exactly `<key>: <value>`. setup-pstack
 // writes the sheet, so it holds no prose, and one strict rule leaves no shape a
@@ -63,21 +126,20 @@ export function parseSheet(markdown) {
     });
 }
 
-// Problems with a parsed sheet, for the role vocabulary of models.json (each
-// role with its `tier`, and the `alias` a released sheet may still use), its
-// tier defaults, and an `orchestrator_capabilities` catalog. A role with no
-// line runs on its tier's default, so that default must dispatch here too.
-// With no catalog, as in the installer's doctor, only the grammar is checked.
-export function checkSheet(sheet, { roles, defaults, catalog }) {
+/** @param {{ line: number, key?: string, value?: string }[]} sheet
+ * @param {{ models: Models, catalog: object | null }} context
+ */
+export function checkSheet(sheet, { models, catalog }) {
   const problems = [];
-  const byRole = new Map(roles.flatMap((r) => [[r.role, r], ...(r.alias ? [[r.alias, r]] : [])]));
+  const all = seats(models);
+  const byKey = new Map(all.flatMap((s) => [[s.key, s], ...(s.alias ? [[s.alias, s]] : [])]));
   const seen = new Set();
   for (const { line, key, value } of sheet) {
     if (!key) {
       problems.push(`line ${line}: not a "<role>: <value>" line (lowercase role, one space after the colon, no indent or markup)`);
       continue;
     }
-    const canonical = byRole.get(key)?.role ?? key;
+    const canonical = byKey.get(key)?.key ?? key;
     if (seen.has(canonical)) problems.push(`"${key}" appears twice; only one line may set it`);
     seen.add(canonical);
     if (key === "session hook") {
@@ -88,13 +150,13 @@ export function checkSheet(sheet, { roles, defaults, catalog }) {
       problems.push("default effort: T3 entries carry their own options; delete this line");
       continue;
     }
-    const role = byRole.get(key);
-    if (!role) {
-      problems.push(`"${key}" is not a pstack role`);
+    const seat = byKey.get(key);
+    if (!seat) {
+      problems.push(unknownKey(key, all, models));
       continue;
     }
     const texts = value.split(",");
-    if (role.tier !== "panel" && texts.length > 1) problems.push(`${key}: takes one entry, not a list`);
+    if (!seat.panel && texts.length > 1) problems.push(`${key}: takes one entry, not a list`);
     const entries = [];
     for (const text of texts) {
       try {
@@ -105,13 +167,13 @@ export function checkSheet(sheet, { roles, defaults, catalog }) {
     }
     const runnable = [];
     for (const entry of entries.filter(Boolean)) {
-      const found = checkTarget(entry, catalog);
+      const found = entryProblems(entry, catalog);
       problems.push(...found.map((p) => `${key}: ${p}`));
       if (!found.length) runnable.push(entry);
     }
     const targets = texts.map((t) => t.trim()).filter((t) => !INHERIT.includes(t));
     if (new Set(targets).size < targets.length) problems.push(`${key}: lists the same target twice`);
-    if (role.tier === "panel") {
+    if (seat.panel) {
       const families = panelFamilies(runnable);
       if (families.size < 2) {
         problems.push(
@@ -120,33 +182,63 @@ export function checkSheet(sheet, { roles, defaults, catalog }) {
       }
     }
   }
-  for (const role of roles.filter((r) => !seen.has(r.role))) {
-    for (const entry of [defaults[role.tier]].flat()) {
-      problems.push(...checkTarget(parseEntry(entry), catalog).map((p) => `${role.role} (no line, tier default): ${p}`));
+  for (const seat of all.filter((s) => !seen.has(s.key))) {
+    for (const { entry } of seat.defaults) {
+      problems.push(...entryProblems(parseEntry(entry), catalog).map((p) => `${seat.key} (no line, tier default): ${p}`));
     }
   }
   return problems;
 }
 
-function checkTarget({ providerInstanceId, model, options }, catalog) {
-  if (!catalog) return [];
+function unknownKey(key, all, models) {
+  const general = all.find((s) => s.domain === GENERAL && key === `${GENERAL} ${s.key}`);
+  if (general) return `"${key}": unprefixed lines set the general column; write "${general.key}"`;
+  const elsewhere = all.find((s) => s.role === key);
+  if (elsewhere && !all.some((s) => s.domain === GENERAL && s.role === key)) {
+    return `"${key}" has no general seat; write "${elsewhere.key}"`;
+  }
+  const role = models.roles.find((r) => r.alias && key === `${SCIENCE} ${r.alias}`);
+  if (role) return `"${key}": write "${SCIENCE} ${role.role}"; the old name counts only on an unprefixed line`;
+  return `"${key}" is not a pstack role`;
+}
+
+function catalogOptions({ providerInstanceId, model }, catalog) {
+  if (!catalog) return { known: null };
   const at = `${providerInstanceId}/${model}`;
   const provider = catalog.providers.find((p) => p.providerInstanceId === providerInstanceId);
-  if (!provider) return [`${at}: no provider instance "${providerInstanceId}" in this T3`];
+  if (!provider) return { known: null, unavailable: `${at}: no provider instance "${providerInstanceId}" in this T3` };
   if (!provider.canRunChildTask || provider.canRunCrossProviderChildTask === false) {
     const why = (provider.constraints ?? []).join(" ");
-    return [`${at}: "${providerInstanceId}" cannot run child tasks${why ? ` (${why})` : ""}`];
+    return { known: null, unavailable: `${at}: "${providerInstanceId}" cannot run child tasks${why ? ` (${why})` : ""}` };
   }
   const listed = provider.models.find((m) => m.id === model);
-  if (!listed) return [`${at}: "${providerInstanceId}" does not list model "${model}"`];
-  const known = listed.options ?? [];
+  if (!listed) return { known: null, unavailable: `${at}: "${providerInstanceId}" does not list model "${model}"` };
+  return { known: listed.options ?? [] };
+}
+
+function entryProblems(target, catalog) {
+  const { providerInstanceId, model, options } = target;
+  const at = `${providerInstanceId}/${model}`;
+  const { known, unavailable } = catalogOptions(target, catalog);
   const problems = [];
   for (const [id, value] of Object.entries(options)) {
-    const option = known.find((o) => o.id === id);
-    const allowed = option?.type === "boolean" ? ["true", "false"] : (option?.options ?? []).map((o) => o.id);
-    if (!option) problems.push(`${at}: no option "${id}" (has ${known.map((o) => o.id).join(", ") || "none"})`);
-    else if (!allowed.includes(value)) problems.push(`${at}: ${id}=${value} is not one of ${allowed.join(", ")}`);
+    const option = known?.find((o) => o.id === id);
+    const speed = Object.hasOwn(STANDARD_SPEED, id);
+    if (known && !option) {
+      problems.push(`${at}: no option "${id}" (has ${known.map((o) => o.id).join(", ") || "none"})${speed ? `; delete ${id}` : ""}`);
+    } else if (isFastSpeed(id, value)) {
+      problems.push(`${at}: ${speedProblem(id, value)}${known ? "" : `, or delete ${id} if the model lists no such option`}`);
+    } else if (option) {
+      const allowed = option.type === "boolean" ? ["true", "false"] : (option.options ?? []).map((o) => o.id);
+      if (!allowed.includes(value)) problems.push(`${at}: ${id}=${value} is not one of ${allowed.join(", ")}`);
+    }
   }
+  for (const option of known ?? []) {
+    if (Object.hasOwn(STANDARD_SPEED, option.id) && !Object.hasOwn(options, option.id)) {
+      problems.push(`${at}: sets no ${option.id}; this router never runs fast, so write ${option.id}=${STANDARD_SPEED[option.id]}`);
+    }
+  }
+  if (unavailable) problems.push(unavailable);
   return problems;
 }
 
@@ -157,10 +249,9 @@ if (invoked === fileURLToPath(import.meta.url)) {
     console.error("usage: t3-sheet.mjs <sheet.md> <catalog.json>");
     process.exit(2);
   }
-  const { roles, tiers } = JSON.parse(readFileSync(new URL("../../../models.json", import.meta.url), "utf8"));
+  const models = JSON.parse(readFileSync(new URL("../../../models.json", import.meta.url), "utf8"));
   const problems = checkSheet(parseSheet(readFileSync(sheetPath, "utf8")), {
-    roles,
-    defaults: tiers,
+    models,
     catalog: JSON.parse(readFileSync(catalogPath, "utf8")),
   });
   for (const problem of problems) console.log(problem);
