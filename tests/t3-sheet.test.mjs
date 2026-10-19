@@ -255,7 +255,7 @@ describe("the T3 session-start context", () => {
       env: { PATH: process.env.PATH, HOME: home, CLAUDE_PLUGIN_ROOT: pluginRoot, GIT_CONFIG_GLOBAL: "/dev/null" },
     });
     expect(result.status).toBe(0);
-    for (const phrase of ["t3-pstack:poteto-mode", "t3-pstack-models.md", "delegate_task"]) {
+    for (const phrase of ["t3-pstack-science:poteto-mode", "~/.config/t3-pstack-science/models.md", "delegate_task"]) {
       expect(result.stdout).toContain(phrase);
     }
   });

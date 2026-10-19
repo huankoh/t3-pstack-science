@@ -26,8 +26,8 @@ function runHook({ sheet, codexHome, homeSheet, machineSheet, context = mandate,
       }
     }
     if (machineSheet !== undefined) {
-      mkdirSync(join(profile, ".config/t3-pstack"), { recursive: true });
-      writeSheet(join(profile, ".config/t3-pstack/models.md"), machineSheet);
+      mkdirSync(join(profile, ".config/t3-pstack-science"), { recursive: true });
+      writeSheet(join(profile, ".config/t3-pstack-science/models.md"), machineSheet);
     }
     const contextPath = join(plugin, "hooks/session-start-context.md");
     if (context === null) rmSync(contextPath);
@@ -71,15 +71,15 @@ describe.skipIf(process.platform !== "win32" && !required)("Windows Codex Sessio
     expect({ ...result, out: result.out.replaceAll("\r\n", "\n") }).toEqual({ status: 0, out: mandate.replaceAll("\r\n", "\n"), err: "" });
   });
 
-  test("reads USERPROFILE when CODEX_HOME is absent or empty", () => {
+  test("ignores home sheets when CODEX_HOME is absent or empty", () => {
     for (const codexHome of [undefined, false]) {
-      expect(runHook({ codexHome, sheet: "session hook: off\n" })).toEqual({ status: 0, out: "", err: "" });
+      expect(runHook({ codexHome, sheet: "session hook: off\n" })).toEqual({ status: 0, out: mandate, err: "" });
     }
   });
 
-  test("CODEX_HOME takes precedence over USERPROFILE", () => {
+  test("ignores both CODEX_HOME and USERPROFILE home sheets", () => {
     expect(runHook({ codexHome: true, sheet: "session hook: off\r\n", homeSheet: "session hook: on\n" })).toEqual({
-      status: 0, out: "", err: "",
+      status: 0, out: mandate, err: "",
     });
     expect(runHook({ codexHome: true, sheet: "session hook: on\n", homeSheet: "session hook: off\n" })).toEqual({
       status: 0, out: mandate, err: "",
@@ -95,7 +95,7 @@ describe.skipIf(process.platform !== "win32" && !required)("Windows Codex Sessio
 
   for (const { name, sheet, off } of sheetCases) {
     test(`${off ? "injects nothing" : "injects the context"} when the sheet has ${name}`, () => {
-      expect(runHook({ sheet })).toEqual({ status: 0, out: off ? "" : mandate, err: "" });
+      expect(runHook({ machineSheet: sheet })).toEqual({ status: 0, out: off ? "" : mandate, err: "" });
     });
   }
 

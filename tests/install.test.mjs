@@ -7,7 +7,6 @@ import { spawnSync } from "node:child_process";
 import {
   chmodSync,
   existsSync,
-  lstatSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
@@ -27,15 +26,16 @@ import { doctorClaude, installClaude, syncScopedRecords } from "../tools/install
 import { AppServer } from "../tools/install/codex.mjs";
 import { parseSource, writeAtomic } from "../tools/install/common.mjs";
 import { discoverHomes } from "../tools/install/homes.mjs";
-import { doctorSheet, moveSheet } from "../tools/install/sheet.mjs";
+import { doctorSheet } from "../tools/install/sheet.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 const models = JSON.parse(readFileSync(join(repoRoot, "plugins/pstack/models.json"), "utf8"));
-const FIX = "rerun `npx -y github:chhoumann/t3-pstack install`";
+const legacy = JSON.parse(readFileSync(join(repoRoot, "tests/fixtures/identity/legacy-install.json"), "utf8"));
+const FIX = "rerun `npx -y github:huankoh/t3-pstack-science install`";
 
 const scratch = [];
 function tmp() {
-  const dir = realpathSync(mkdtempSync(join(tmpdir(), "t3-pstack-install-")));
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "t3-pstack-science-install-")));
   scratch.push(dir);
   return dir;
 }
@@ -51,7 +51,7 @@ const mode = (path) => statSync(path).mode & 0o777;
 // The plugin's own skills, and a doctor context that trusts the GitHub repo.
 const SKILL = (name) => readFileSync(join(repoRoot, "plugins/pstack/skills", name, "SKILL.md"), "utf8");
 const skills = new Map(["how", "why"].map((name) => [name, SKILL(name)]));
-const github = parseSource("chhoumann/t3-pstack", "/home/u");
+const github = parseSource("huankoh/t3-pstack-science", "/home/u");
 const context = { source: github, trusted: new Set([github.key]), version: "2.0.0-rc.3", skills };
 
 // A `claude` that records each call and changes nothing.
@@ -141,7 +141,7 @@ function claudeHome({ autoUpdate } = {}) {
   const dir = tmp();
   const user = {
     scope: "user",
-    installPath: `${dir}/plugins/cache/t3-pstack/t3-pstack/2.0.0-rc.3`,
+    installPath: `${dir}/plugins/cache/t3-pstack-science/t3-pstack-science/2.0.0-rc.3`,
     version: "2.0.0-rc.3",
     installedAt: "2026-10-06T08:38:28.344Z",
     lastUpdated: "2026-10-14T11:20:44.228Z",
@@ -150,26 +150,26 @@ function claudeHome({ autoUpdate } = {}) {
   const project = {
     scope: "project",
     projectPath: "/home/u",
-    installPath: `${dir}/plugins/cache/t3-pstack/t3-pstack/1.0.11`,
+    installPath: `${dir}/plugins/cache/t3-pstack-science/t3-pstack-science/1.0.11`,
     version: "1.0.11",
     installedAt: "2026-10-13T04:43:26.759Z",
     lastUpdated: "2026-10-13T04:43:26.759Z",
     gitCommitSha: "0000000000000000000000000000000000000000",
   };
   const other = { scope: "project", projectPath: "/home/u", installPath: "/x", version: "0.1.0" };
-  writeJson(join(user.installPath, ".claude-plugin/plugin.json"), { name: "t3-pstack", version: user.version });
+  writeJson(join(user.installPath, ".claude-plugin/plugin.json"), { name: "t3-pstack-science", version: user.version });
   for (const [name, text] of skills) {
     mkdirSync(join(user.installPath, "skills", name), { recursive: true });
     writeFileSync(join(user.installPath, "skills", name, "SKILL.md"), text);
   }
   writeJson(join(dir, "plugins/installed_plugins.json"), {
     version: 2,
-    plugins: { "t3-pstack@t3-pstack": [user, project], "other@market": [other] },
+    plugins: { "t3-pstack-science@t3-pstack-science": [user, project], "other@market": [other] },
   });
   writeJson(join(dir, "settings.json"), {
-    enabledPlugins: { "t3-pstack@t3-pstack": true },
+    enabledPlugins: { "t3-pstack-science@t3-pstack-science": true },
     extraKnownMarketplaces: {
-      "t3-pstack": { source: { source: "github", repo: "chhoumann/t3-pstack" }, ...(autoUpdate && { autoUpdate }) },
+      "t3-pstack-science": { source: { source: "github", repo: "huankoh/t3-pstack-science" }, ...(autoUpdate && { autoUpdate }) },
     },
   });
   return { dir, user, project, other };
@@ -192,7 +192,7 @@ describe("a stale other-scope Claude Code record", () => {
     expect(JSON.parse(readFileSync(path, "utf8"))).toEqual({
       version: 2,
       plugins: {
-        "t3-pstack@t3-pstack": [
+        "t3-pstack-science@t3-pstack-science": [
           user,
           { ...project, installPath: user.installPath, version: user.version, gitCommitSha: user.gitCommitSha, lastUpdated: user.lastUpdated },
         ],
@@ -221,7 +221,7 @@ describe("a stale other-scope Claude Code record", () => {
     writeFileSync(join(dir, "skills/how/SKILL.md"), SKILL("how"));
     const home = { harness: "claude", dir, from: ["default"], bin: "claude" };
     expect(doctorClaude(home, context)).toEqual([
-      { name: "marketplace", ok: true, detail: "chhoumann/t3-pstack" },
+      { name: "marketplace", ok: true, detail: "huankoh/t3-pstack-science" },
       { name: "installed", ok: true, detail: "2.0.0-rc.3" },
       { name: "enabled", ok: true, detail: "yes" },
       { name: "marketplace auto-update", ok: false, detail: "false", fix: FIX },
@@ -243,7 +243,7 @@ describe("a stale other-scope Claude Code record", () => {
     syncScopedRecords(dir);
     rmSync(join(dir, "skills"), { recursive: true });
     const settings = JSON.parse(readFileSync(join(dir, "settings.json"), "utf8"));
-    settings.extraKnownMarketplaces["t3-pstack"].autoUpdate = true;
+    settings.extraKnownMarketplaces["t3-pstack-science"].autoUpdate = true;
     writeJson(join(dir, "settings.json"), settings);
     expect(doctorClaude(home, context).filter((c) => !c.ok)).toEqual([]);
   });
@@ -267,7 +267,7 @@ describe("a stale other-scope Claude Code record", () => {
       { name: "installed", ok: false, detail: `2.0.0-rc.3, but its files at ${user.installPath} are missing`, fix: FIX },
     ]);
     expect(installClaude(home, context)).toEqual(["reinstalled 2.0.0-rc.3, whose files were missing"]);
-    expect(claude.calls()).toEqual(["plugin install t3-pstack@t3-pstack --scope user"]);
+    expect(claude.calls()).toEqual(["plugin install t3-pstack-science@t3-pstack-science --scope user"]);
   });
 
   test("install says so when the marketplace has no newer version to update to", () => {
@@ -276,7 +276,7 @@ describe("a stale other-scope Claude Code record", () => {
     const claude = fakeClaude();
     const home = { harness: "claude", dir, from: ["default"], bin: claude.bin };
     expect(installClaude(home, { ...context, version: "2.0.0-rc.4" })).toEqual(["the marketplace has no 2.0.0-rc.4, so it stays at 2.0.0-rc.3"]);
-    expect(claude.calls()).toEqual(["plugin marketplace update t3-pstack", "plugin update t3-pstack@t3-pstack --scope user"]);
+    expect(claude.calls()).toEqual(["plugin marketplace update t3-pstack-science", "plugin update t3-pstack-science@t3-pstack-science --scope user"]);
   });
 
   test("doctor reports settings.json that does not parse by path alone", () => {
@@ -296,12 +296,32 @@ describe("a stale other-scope Claude Code record", () => {
   });
 });
 
-describe("a t3-pstack marketplace from another source", () => {
+describe("side-by-side Claude plugins", () => {
+  test.each([true, false])("warns only when the foreign plugin is enabled too (%s)", (foreignEnabled) => {
+    const { dir } = claudeHome({ autoUpdate: true });
+    const path = join(dir, "settings.json");
+    const settings = JSON.parse(readFileSync(path, "utf8"));
+    settings.enabledPlugins["t3-pstack-science@t3-pstack-science"] = true;
+    settings.enabledPlugins[legacy.pluginId] = foreignEnabled;
+    writeJson(path, settings);
+    const before = readFileSync(path, "utf8");
+    const home = { harness: "claude", dir, bin: "claude" };
+    const warnings = doctorClaude(home, context).filter((c) => c.warn);
+    expect(warnings).toEqual(foreignEnabled ? [{
+      name: "session hooks", ok: false, warn: true,
+      detail: "t3-pstack is also enabled; both session hooks fire",
+      fix: `disable ${legacy.pluginId} in this home`,
+    }] : []);
+    expect(readFileSync(path, "utf8")).toBe(before);
+  });
+});
+
+describe("a t3-pstack-science marketplace from another source", () => {
   function counterfeit() {
     const { dir } = claudeHome({ autoUpdate: true });
     const elsewhere = tmp();
     const settings = JSON.parse(readFileSync(join(dir, "settings.json"), "utf8"));
-    settings.extraKnownMarketplaces["t3-pstack"].source = { source: "directory", path: elsewhere };
+    settings.extraKnownMarketplaces["t3-pstack-science"].source = { source: "directory", path: elsewhere };
     writeJson(join(dir, "settings.json"), settings);
     rmSync(join(dir, "plugins/installed_plugins.json"));
     return { dir, elsewhere };
@@ -316,8 +336,8 @@ describe("a t3-pstack marketplace from another source", () => {
     expect(doctorClaude(home, context)[0]).toEqual({
       name: "marketplace",
       ok: false,
-      detail: `${elsewhere}, which is neither chhoumann/t3-pstack nor --source`,
-      fix: `if you trust it, rerun with --source ${elsewhere}; otherwise remove it with \`CLAUDE_CONFIG_DIR=${dir} claude plugin marketplace remove t3-pstack\`, then ${FIX}`,
+      detail: `${elsewhere}, which is neither huankoh/t3-pstack-science nor --source`,
+      fix: `if you trust it, rerun with --source ${elsewhere}; otherwise remove it with \`CLAUDE_CONFIG_DIR=${dir} claude plugin marketplace remove t3-pstack-science\`, then ${FIX}`,
     });
   });
 
@@ -344,14 +364,14 @@ describe("--source", () => {
     expect(r.stderr).toBe("");
     const report = JSON.parse(r.stdout);
     expect(report.source).toBe("huankoh/t3-pstack-science");
-    expect(report.homes[0].steps).toEqual(["added the t3-pstack marketplace from huankoh/t3-pstack-science"]);
+    expect(report.homes[0].steps).toEqual(["added the t3-pstack-science marketplace from huankoh/t3-pstack-science"]);
     expect(claude.calls()).toEqual(["plugin marketplace add huankoh/t3-pstack-science"]);
   });
 
   test("reads owner/repo as GitHub even where that relative directory exists, and a URL to the same repository as the same source", () => {
     const cwd = tmp();
-    mkdirSync(join(cwd, "chhoumann/t3-pstack"), { recursive: true });
-    const r = spawnSync(process.execPath, [join(repoRoot, "tools/install.mjs"), "doctor", "--source", "chhoumann/t3-pstack", "--json"], {
+    mkdirSync(join(cwd, "huankoh/t3-pstack-science"), { recursive: true });
+    const r = spawnSync(process.execPath, [join(repoRoot, "tools/install.mjs"), "doctor", "--source", "huankoh/t3-pstack-science", "--json"], {
       cwd,
       env: { HOME: tmp(), PATH: tmp() },
       encoding: "utf8",
@@ -359,10 +379,10 @@ describe("--source", () => {
     expect({ status: r.status, stderr: r.stderr, source: r.status === 0 && JSON.parse(r.stdout).source }).toEqual({
       status: 0,
       stderr: "",
-      source: "chhoumann/t3-pstack",
+      source: "huankoh/t3-pstack-science",
     });
-    expect(parseSource("git@github.com:ChHoumann/t3-pstack.git", "/home/u").key).toBe(github.key);
-    expect(parseSource("https://github.com/chhoumann/t3-pstack", "/home/u").key).toBe(github.key);
+    expect(parseSource("git@github.com:HuanKoh/t3-pstack-science.git", "/home/u").key).toBe(github.key);
+    expect(parseSource("https://github.com/huankoh/t3-pstack-science", "/home/u").key).toBe(github.key);
     expect(() => parseSource("./missing", cwd)).toThrow("--source ./missing: not owner/repo, a Git URL, or an existing directory");
   });
 });
@@ -393,112 +413,46 @@ describe("the model sheet", () => {
     const root = tmp();
     const homes = [".claude", ".codex", ".codex-pool", ".claude-never-run"].map((name) => ({ dir: join(root, name) }));
     for (const { dir } of homes.slice(0, 3)) mkdirSync(dir);
-    return { root, homes, sheet: join(root, ".config/t3-pstack/models.md") };
+    return { root, homes, sheet: join(root, ".config/t3-pstack-science/models.md") };
   }
 
-  test("moves a linked home sheet to the machine path once and links every existing home to it", () => {
+  test("install leaves foreign sheets and their symlinks untouched", () => {
     const { root, homes, sheet } = machine();
-    writeFileSync(join(root, ".claude/t3-pstack-models.md"), SHEET);
-    symlinkSync(join(root, ".claude/t3-pstack-models.md"), join(root, ".codex/t3-pstack-models.md"));
-
-    expect(moveSheet(sheet, homes)).toEqual([
-      `moved the sheet from ${join(root, ".claude/t3-pstack-models.md")}`,
-      `linked ${join(root, ".claude/t3-pstack-models.md")} to it`,
-      `linked ${join(root, ".codex-pool/t3-pstack-models.md")} to it`,
-    ]);
-    expect(readFileSync(sheet, "utf8")).toBe(SHEET);
-    expect(readlinkSync(join(root, ".claude/t3-pstack-models.md"))).toBe(sheet);
-    expect(readlinkSync(join(root, ".codex/t3-pstack-models.md"))).toBe(join(root, ".claude/t3-pstack-models.md"));
-    expect(readlinkSync(join(root, ".codex-pool/t3-pstack-models.md"))).toBe(sheet);
-    expect(existsSync(join(root, ".claude-never-run"))).toBe(false);
-
-    expect(moveSheet(sheet, homes)).toEqual([]);
-    expect(doctorSheet(sheet, homes, { catalog: null, models })).toEqual([
-      { name: "machine sheet valid", ok: true, detail: "every line parses (pass --catalog to check targets)" },
-      { name: "home sheets", ok: true, detail: "none differ from it" },
-    ]);
+    const legacy = join(root, ".claude/t3-pstack-models.md");
+    const linked = join(root, ".codex/t3-pstack-models.md");
+    writeFileSync(legacy, SHEET, { mode: 0o600 });
+    symlinkSync(legacy, linked);
+    const oldMachine = join(root, ".config/t3-pstack/models.md");
+    mkdirSync(dirname(oldMachine), { recursive: true });
+    writeFileSync(oldMachine, "session hook: off\n");
+    const claude = fakeClaude();
+    const result = spawnSync(process.execPath, [join(repoRoot, "tools/install.mjs"), "install", "--json"], {
+      cwd: repoRoot,
+      env: { HOME: root, TMPDIR: process.env.TMPDIR, PATH: dirname(claude.bin) },
+      encoding: "utf8",
+    });
+    const report = JSON.parse(result.stdout);
+    expect(report.sheet.path).toBe(join(root, ".config/t3-pstack-science/models.md"));
+    expect(report.sheet.steps).toEqual([]);
+    expect(readFileSync(legacy, "utf8")).toBe(SHEET);
+    expect(mode(legacy)).toBe(0o600);
+    expect(readlinkSync(linked)).toBe(legacy);
+    expect(readFileSync(oldMachine, "utf8")).toBe("session hook: off\n");
+    expect(existsSync(join(root, ".config/t3-pstack-science/models.md"))).toBe(false);
+    expect(readdirSync(homes[2].dir)).toEqual([]);
   });
 
-  test("links the machine path to a home sheet's file outside every home instead of copying it", () => {
-    const { root, homes, sheet } = machine();
-    const dotfiles = join(root, "dotfiles/t3-pstack-models.md");
-    mkdirSync(join(root, "dotfiles"));
-    writeFileSync(dotfiles, SHEET);
-    symlinkSync(dotfiles, join(root, ".claude/t3-pstack-models.md"));
-    writeFileSync(join(root, ".codex/t3-pstack-models.md"), SHEET);
-
-    expect(moveSheet(sheet, homes)).toEqual([
-      `linked the sheet to ${dotfiles}`,
-      `linked ${join(root, ".codex/t3-pstack-models.md")} to it`,
-      `linked ${join(root, ".codex-pool/t3-pstack-models.md")} to it`,
-    ]);
-    expect(readlinkSync(sheet)).toBe(dotfiles);
-    expect(readlinkSync(join(root, ".claude/t3-pstack-models.md"))).toBe(dotfiles);
-    expect(readFileSync(dotfiles, "utf8")).toBe(SHEET);
-    expect(moveSheet(sheet, homes)).toEqual([]);
-  });
-
-  test("keeps a home sheet that links to another file, even one that matches the machine sheet", () => {
-    const { root, homes, sheet } = machine();
-    mkdirSync(join(root, ".config/t3-pstack"), { recursive: true });
-    writeFileSync(sheet, SHEET);
-    mkdirSync(join(root, "dotfiles"));
-    writeFileSync(join(root, "dotfiles/models.md"), SHEET);
-    symlinkSync(join(root, "dotfiles/models.md"), join(root, ".claude/t3-pstack-models.md"));
-
-    expect(moveSheet(sheet, homes)).toEqual([
-      `linked ${join(root, ".codex/t3-pstack-models.md")} to it`,
-      `linked ${join(root, ".codex-pool/t3-pstack-models.md")} to it`,
-    ]);
-    expect(readlinkSync(join(root, ".claude/t3-pstack-models.md"))).toBe(join(root, "dotfiles/models.md"));
-  });
-
-  test("moves a sheet with its mode, and leaves a file beside it that only shares the old temp name", () => {
-    const { root, homes, sheet } = machine();
-    writeFileSync(join(root, ".claude/t3-pstack-models.md"), SHEET, { mode: 0o600 });
-    writeFileSync(join(root, ".claude/t3-pstack-models.md.t3-pstack-link"), "mine\n");
-
-    moveSheet(sheet, homes);
-    expect(mode(sheet)).toBe(0o600);
-    expect(readFileSync(join(root, ".claude/t3-pstack-models.md.t3-pstack-link"), "utf8")).toBe("mine\n");
-    expect(readdirSync(join(root, ".claude")).sort()).toEqual(["t3-pstack-models.md", "t3-pstack-models.md.t3-pstack-link"]);
-  });
-
-  test("leaves home sheets that disagree, and doctor says so", () => {
+  test("doctor ignores conflicting foreign home sheets", () => {
     const { root, homes, sheet } = machine();
     writeFileSync(join(root, ".claude/t3-pstack-models.md"), SHEET);
     writeFileSync(join(root, ".codex/t3-pstack-models.md"), "session hook: off\n");
-
-    expect(moveSheet(sheet, homes)).toEqual([]);
-    expect(existsSync(sheet)).toBe(false);
     expect(doctorSheet(sheet, homes, { catalog: null, models })).toEqual([
       {
-        name: "machine sheet",
-        ok: false,
-        detail: `missing; ${join(root, ".claude/t3-pstack-models.md")}, ${join(root, ".codex/t3-pstack-models.md")} differ, so the installer leaves them`,
-        fix: `keep one, then ${FIX}`,
+        name: "machine sheet", ok: false, warn: true,
+        detail: "none, so every role runs on its skill's defaults",
+        fix: "run /t3-pstack-science:setup-pstack in a T3 thread",
       },
     ]);
-  });
-
-  test("keeps a home sheet that differs from an existing machine sheet, and links one that matches", () => {
-    const { root, homes, sheet } = machine();
-    mkdirSync(join(root, ".config/t3-pstack"), { recursive: true });
-    writeFileSync(sheet, SHEET);
-    writeFileSync(join(root, ".claude/t3-pstack-models.md"), SHEET);
-    writeFileSync(join(root, ".codex/t3-pstack-models.md"), "session hook: off\n");
-
-    expect(moveSheet(sheet, homes)).toEqual([
-      `linked ${join(root, ".claude/t3-pstack-models.md")} to it`,
-      `linked ${join(root, ".codex-pool/t3-pstack-models.md")} to it`,
-    ]);
-    expect(lstatSync(join(root, ".codex/t3-pstack-models.md")).isSymbolicLink()).toBe(false);
-    expect(doctorSheet(sheet, homes, { catalog: null, models })[1]).toEqual({
-      name: "home sheets",
-      ok: false,
-      detail: `${join(root, ".codex/t3-pstack-models.md")} differ from the machine sheet`,
-      fix: `move each aside, then ${FIX} to link it`,
-    });
   });
 
   test("doctor warns without a sheet and fails on a malformed one", () => {
@@ -508,7 +462,7 @@ describe("the model sheet", () => {
         name: "machine sheet",
         ok: false,
         detail: "none, so every role runs on its skill's defaults",
-        fix: "run /t3-pstack:setup-pstack in a T3 thread",
+        fix: "run /t3-pstack-science:setup-pstack in a T3 thread",
         warn: true,
       },
     ]);
@@ -518,7 +472,7 @@ describe("the model sheet", () => {
       name: "machine sheet valid",
       ok: false,
       detail: 'bug-fix: "claude-opus" does not start with <providerInstanceId>/<modelId>; "how critics" is not a pstack role',
-      fix: "run /t3-pstack:setup-pstack in a T3 thread",
+      fix: "run /t3-pstack-science:setup-pstack in a T3 thread",
     });
   });
 
@@ -529,14 +483,14 @@ describe("the model sheet", () => {
     expect(doctorSheet(sheet, homes, { catalog: null, models })[0]).toEqual({
       name: "machine sheet valid", ok: false,
       detail: 'science bug-fix: "opus" does not start with <providerInstanceId>/<modelId>',
-      fix: "run /t3-pstack:setup-pstack in a T3 thread",
+      fix: "run /t3-pstack-science:setup-pstack in a T3 thread",
     });
   });
 
   test("doctor reports a source policy that predates domains without throwing", () => {
     const { homes, sheet } = machine();
     expect(doctorSheet(sheet, homes, { catalog: null, models: { tiers: {}, roles: [] } })).toEqual([
-      { name: "model policy", ok: false, detail: "models.json predates domains; install a t3-pstack-science source", fix: "remove the existing `t3-pstack` marketplace from each affected home, then run `npx -y github:huankoh/t3-pstack-science install --source huankoh/t3-pstack-science` (or set --source to a t3-pstack-science checkout)" },
+      { name: "model policy", ok: false, detail: "models.json predates domains; install a t3-pstack-science source", fix: "remove the existing `t3-pstack-science` marketplace from each affected home, then run `npx -y github:huankoh/t3-pstack-science install --source huankoh/t3-pstack-science` (or set --source to a t3-pstack-science checkout)" },
     ]);
   });
 

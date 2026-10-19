@@ -1,0 +1,7 @@
+{
+  "name": "t3-pstack",
+  "pluginId": "t3-pstack@t3-pstack",
+  "install": "github:chhoumann/t3-pstack",
+  "namespace": "/t3-pstack:poteto-mode",
+  "sheet": "~/.config/t3-pstack/models.md"
+}
