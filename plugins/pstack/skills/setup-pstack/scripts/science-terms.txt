@@ -1,0 +1,45 @@
+# Terms excluded from term-free briefs. One lowercase term per line.
+# Spaces also match hyphens or underscores. A trailing s or es also matches.
+amino acid
+antibody
+antigen
+assay
+bioassay
+binding affinity
+binding site
+biology
+biomarker
+chromosome
+codon
+cytokine
+dna
+docking
+enzyme
+epitope
+gene
+genome
+genomic
+glycan
+glycoprotein
+glycosylation
+inhibitor
+kinase
+ligand
+metabolite
+microbiome
+mrna
+mutation
+nucleotide
+oligosaccharide
+pathogen
+pdb
+peptide
+phenotype
+protein
+proteome
+receptor
+rna
+small molecule
+smiles
+tissue
+transcriptome
