@@ -105,7 +105,7 @@ describe("applySubstitutions", () => {
 
   test("the shipped policy fork carries the amended speed and reasoning rules", () => {
     const text = readFileSync(new URL("../plugins/pstack/skills/poteto-mode/SKILL.md", import.meta.url), "utf8");
-    expect(text).toContain("Every dispatch sets each speed option its model lists to its standard value (`fastMode=false` on Claude and `cursor`, `serviceTier=default` on Codex), as the defaults in [Models](#models) do. `t3-sheet.mjs` rejects an entry with nonstandard speed.");
+    expect(text).toContain("Every dispatch sets each speed option its model lists to its standard value (`fastMode=false` on Claude and `cursor`, `serviceTier=default` on Codex), as the defaults in [Models](#models) do. This router never uses fast mode, urgent or not, and `t3-sheet.mjs` rejects a fast entry.");
     expect(text).not.toContain("only when the job is urgent");
     expect(text).not.toContain("fastMode=true");
     expect(text).not.toContain("and speed the job needs");
@@ -134,46 +134,54 @@ describe("applySubstitutions", () => {
     for (const r of router) {
       expect(r.replacement.startsWith(r.pattern)).toBe(true);
       expect(r.replacement).not.toMatch(/\b(?:claude|gpt|grok|gemini|composer|opus|fable|sonnet|haiku|sol|astra|luna|codex|cursor|openai|anthropic|xai)\b/i);
-      const rel = r.files.replace(/^\^|\$$/g, "").replaceAll("\\.", ".");
+      const rel = {
+        "Open a todolist whose first items are the matched playbook's steps, copied in verbatim, before any task-specific todos.": "skills/poteto-mode/SKILL.md",
+        "Prose and judgment read `judgment and prose`.": "skills/poteto-mode/SKILL.md",
+        "Nothing gets armed before an independent per-PR verdict, and only the contiguous verified run from the root lands.": "skills/poteto-mode/SKILL.md",
+        "Only a verdict from an agent that did not write the code counts, because an author checks what it meant to build.": "skills/poteto-mode/playbooks/shipping.md",
+        "Before handing back, spawn a subagent on a different model family from the one that did the work.": "skills/show-me-your-work/SKILL.md",
+      }[r.pattern];
+      expect(new RegExp(r.files).test(rel)).toBe(true);
       const result = applySubstitutions(r.pattern, RULES.substitutions, rel);
       expect(result.text).toBe(r.replacement);
       expect([...result.counts.keys()]).toHaveLength(1);
     }
   });
 
-  test("the shipped router names mechanical code and final review without fast code model", () => {
+  test("the shipped router preserves upstream wording and names mechanical code and final review", () => {
     const poteto = readFileSync(new URL("../plugins/pstack/skills/poteto-mode/SKILL.md", import.meta.url), "utf8");
-    expect(poteto).toContain("Trivial mechanical edits go to the `mechanical code` line.");
+    expect(poteto).toContain("Trivial mechanical edits go to your fast code model.");
+    expect(poteto).toContain("Prose and judgment read `judgment and prose`. Trivial mechanical edits read `mechanical code`.");
     expect(poteto).toContain("In `science`, the hardest changes still read `hardest tasks`, trivial mechanical edits read `mechanical code`, and the rest read their playbook's line.");
     expect(poteto).toContain("That verdict, and the **show-me-your-work** handback review, run on the `final review` line. Other verification stays on `swarm workers`.");
-    expect(poteto).not.toContain("fast code model");
     const shipping = readFileSync(new URL("../plugins/pstack/skills/poteto-mode/playbooks/shipping.md", import.meta.url), "utf8");
     expect(shipping).toContain("and still performs this step's prescribed verification. Other verification stays on `swarm workers`.");
     const handback = readFileSync(new URL("../plugins/pstack/skills/show-me-your-work/SKILL.md", import.meta.url), "utf8");
     expect(handback).toContain('"The work" is the change being handed back.');
     expect(handback).toContain("Count the chat's family when it edited the change itself and every delegate's family whose output is in the change.");
     expect(handback).toContain("The `final review` line always reviews");
-    expect(handback).toContain("When that line's family is among those families, the first entry of the same column's `interrogate reviewers` whose family is outside them and that reads the column's terms also reviews.");
+    expect(handback).toContain("When that line's family is among those families, the first entry of the same column's `interrogate reviewers` whose family is outside them also reviews.");
     expect(handback).toContain("Both verdicts must pass.");
+    expect(handback).toContain("When that reviewer's family does not read the column's terms, give it a term-free brief and stage term-free copies of the diff and the trail, per [Models](../poteto-mode/SKILL.md#models).");
+    expect(handback).toContain("In `general`, every family reads the terms.");
     expect(handback).toContain("Only when no such reviewer exists, record `BLOCKED: independent review` and keep the handback closed.");
     expect(handback).not.toContain("Do not substitute another reviewer.");
     expect(poteto).toContain("picked per [Models](#models) before step 1 and before the first `delegate_task`.");
     expect(poteto).toContain("except the independent verdict and the handback review, which run on `final review`.");
   });
 
-  test.each(["how", "why", "arena", "architect", "interrogate", "swarm", "reflect", "show-me-your-work"])("%s routes reasoning without a speed choice", (skill) => {
+  test.each(["how", "why", "arena", "interrogate", "swarm", "reflect", "show-me-your-work"])("%s preserves the upstream reasoning and speed wording", (skill) => {
     const rel = `skills/${skill}/SKILL.md`;
     const upstream = "Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.";
-    const expected = "Pick each subagent's reasoning level for the job, per the Subagents section of the **poteto-mode** skill.";
-    expect(applySubstitutions(upstream, RULES.substitutions, rel).text).toBe(expected);
-    expect(readFileSync(new URL(`../plugins/pstack/${rel}`, import.meta.url), "utf8")).not.toContain("reasoning level and fast or standard speed");
+    expect(applySubstitutions(upstream, RULES.substitutions, rel).text).toBe(upstream);
+    expect(readFileSync(new URL(`../plugins/pstack/${rel}`, import.meta.url), "utf8")).toContain(upstream);
   });
 
-  test("recall keeps model selection at standard speed", () => {
+  test("recall preserves upstream model selection wording", () => {
     const rel = "skills/recall/SKILL.md";
     const upstream = "Spawn parallel subagents on a fast, cheap model, each taking a slice of the corpus.";
-    expect(applySubstitutions(upstream, RULES.substitutions, rel).text).toBe("Spawn parallel subagents on a cheap model, each taking a slice of the corpus.");
-    expect(readFileSync(new URL(`../plugins/pstack/${rel}`, import.meta.url), "utf8")).not.toMatch(/\bfast\b/);
+    expect(applySubstitutions(upstream, RULES.substitutions, rel).text).toBe(upstream);
+    expect(readFileSync(new URL(`../plugins/pstack/${rel}`, import.meta.url), "utf8")).toContain(upstream);
   });
 
   // An anchored insert keeps its anchor sentence, so only it may match its
@@ -222,7 +230,7 @@ describe("applySubstitutions", () => {
     [
       "skills/poteto-mode/SKILL.md",
       "Use fast mode only when the job is urgent, meaning CI or trunk is red or a person is blocked on the result right now. Otherwise use standard speed, the same slug without `-fast`. Verification is the exception and stays on the `swarm workers` model and speed (`grok-4.7-xhigh-fast` by default).",
-      "Every dispatch sets each speed option its model lists to its standard value (`fastMode=false` on Claude and `cursor`, `serviceTier=default` on Codex), as the defaults in [Models](#models) do. `t3-sheet.mjs` rejects an entry with nonstandard speed. Verification is the exception and stays on the `swarm workers` model and speed (default in the **swarm** skill's Models section), except the independent verdict and the handback review, which run on `final review`.",
+      "Every dispatch sets each speed option its model lists to its standard value (`fastMode=false` on Claude and `cursor`, `serviceTier=default` on Codex), as the defaults in [Models](#models) do. This router never uses fast mode, urgent or not, and `t3-sheet.mjs` rejects a fast entry. Verification is the exception and stays on the `swarm workers` model and speed (default in the **swarm** skill's Models section), except the independent verdict and the handback review, which run on `final review`.",
     ],
     [
       "skills/poteto-mode/SKILL.md",

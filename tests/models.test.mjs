@@ -73,16 +73,22 @@ describe("committed models.json", () => {
     expect(models.roles.map((r) => r.role)).not.toContain("term-free code");
   });
 
-  test("science defaults allow independent review of workers and of final-review-family authors", () => {
+  test.each([
+    [["feature, refactoring"], ["grok"], null],
+    [["feature, refactoring", "hardest tasks"], ["gpt", "grok"], {
+      entry: "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", termFree: true,
+    }],
+  ])("science handback selects an independent reviewer for authors %j", (roles, expectedFamilies, expectedExtra) => {
     const family = (entry) => sheet.family(sheet.parseEntry(entry).model);
     const science = sheet.seats(models).filter((s) => s.domain === "science");
-    const final = science.find((s) => s.role === "final review");
-    const finalFamily = family(final.defaults[0].entry);
-    expect(["code", "mechanical"].map((tier) => family(models.domains.science.tiers[tier]))).toEqual(["grok", "grok"]);
-    for (const tier of ["code", "mechanical"]) expect(family(models.domains.science.tiers[tier])).not.toBe(finalFamily);
-    const independent = science.find((s) => s.role === "interrogate reviewers").defaults
-      .filter((d) => family(d.entry) !== finalFamily && !d.termFree);
-    expect(independent.map((d) => family(d.entry))).toEqual(["grok"]);
+    const authors = new Set(roles.map((role) => family(science.find((s) => s.role === role).defaults[0].entry)));
+    expect([...authors].sort()).toEqual(expectedFamilies);
+    const final = science.find((s) => s.role === "final review").defaults[0];
+    expect(final).toEqual({ entry: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default", termFree: false });
+    const extra = authors.has(family(final.entry))
+      ? science.find((s) => s.role === "interrogate reviewers").defaults.find((d) => !authors.has(family(d.entry)))
+      : null;
+    expect(extra).toEqual(expectedExtra);
   });
 
   test("only science panel defaults outside its term readers need term-free briefs", () => {
