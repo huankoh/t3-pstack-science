@@ -1,64 +1,214 @@
---- tools/install/common.mjs:11
-export const MARKETPLACE = "t3-pstack";
---- tools/install/common.mjs:12
-export const HOME_REPO = "chhoumann/t3-pstack";
---- plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs:20
-export const SHEET_DIR = "t3-pstack";
---- plugins/pstack/hooks/session-start.sh:8
-    home_sheet="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/t3-pstack-models.md"
---- plugins/pstack/hooks/session-start.sh:12
-    home_sheet="${CODEX_HOME:-$HOME/.codex}/t3-pstack-models.md"
---- plugins/pstack/hooks/session-start.sh:23
-sheet="${XDG_CONFIG_HOME:-$HOME/.config}/t3-pstack/models.md"
---- plugins/pstack/hooks/session-start.ps1:9
-$sheet = Join-Path $configRoot 't3-pstack\models.md'
---- plugins/pstack/hooks/session-start.ps1:15
-    $sheet = Join-Path $sheetRoot 't3-pstack-models.md'
---- plugins/pstack/hooks/session-start-context.md:4
-Invoke the `t3-pstack:poteto-mode` skill and follow its instructions when a task meets any of these:
---- plugins/pstack/hooks/session-start-context.md:12
-When the intent is already specific, such as TDD, a design sketch, how or why something works, an arena, or an adversarial review, still enter through `t3-pstack:poteto-mode` and open that skill from the bundled path it names. The other pstack skills run only from poteto-mode or when the user types them.
---- plugins/pstack/hooks/session-start-context.md:14
-This runs on T3: before the first subagent or panel in a session, read the model sheet, `~/.config/t3-pstack/models.md` (`$XDG_CONFIG_HOME/t3-pstack/models.md` when that is set), or `t3-pstack-models.md` in this host's config directory when that file is missing. This chat runs the playbook itself. A step it says to delegate goes through `delegate_task` to that role's sheet entry, and the reply lists which provider and model ran each step.
---- tools/derive-t3.mjs:82
-  "When it is missing, read `t3-pstack-models.md` in the host's config directory (`$CLAUDE_CONFIG_DIR` or " +
---- package.json:10
-  "homepage": "https://github.com/chhoumann/t3-pstack",
---- package.json:11
-  "repository": "https://github.com/chhoumann/t3-pstack",
---- package.json:14
-    "t3-pstack": "tools/install.mjs"
---- plugins/pstack/.claude-plugin/plugin.json:3
-  "displayName": "t3-pstack (pstack for T3 Code)",
---- plugins/pstack/.claude-plugin/plugin.json:10
-  "homepage": "https://github.com/chhoumann/t3-pstack",
---- plugins/pstack/.claude-plugin/plugin.json:11
-  "repository": "https://github.com/chhoumann/t3-pstack",
---- plugins/pstack/.codex-plugin/plugin.json:9
-  "homepage": "https://github.com/chhoumann/t3-pstack",
---- plugins/pstack/.codex-plugin/plugin.json:10
-  "repository": "https://github.com/chhoumann/t3-pstack",
---- plugins/pstack/.codex-plugin/plugin.json:31
-    "displayName": "t3-pstack",
---- plugins/pstack/.codex-plugin/plugin.json:45
-    "websiteURL": "https://github.com/chhoumann/t3-pstack",
---- tools/substitutions.json:41
-      "replacement": "`https://github.com/chhoumann/t3-pstack/blob/main/plugins/pstack/` followed by its path",
---- tools/substitutions.json:59
-      "replacement": "1. Install t3-pstack per its [README](https://github.com/chhoumann/t3-pstack#readme), once per harness that T3 runs.",
---- tools/substitutions.json:71
-      "replacement": "[README](https://github.com/chhoumann/t3-pstack/blob/main/README.md)",
---- tools/substitutions.json:609
-      "replacement": "in the root's store, `${XDG_STATE_HOME:-~/.local/state}/t3-pstack/` (T3 names no agent store),",
---- tools/substitutions.json:752
-      "replacement": "in `${XDG_STATE_HOME:-~/.local/state}/t3-pstack/` (T3 names no agent store).",
 --- .agents/plugins/marketplace.json:2
   "name": "t3-pstack",
 --- .agents/plugins/marketplace.json:4
     "displayName": "t3-pstack"
 --- .agents/plugins/marketplace.json:8
       "name": "t3-pstack",
---- .claude-plugin/marketplace.json:2
-  "name": "t3-pstack",
 --- .claude-plugin/marketplace.json:10
       "name": "t3-pstack",
+--- .claude-plugin/marketplace.json:2
+  "name": "t3-pstack",
+--- CONTEXT.md:8
+- **Model sheet** - `~/.config/t3-pstack/models.md` (`$XDG_CONFIG_HOME/t3-pstack/models.md` when that is set), one per machine, one role per line, each value a T3 entry (`<providerInstanceId>/<modelId>` plus `<optionId>=<value>` pairs) or `inherit-parent`. `setup-pstack` writes it and `t3-sheet.mjs` checks it against `orchestrator_capabilities`.
+--- CONTEXT.md:9
+- **Installer** - `tools/install.mjs`, the package's `t3-pstack` bin, run as `npx -y github:chhoumann/t3-pstack <install|update|doctor>`. It installs the plugin in every Claude Code and Codex home T3 can run, trusts the Codex session-start hook, moves the model sheet to its machine path, and checks the result.
+--- CONTRIBUTING.md:106
+Include the t3-pstack version, the T3 Code version, the host (Claude Code or Codex) and its version, and the reproduction steps.
+--- README.md:1
+# t3-pstack
+--- README.md:12
+npx -y github:chhoumann/t3-pstack install
+--- README.md:13
+npx -y github:chhoumann/t3-pstack update
+--- README.md:14
+npx -y github:chhoumann/t3-pstack doctor
+--- README.md:17
+`npx -y github:chhoumann/t3-pstack` runs the installer from the latest commit on `main`. That is the rolling channel, the same one each home's marketplace auto-updates from. To run one release's installer, name its tag, as in `npx -y github:chhoumann/t3-pstack#v2.0.0-rc.11 doctor`.
+--- README.md:19
+`install` and `update` are the same command, and a second run changes nothing. With Node 20 or later, it installs or updates the `t3-pstack@t3-pstack` plugin in every Claude Code and Codex config home T3 can run: `~/.claude` and `~/.codex`, `$CLAUDE_CONFIG_DIR` and `$CODEX_HOME`, and the home of each `claudeAgent` and `codex` instance in T3's settings, disabled ones included. Name any other home with `--claude-home <dir>` or `--codex-home <dir>`. Each home's `t3-pstack` marketplace must come from `chhoumann/t3-pstack`, or from `--source <owner/repo|git URL|dir>` on the same run, and a home whose marketplace has another source is left as it is. A local directory needs a path such as `./t3-pstack`, since `owner/repo` always means GitHub. On Codex it also trusts t3-pstack's session-start hook, once its hooks file is the one this release pins. Codex runs a plugin's hook only once it is trusted, and T3's Codex sessions never ask, so without this step the hook never runs. Run `update` after each release.
+--- README.md:23
+Then run `/t3-pstack:setup-pstack` in a T3 thread on each machine. It writes the model sheet, `~/.config/t3-pstack/models.md`, with one T3 target per role (`<providerInstanceId>/<modelId>` plus that provider's options), and checks it against the machine's `orchestrator_capabilities`. Without a sheet, every role runs on the defaults in its skill's Models section.
+--- README.md:31
+The session-start hook tells each new chat when to enter `poteto-mode` on its own: work that touches more than one file, a design choice, or a bug whose cause is unknown. `poteto-mode` matches the task to a playbook and opens the other skills from there. They ship as upstream ships them, invoked by `poteto-mode` or typed by you (`/t3-pstack:<name>` on Claude Code, `$t3-pstack:<name>` on Codex).
+--- README.md:41
+t3-pstack has no server or telemetry. Anything its skills ask your agent to read, including session transcripts, goes to your model provider. Scripts run locally, and PR tools use your GitHub CLI login.
+--- README.md:49
+t3-pstack is [MIT-licensed](LICENSE). Its T3 modifications and additions are © 2026 Christian Bager Bach Houmann. It builds on:
+--- README.md:7
+t3-pstack works only inside T3.
+--- SECURITY.md:11
+The installer installs nothing and trusts no hook in a home whose `t3-pstack` marketplace comes from anywhere but `chhoumann/t3-pstack` or the run's explicit `--source`. In Codex it trusts only t3-pstack's own session-start hook, from the hooks file the Codex manifest names, at the digest `tools/frozen-hooks.json` pins. Like Codex's own hook trust, it checks the hook's entry and not the script the entry runs, which changes with each release. The marketplace source is what vouches for the script.
+--- SECURITY.md:15
+`npx -y github:chhoumann/t3-pstack` runs the latest commit on `main`, the rolling channel the marketplaces auto-update from. `npx -y github:chhoumann/t3-pstack#v<version>` runs one release's installer from its tag.
+--- SECURITY.md:3
+Report a vulnerability privately, through [GitHub's private vulnerability reporting form](https://github.com/chhoumann/t3-pstack/security/advisories/new) where the repository has it enabled, or else by contacting the maintainer through their [GitHub profile](https://github.com/chhoumann). Please do not open a public issue for a vulnerability, because the issue tracker is public from the moment you press submit. A private report keeps the details between us until a fix is released.
+--- package.json:10
+  "homepage": "https://github.com/chhoumann/t3-pstack",
+--- package.json:11
+  "repository": "https://github.com/chhoumann/t3-pstack",
+--- package.json:14
+    "t3-pstack": "tools/install.mjs"
+--- package.json:2
+  "name": "t3-pstack",
+--- package.json:5
+  "description": "The installer and development tooling for t3-pstack, Lauren Tan's pstack rewritten in place for T3 Code. The plugin itself lives in plugins/pstack.",
+--- plugins/pstack/.claude-plugin/plugin.json:10
+  "homepage": "https://github.com/chhoumann/t3-pstack",
+--- plugins/pstack/.claude-plugin/plugin.json:11
+  "repository": "https://github.com/chhoumann/t3-pstack",
+--- plugins/pstack/.claude-plugin/plugin.json:2
+  "name": "t3-pstack",
+--- plugins/pstack/.claude-plugin/plugin.json:3
+  "displayName": "t3-pstack (pstack for T3 Code)",
+--- plugins/pstack/.codex-plugin/plugin.json:10
+  "repository": "https://github.com/chhoumann/t3-pstack",
+--- plugins/pstack/.codex-plugin/plugin.json:2
+  "name": "t3-pstack",
+--- plugins/pstack/.codex-plugin/plugin.json:31
+    "displayName": "t3-pstack",
+--- plugins/pstack/.codex-plugin/plugin.json:45
+    "websiteURL": "https://github.com/chhoumann/t3-pstack",
+--- plugins/pstack/.codex-plugin/plugin.json:9
+  "homepage": "https://github.com/chhoumann/t3-pstack",
+--- plugins/pstack/README.md:1
+# t3-pstack
+--- plugins/pstack/README.md:16
+t3-pstack has no server or telemetry. Anything its skills ask your agent to read, including session transcripts, goes to your model provider. Scripts run locally, and PR tools use your GitHub CLI login.
+--- plugins/pstack/README.md:20
+- [Install and setup](https://github.com/chhoumann/t3-pstack#readme)
+--- plugins/pstack/README.md:21
+- [Issues and support](https://github.com/chhoumann/t3-pstack/issues)
+--- plugins/pstack/README.md:22
+- [Security policy](https://github.com/chhoumann/t3-pstack/blob/main/SECURITY.md)
+--- plugins/pstack/README.md:26
+MIT. Original pstack © 2026 Lauren Tan; imported cursor-team-kit and thermos skills © 2026 Cursor; T3 modifications © 2026 Christian Bager Bach Houmann. See [NOTICE.md](https://github.com/chhoumann/t3-pstack/blob/main/NOTICE.md).
+--- plugins/pstack/README.md:9
+- Skills: upstream's skill text, with its Cursor mechanics rewritten for T3. Each appears as `/t3-pstack:<name>`.
+--- plugins/pstack/hooks/session-start-context.md:12
+When the intent is already specific, such as TDD, a design sketch, how or why something works, an arena, or an adversarial review, still enter through `t3-pstack:poteto-mode` and open that skill from the bundled path it names. The other pstack skills run only from poteto-mode or when the user types them.
+--- plugins/pstack/hooks/session-start-context.md:14
+This runs on T3: before the first subagent or panel in a session, read the model sheet, `~/.config/t3-pstack/models.md` (`$XDG_CONFIG_HOME/t3-pstack/models.md` when that is set), or `t3-pstack-models.md` in this host's config directory when that file is missing. This chat runs the playbook itself. A step it says to delegate goes through `delegate_task` to that role's sheet entry, and the reply lists which provider and model ran each step.
+--- plugins/pstack/hooks/session-start-context.md:2
+You have t3-pstack, pstack for T3 Code.
+--- plugins/pstack/hooks/session-start-context.md:4
+Invoke the `t3-pstack:poteto-mode` skill and follow its instructions when a task meets any of these:
+--- plugins/pstack/hooks/session-start.ps1:15
+    $sheet = Join-Path $sheetRoot 't3-pstack-models.md'
+--- plugins/pstack/hooks/session-start.ps1:9
+$sheet = Join-Path $configRoot 't3-pstack\models.md'
+--- plugins/pstack/hooks/session-start.sh:12
+    home_sheet="${CODEX_HOME:-$HOME/.codex}/t3-pstack-models.md"
+--- plugins/pstack/hooks/session-start.sh:23
+sheet="${XDG_CONFIG_HOME:-$HOME/.config}/t3-pstack/models.md"
+--- plugins/pstack/hooks/session-start.sh:8
+    home_sheet="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/t3-pstack-models.md"
+--- plugins/pstack/skills/architect/SKILL.md:87
+A line in the model sheet overrides each default. `<role>: <entry>` sets the general column, as in every sheet written before domains, and `science <role>: <entry>` sets the science column. The sheet is `~/.config/t3-pstack/models.md` (`$XDG_CONFIG_HOME/t3-pstack/models.md` when that is set), one per machine, and `/setup-pstack` writes it. When it is missing, read `t3-pstack-models.md` in the host's config directory (`$CLAUDE_CONFIG_DIR` or `~/.claude` on Claude Code, `$CODEX_HOME` or `~/.codex` on Codex). An entry is `<providerInstanceId>/<modelId>` plus `<optionId>=<value>` pairs, and it maps onto `delegate_task`'s `target`, with the provider instance as `providerInstanceId`, the model as `model`, and the pairs as `options`. It splits at its first `/`, so a model ID with its own `/`, such as OpenCode's `<provider>/<model>`, is written whole after it. Option IDs differ per provider, so take them from `orchestrator_capabilities`. `inherit-parent` or `auto` omits `target`.
+--- plugins/pstack/skills/arena/SKILL.md:56
+A line in the model sheet overrides each default. `<role>: <entry>` sets the general column, as in every sheet written before domains, and `science <role>: <entry>` sets the science column. The sheet is `~/.config/t3-pstack/models.md` (`$XDG_CONFIG_HOME/t3-pstack/models.md` when that is set), one per machine, and `/setup-pstack` writes it. When it is missing, read `t3-pstack-models.md` in the host's config directory (`$CLAUDE_CONFIG_DIR` or `~/.claude` on Claude Code, `$CODEX_HOME` or `~/.codex` on Codex). An entry is `<providerInstanceId>/<modelId>` plus `<optionId>=<value>` pairs, and it maps onto `delegate_task`'s `target`, with the provider instance as `providerInstanceId`, the model as `model`, and the pairs as `options`. It splits at its first `/`, so a model ID with its own `/`, such as OpenCode's `<provider>/<model>`, is written whole after it. Option IDs differ per provider, so take them from `orchestrator_capabilities`. `inherit-parent` or `auto` omits `target`.
+--- plugins/pstack/skills/how/SKILL.md:44
+A line in the model sheet overrides each default. `<role>: <entry>` sets the general column, as in every sheet written before domains, and `science <role>: <entry>` sets the science column. The sheet is `~/.config/t3-pstack/models.md` (`$XDG_CONFIG_HOME/t3-pstack/models.md` when that is set), one per machine, and `/setup-pstack` writes it. When it is missing, read `t3-pstack-models.md` in the host's config directory (`$CLAUDE_CONFIG_DIR` or `~/.claude` on Claude Code, `$CODEX_HOME` or `~/.codex` on Codex). An entry is `<providerInstanceId>/<modelId>` plus `<optionId>=<value>` pairs, and it maps onto `delegate_task`'s `target`, with the provider instance as `providerInstanceId`, the model as `model`, and the pairs as `options`. It splits at its first `/`, so a model ID with its own `/`, such as OpenCode's `<provider>/<model>`, is written whole after it. Option IDs differ per provider, so take them from `orchestrator_capabilities`. `inherit-parent` or `auto` omits `target`.
+--- plugins/pstack/skills/interrogate/SKILL.md:83
+A line in the model sheet overrides each default. `<role>: <entry>` sets the general column, as in every sheet written before domains, and `science <role>: <entry>` sets the science column. The sheet is `~/.config/t3-pstack/models.md` (`$XDG_CONFIG_HOME/t3-pstack/models.md` when that is set), one per machine, and `/setup-pstack` writes it. When it is missing, read `t3-pstack-models.md` in the host's config directory (`$CLAUDE_CONFIG_DIR` or `~/.claude` on Claude Code, `$CODEX_HOME` or `~/.codex` on Codex). An entry is `<providerInstanceId>/<modelId>` plus `<optionId>=<value>` pairs, and it maps onto `delegate_task`'s `target`, with the provider instance as `providerInstanceId`, the model as `model`, and the pairs as `options`. It splits at its first `/`, so a model ID with its own `/`, such as OpenCode's `<provider>/<model>`, is written whole after it. Option IDs differ per provider, so take them from `orchestrator_capabilities`. `inherit-parent` or `auto` omits `target`.
+--- plugins/pstack/skills/poteto-help/SKILL.md:13
+This file maps questions to the skills and guide pages that hold the answers. Those files own the details. Read the file you route to before you quote it, and trust it when it disagrees with this map. The links here point into the installed plugin, which the user may not be able to open, so give the user the file's public copy: `https://github.com/chhoumann/t3-pstack/blob/main/plugins/pstack/` followed by its path.
+--- plugins/pstack/skills/poteto-help/SKILL.md:27
+- No model sheet (`~/.config/t3-pstack/models.md`, see `/setup-pstack`) means `/setup-pstack` hasn't run for this user, so every role uses its default model.
+--- plugins/pstack/skills/poteto-help/SKILL.md:37
+1. Install t3-pstack per its [README](https://github.com/chhoumann/t3-pstack#readme), once per harness that T3 runs.
+--- plugins/pstack/skills/poteto-help/SKILL.md:41
+Installing changes nothing until the user invokes a skill. Only `/setup-pstack` loads from the user's words. The [README](https://github.com/chhoumann/t3-pstack/blob/main/README.md) and [guide page 1](https://github.com/cursor/plugins/blob/main/pstack/docs/guide/01-setup.md) have the details. Offer to word their first prompt with them, per [`references/prompting.md`](references/prompting.md).
+--- plugins/pstack/skills/poteto-help/SKILL.md:45
+t3-pstack is pstack rewritten for T3 Code. Its workflow skills, including `/poteto-mode`, `/how`, `/why`, and `/teach`, dispatch subagents through T3's `delegate_task` with per-role models, so those parts need a T3 thread.
+--- plugins/pstack/skills/poteto-help/SKILL.md:54
+- Where the harness runs t3-pstack's session-start hook, each new chat is told when to enter `/poteto-mode` on its own.
+--- plugins/pstack/skills/poteto-help/SKILL.md:55
+- Skill names differ by harness: `/t3-pstack:poteto-mode` on Claude Code, `$poteto-mode` on Codex. This file writes every skill as `/<name>`.
+--- plugins/pstack/skills/poteto-mode/SKILL.md:166
+A line in the model sheet overrides each default. `<role>: <entry>` sets the general column, as in every sheet written before domains, and `science <role>: <entry>` sets the science column. The sheet is `~/.config/t3-pstack/models.md` (`$XDG_CONFIG_HOME/t3-pstack/models.md` when that is set), one per machine, and `/setup-pstack` writes it. When it is missing, read `t3-pstack-models.md` in the host's config directory (`$CLAUDE_CONFIG_DIR` or `~/.claude` on Claude Code, `$CODEX_HOME` or `~/.codex` on Codex). An entry is `<providerInstanceId>/<modelId>` plus `<optionId>=<value>` pairs, and it maps onto `delegate_task`'s `target`, with the provider instance as `providerInstanceId`, the model as `model`, and the pairs as `options`. It splits at its first `/`, so a model ID with its own `/`, such as OpenCode's `<provider>/<model>`, is written whole after it. Option IDs differ per provider, so take them from `orchestrator_capabilities`. `inherit-parent` or `auto` omits `target`.
+--- plugins/pstack/skills/poteto-mode/playbooks/autopilot-full.md:12
+   Assume the owner's session dies. Soon after starting, push and start a decision trail in the root's store, `${XDG_STATE_HOME:-~/.local/state}/t3-pstack/` (T3 names no agent store), per the **show-me-your-work** skill, then push after every unit worth keeping. Whoever spawns a subagent records its id, state, and a stuck-after runtime from past runs of its kind in that store, so the root can probe it if the parent dies. Force-push only your own branch, with `--force-with-lease` pinned to the SHA you last pushed or took over, and on any push you did not make, stop and report to the root.
+--- plugins/pstack/skills/poteto-mode/playbooks/orchestrate.md:23
+Create `orchestrate/<project-slug>/` in `${XDG_STATE_HOME:-~/.local/state}/t3-pstack/` (T3 names no agent store). Every file has exactly one writer. Owners publish facts, readers aggregate at read time. Use `bun scripts/orch/orch.ts` for bookkeeping, written below as `orch`, while its canonical plain TSV and JSON stay readable without the CLI.
+--- plugins/pstack/skills/poteto-mode/scripts/resolve-codex-transcript.ts:5
+// t3-pstack; NOTICE.md lists the changes.
+--- plugins/pstack/skills/poteto-mode/scripts/watch-pr/settle.ts:5
+// t3-pstack's review settle window. Review bots post minutes after CI turns
+--- plugins/pstack/skills/poteto-mode/scripts/watch-pr/verdicts.test.ts:166
+  it("waits out t3-pstack's review settle window before reporting the review gate", async () => {
+--- plugins/pstack/skills/reflect/SKILL.md:85
+A line in the model sheet overrides each default. `<role>: <entry>` sets the general column, as in every sheet written before domains, and `science <role>: <entry>` sets the science column. The sheet is `~/.config/t3-pstack/models.md` (`$XDG_CONFIG_HOME/t3-pstack/models.md` when that is set), one per machine, and `/setup-pstack` writes it. When it is missing, read `t3-pstack-models.md` in the host's config directory (`$CLAUDE_CONFIG_DIR` or `~/.claude` on Claude Code, `$CODEX_HOME` or `~/.codex` on Codex). An entry is `<providerInstanceId>/<modelId>` plus `<optionId>=<value>` pairs, and it maps onto `delegate_task`'s `target`, with the provider instance as `providerInstanceId`, the model as `model`, and the pairs as `options`. It splits at its first `/`, so a model ID with its own `/`, such as OpenCode's `<provider>/<model>`, is written whole after it. Option IDs differ per provider, so take them from `orchestrator_capabilities`. `inherit-parent` or `auto` omits `target`.
+--- plugins/pstack/skills/setup-pstack/SKILL.md:18
+The default role-to-target mapping is the sheet shape in step 5 below. If the sheet already exists, read it and treat its `# budget` line and its role values as the current choices. If it does not, read `t3-pstack-models.md` in the host's config directory (`$CLAUDE_CONFIG_DIR` or `~/.claude` on Claude Code, `$CODEX_HOME` or `~/.codex` on Codex), where releases before 2.0.0-rc.3 kept the sheet, the same way. Otherwise start from those defaults. A line whose role is not in step 5, such as `how critics`, is from a retired role. Drop it. Carry a `strongest judgment` value over to `hardest tasks`, its new name. Also drop any value that is not a T3 entry, such as a bare family name, a `claude-` slug, or an `@<level>` suffix, and a `default effort` line.
+--- plugins/pstack/skills/setup-pstack/SKILL.md:33
+**(d) Ask about the session-start hook.** Ask whether t3-pstack's session-start hook should keep telling new chats when to enter `/poteto-mode`. Write `session hook: on` or `session hook: off`.
+--- plugins/pstack/skills/setup-pstack/SKILL.md:41
+Overwrite the sheet with the candidate, creating its directory and writing through any symlink at its path (resolve it with `realpath`). If a different file is already there, run the checker on it and ask before you replace it. Overwrite the whole file so re-runs stay idempotent. Then replace `t3-pstack-models.md` in the host's config directory with a link to the sheet (`ln -sf`), so an older t3-pstack reads the same sheet. Step 2 already read what it held. On Codex, remove any pstack model rows an earlier setup pasted into `<codex-home>/AGENTS.md`. With every default kept, the sheet reads:
+--- plugins/pstack/skills/setup-pstack/SKILL.md:8
+Write the model sheet, `~/.config/t3-pstack/models.md` (`$XDG_CONFIG_HOME/t3-pstack/models.md` when that is set), one per machine. It sets pstack's T3 provider and model per role, and every pstack skill reads it before it dispatches.
+--- plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs:20
+export const SHEET_DIR = "t3-pstack";
+--- plugins/pstack/skills/swarm/SKILL.md:49
+A line in the model sheet overrides each default. `<role>: <entry>` sets the general column, as in every sheet written before domains, and `science <role>: <entry>` sets the science column. The sheet is `~/.config/t3-pstack/models.md` (`$XDG_CONFIG_HOME/t3-pstack/models.md` when that is set), one per machine, and `/setup-pstack` writes it. When it is missing, read `t3-pstack-models.md` in the host's config directory (`$CLAUDE_CONFIG_DIR` or `~/.claude` on Claude Code, `$CODEX_HOME` or `~/.codex` on Codex). An entry is `<providerInstanceId>/<modelId>` plus `<optionId>=<value>` pairs, and it maps onto `delegate_task`'s `target`, with the provider instance as `providerInstanceId`, the model as `model`, and the pairs as `options`. It splits at its first `/`, so a model ID with its own `/`, such as OpenCode's `<provider>/<model>`, is written whole after it. Option IDs differ per provider, so take them from `orchestrator_capabilities`. `inherit-parent` or `auto` omits `target`.
+--- plugins/pstack/skills/why/SKILL.md:106
+A line in the model sheet overrides each default. `<role>: <entry>` sets the general column, as in every sheet written before domains, and `science <role>: <entry>` sets the science column. The sheet is `~/.config/t3-pstack/models.md` (`$XDG_CONFIG_HOME/t3-pstack/models.md` when that is set), one per machine, and `/setup-pstack` writes it. When it is missing, read `t3-pstack-models.md` in the host's config directory (`$CLAUDE_CONFIG_DIR` or `~/.claude` on Claude Code, `$CODEX_HOME` or `~/.codex` on Codex). An entry is `<providerInstanceId>/<modelId>` plus `<optionId>=<value>` pairs, and it maps onto `delegate_task`'s `target`, with the provider instance as `providerInstanceId`, the model as `model`, and the pairs as `options`. It splits at its first `/`, so a model ID with its own `/`, such as OpenCode's `<provider>/<model>`, is written whole after it. Option IDs differ per provider, so take them from `orchestrator_capabilities`. `inherit-parent` or `auto` omits `target`.
+--- tools/derive-t3.mjs:82
+  "When it is missing, read `t3-pstack-models.md` in the host's config directory (`$CLAUDE_CONFIG_DIR` or " +
+--- tools/install.mjs:10
+// Each home's t3-pstack marketplace must come from chhoumann/t3-pstack or from
+--- tools/install.mjs:122
+  const lines = [`t3-pstack ${version} from ${source}`];
+--- tools/install.mjs:15
+//   npx -y github:chhoumann/t3-pstack <install|update|doctor>
+--- tools/install.mjs:156
+  console.error(`t3-pstack: ${err.message}`);
+--- tools/install.mjs:16
+//     --source <owner/repo|git URL|dir>   marketplace source, default chhoumann/t3-pstack
+--- tools/install.mjs:2
+// t3-pstack's installer. `install`, or `update`, the same command, brings
+--- tools/install.mjs:4
+// t3-pstack, trusts the Codex session-start hook, and moves the model sheet to
+--- tools/install.mjs:40
+  "usage: t3-pstack <install|update|doctor> [--source <owner/repo|git URL|dir>] " +
+--- tools/install/codex.mjs:286
+          : "no t3-pstack hook listed",
+--- tools/install/codex.mjs:37
+    await server.request("initialize", { clientInfo: { name: "t3-pstack-installer", version: "1" } });
+--- tools/install/common.mjs:10
+export const PLUGIN_ID = "t3-pstack@t3-pstack";
+--- tools/install/common.mjs:11
+export const MARKETPLACE = "t3-pstack";
+--- tools/install/common.mjs:12
+export const HOME_REPO = "chhoumann/t3-pstack";
+--- tools/install/common.mjs:14
+export const INSTALL_HINT = "rerun `npx -y github:chhoumann/t3-pstack install`";
+--- tools/install/common.mjs:158
+export const tempBeside = (path) => join(dirname(path), `.${basename(path)}.${randomUUID()}.t3-pstack.tmp`);
+--- tools/install/common.mjs:62
+// The marketplace check both doctors run. A marketplace named t3-pstack from
+--- tools/install/common.mjs:93
+    neutral = mkdtempSync(join(tmpdir(), "t3-pstack-"));
+--- tools/install/sheet.mjs:12
+export const HOME_SHEET = "t3-pstack-models.md";
+--- tools/install/sheet.mjs:13
+const SETUP_HINT = "run /t3-pstack:setup-pstack in a T3 thread";
+--- tools/install/sheet.mjs:3
+// `${XDG_CONFIG_HOME:-~/.config}/t3-pstack/models.md`. Released versions read
+--- tools/install/sheet.mjs:4
+// `t3-pstack-models.md` in each config home, so the installer moves that sheet
+--- tools/substitutions.json:41
+      "replacement": "`https://github.com/chhoumann/t3-pstack/blob/main/plugins/pstack/` followed by its path",
+--- tools/substitutions.json:47
+      "replacement": "- No model sheet (`~/.config/t3-pstack/models.md`, see `/setup-pstack`) means `/setup-pstack` hasn't run for this user",
+--- tools/substitutions.json:59
+      "replacement": "1. Install t3-pstack per its [README](https://github.com/chhoumann/t3-pstack#readme), once per harness that T3 runs.",
+--- tools/substitutions.json:609
+      "replacement": "in the root's store, `${XDG_STATE_HOME:-~/.local/state}/t3-pstack/` (T3 names no agent store),",
+--- tools/substitutions.json:71
+      "replacement": "[README](https://github.com/chhoumann/t3-pstack/blob/main/README.md)",
+--- tools/substitutions.json:752
+      "replacement": "in `${XDG_STATE_HOME:-~/.local/state}/t3-pstack/` (T3 names no agent store).",
+--- tools/substitutions.json:89
+      "replacement": "t3-pstack is pstack rewritten for T3 Code. Its workflow skills, including `/poteto-mode`, `/how`, `/why`, and `/teach`, dispatch subagents through T3's `delegate_task` with per-role models, so those parts need a T3 thread.",
+--- tools/substitutions.json:95
+      "replacement": "- Invoking `/poteto-mode` attaches the skill to one message. It fades as the chat moves on, so start each new task with it.\n- Where the harness runs t3-pstack's session-start hook, each new chat is told when to enter `/poteto-mode` on its own.\n- Skill names differ by harness: `/t3-pstack:poteto-mode` on Claude Code, `$poteto-mode` on Codex. This file writes every skill as `/<name>`.",
