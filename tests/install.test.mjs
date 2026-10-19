@@ -20,7 +20,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { doctorClaude, installClaude, syncScopedRecords } from "../tools/install/claude.mjs";
@@ -334,6 +334,20 @@ describe("a t3-pstack marketplace from another source", () => {
 });
 
 describe("--source", () => {
+  test("a home with no marketplace registers the science fork passed as --source", () => {
+    const claude = fakeClaude();
+    const r = spawnSync(process.execPath, [join(repoRoot, "tools/install.mjs"), "install", "--source", "huankoh/t3-pstack-science", "--json"], {
+      cwd: repoRoot,
+      env: { HOME: tmp(), TMPDIR: process.env.TMPDIR, PATH: `${process.env.HOME}/.bun/bin:${dirname(claude.bin)}` },
+      encoding: "utf8",
+    });
+    expect({ status: r.status, stderr: r.stderr }).toEqual({ status: 1, stderr: "" });
+    const report = JSON.parse(r.stdout);
+    expect(report.source).toBe("huankoh/t3-pstack-science");
+    expect(report.homes[0].steps).toEqual(["added the t3-pstack marketplace from huankoh/t3-pstack-science"]);
+    expect(claude.calls()).toEqual(["plugin marketplace add huankoh/t3-pstack-science"]);
+  });
+
   test("reads owner/repo as GitHub even where that relative directory exists, and a URL to the same repository as the same source", () => {
     const cwd = tmp();
     mkdirSync(join(cwd, "chhoumann/t3-pstack"), { recursive: true });
@@ -522,7 +536,7 @@ describe("the model sheet", () => {
   test("doctor reports a source policy that predates domains without throwing", () => {
     const { homes, sheet } = machine();
     expect(doctorSheet(sheet, homes, { catalog: null, models: { tiers: {}, roles: [] } })).toEqual([
-      { name: "model policy", ok: false, detail: "models.json predates domains; install a t3-pstack-science source", fix: "rerun `npx -y github:chhoumann/t3-pstack install --source huankoh/t3-pstack-science` (or set --source to a t3-pstack-science checkout)" },
+      { name: "model policy", ok: false, detail: "models.json predates domains; install a t3-pstack-science source", fix: "remove the existing `t3-pstack` marketplace from each affected home, then run `npx -y github:huankoh/t3-pstack-science install --source huankoh/t3-pstack-science` (or set --source to a t3-pstack-science checkout)" },
     ]);
   });
 

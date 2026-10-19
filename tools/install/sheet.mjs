@@ -7,7 +7,7 @@ import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, renameSyn
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
 import { checkSheet, parseSheet, SHEET_DIR } from "../../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
-import { check, INSTALL_HINT, tempBeside, writeAtomic } from "./common.mjs";
+import { check, INSTALL_HINT, MARKETPLACE, SCIENCE_REPO, tempBeside, writeAtomic } from "./common.mjs";
 
 export const HOME_SHEET = "t3-pstack-models.md";
 const SETUP_HINT = "run /t3-pstack:setup-pstack in a T3 thread";
@@ -67,7 +67,7 @@ export function doctorSheet(sheet, homes, { catalog, models }) {
   if (!models?.domains) {
     return [check(
       "model policy", false, "models.json predates domains; install a t3-pstack-science source",
-      "rerun `npx -y github:chhoumann/t3-pstack install --source huankoh/t3-pstack-science` (or set --source to a t3-pstack-science checkout)",
+      `remove the existing \`${MARKETPLACE}\` marketplace from each affected home, then run \`npx -y github:${SCIENCE_REPO} install --source ${SCIENCE_REPO}\` (or set --source to a t3-pstack-science checkout)`,
     )];
   }
   const old = homeSheets(homes).filter(isFile);
