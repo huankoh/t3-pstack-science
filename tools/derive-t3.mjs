@@ -137,7 +137,7 @@ export function museModeProse(models) {
     "A `muse <role>:` line must name a target. `inherit-parent` and `auto` are rejected on a muse line. " +
     "The domain does not change muse targets. Muse-mode seats whose family is a science term reader (by default Muse and DeepSeek) read the terms. A muse-mode seat whose family is not a science term reader (by default Opus) gets a term-free brief on a science task. " +
     "Panels in `mode: muse` follow the normal two-family rule. " +
-    "Levels are fixed. Do not raise or lower them, and the sheet `# budget` comment does not apply. " +
+    "Muse seats start at their listed level and are tuned per job per the **poteto-mode** skill's Subagents section, never above `xhigh`, and a DeepSeek seat always runs at `max`. The sheet `# budget` comment does not set muse levels. " +
     "A rejected or unrunnable muse target blocks that dispatch and names the target and the fix. Never use a standard seat or the generic same-family fallback. " +
     "A failed reviewer gets a fresh reviewer on the same entry, or the gate stays `BLOCKED: independent review`. " +
     "The handback's extra reviewer under `mode: muse` is the first `muse interrogate reviewers` entry outside the work's families, by family as usual. " +

@@ -100,7 +100,7 @@ describe("applySubstitutions", () => {
 
   test("the effort port rule names cursor's option ID and keeps speed standard", () => {
     expect(applySubstitutions("Change only the effort level and whether the slug is fast,", RULES.substitutions, "skills/poteto-mode/SKILL.md").text).toBe(
-      "Change only the entry's reasoning option (`effort` on Claude, `reasoningEffort` on Codex and Muse, `reasoning_effort` on `cursor` targets; muse mode keeps its listed levels),",
+      "Change only the entry's reasoning option (`effort` on Claude, `reasoningEffort` on Codex and Muse, `reasoning_effort` on `cursor` targets),",
     );
   });
 
@@ -113,7 +113,7 @@ describe("applySubstitutions", () => {
     expect(text).not.toContain("or no speed option");
     expect(text).toContain("pick the reasoning level the job needs.");
     expect(text).toContain("If the model has no value at that reasoning level, use its nearest one in `orchestrator_capabilities`. Omit a speed option the model does not list.");
-    expect(text).toContain("Change only the entry's reasoning option (`effort` on Claude, `reasoningEffort` on Codex and Muse, `reasoning_effort` on `cursor` targets; muse mode keeps its listed levels),");
+    expect(text).toContain("Change only the entry's reasoning option (`effort` on Claude, `reasoningEffort` on Codex and Muse, `reasoning_effort` on `cursor` targets),");
   });
 
   test("every rule's replacement is free of the denylist", () => {
@@ -177,10 +177,10 @@ describe("applySubstitutions", () => {
     expect(handback).toContain("The subagent reads the audit trail and the run's transcript, then flags what the user should pay attention to.");
   });
 
-  test.each(["how", "why", "arena", "interrogate", "swarm", "reflect", "show-me-your-work", "automate-me", "figure-it-out", "no-comments", "recall"])("%s keeps the upstream reasoning wording and adds the muse fixed-level caveat", (skill) => {
+  test.each(["how", "why", "arena", "interrogate", "swarm", "reflect", "show-me-your-work", "automate-me", "figure-it-out", "no-comments", "recall"])("%s keeps the upstream reasoning wording exactly", (skill) => {
     const rel = `skills/${skill}/SKILL.md`;
     const upstream = "Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.";
-    const derived = `${upstream} In \`mode: muse\`, use the level on the muse line or default; do not raise or lower it.`;
+    const derived = upstream;
     expect(applySubstitutions(upstream, RULES.substitutions, rel).text).toBe(derived);
     expect(readFileSync(new URL(`../plugins/pstack/${rel}`, import.meta.url), "utf8")).toContain(derived);
   });
@@ -264,7 +264,7 @@ describe("applySubstitutions", () => {
   // The T3 behavior the port adds on an upstream anchor: each must survive.
   test.each([
     ["skills/poteto-mode/SKILL.md", "Interrupt-chained resumes silently drop directives, so fire a fresh subagent with consolidated scope rather than trusting a \"done\" summary.", ["**Dispatch on T3.**", "dispatch ledger", "`BLOCKED: independent review`", "`clientRequestId`"]],
-    ["skills/poteto-mode/SKILL.md", "- Contested design → the **interrogate** skill (multi-model adversarial) before shipping.", ["before Opening a PR", "After three fix rounds, stop"]],
+    ["skills/poteto-mode/SKILL.md", "- Contested design → the **interrogate** skill (multi-model adversarial) before shipping.", ["before Opening a PR", "at most three fix runs in all"]],
     ["skills/arena/SKILL.md", "Prefer a different model family from the parent's.", ["no model scores its own work"]],
     ["skills/poteto-mode/playbooks/babysit.md", "Run `drive` and `background` under `/loop` in dynamic mode.", ["--timeout 540", "watch_pull_request", "--settle"]],
     ["skills/poteto-mode/playbooks/autopilot-full.md", "Each owner is a Cursor cloud agent that builds, opens its PR", ["t3_thread_launch", "t3_thread_send"]],

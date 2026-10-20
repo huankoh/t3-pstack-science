@@ -1,7 +1,7 @@
 // Muse mode routing prose: one generated source stamped into every Models
 // section, the session-start context, and the Cursor rule derived from it.
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -122,14 +122,61 @@ describe("muse mode prose", () => {
     expect(read("README.md")).not.toContain("Opus 5.5 and DeepSeek sit on every muse mode panel");
   });
 
-  test("the reasoning-level rule keeps muse levels fixed", () => {
+  test("poteto-mode caps levels at xhigh, keeps DeepSeek at max, and reviews once by default", () => {
+    const poteto = read("plugins/pstack/skills/poteto-mode/SKILL.md");
+    expect(poteto).toContain("Raise it one step, up to `xhigh`, for the hardest or subtlest work.");
+    expect(poteto).toContain("No child runs above `xhigh` unless the user asks for more in the chat, or picked the `unlimited` budget in `/setup-pstack`.");
+    expect(poteto).toContain("An entry on the `deepseek` family always runs at `max`, its listed level, in every mode, and is never raised or lowered.");
+    expect(poteto).toContain("In `mode: muse`, start from the level on the `muse <role>:` line or the muse default and raise or lower it per job by this same rule, never above `xhigh`. The sheet `# budget` comment does not set muse levels.");
+    expect(poteto).toContain("By default the panel reviews the whole change once, with every reviewer on the line.");
+    expect(poteto).toContain("One fix run then addresses that round's Act on findings and folds in accepted nits or drops them, with a reason for each dismissal.");
+    expect(poteto).toContain("A `fail` gets another fix run and another artifact check, not another review, with at most three fix runs in all.");
+    expect(poteto).toContain("The fix is not re-reviewed unless the user asks for more rounds.");
+    expect(poteto).toContain("each later round reviews only the fix diff, and after three fix rounds the loop stops and reports the open findings, what kind of failure they suggest, and a recommendation.");
+    expect(poteto).not.toContain("muse mode keeps its listed levels");
+  });
+
+  test("the eleven skills carry upstream's reasoning sentence exactly, with no muse caveat", () => {
+    const upstream = "Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.";
     const caveat = "In `mode: muse`, use the level on the muse line or default; do not raise or lower it.";
-    expect(read("plugins/pstack/skills/poteto-mode/SKILL.md")).toContain(caveat);
     for (const skill of ["how", "arena", "interrogate", "reflect", "swarm", "why", "show-me-your-work", "automate-me", "figure-it-out", "no-comments", "recall"]) {
-      expect(read(`plugins/pstack/skills/${skill}/SKILL.md`)).toContain(caveat);
+      const text = read(`plugins/pstack/skills/${skill}/SKILL.md`);
+      expect(text).toContain(upstream);
+      expect(text).not.toContain(caveat);
     }
     const subs = JSON.parse(read("tools/substitutions.json")).substitutions;
-    expect(subs.filter((r) => r.replacement.includes(caveat)).length).toBeGreaterThanOrEqual(2);
+    expect(subs.some((r) => r.replacement.includes(caveat))).toBe(false);
+    expect(subs.some((r) => r.pattern === upstream)).toBe(false);
+  });
+
+  test("no shipped file still says levels are fixed or not to raise or lower a muse level", () => {
+    const stack = [join(repoRoot, "plugins")];
+    const hits = [];
+    while (stack.length) {
+      const dir = stack.pop();
+      for (const name of readdirSync(dir)) {
+        const path = join(dir, name);
+        if (statSync(path).isDirectory()) stack.push(path);
+        else if (/\.(md|mdc|json|mjs|ts|sh|txt)$/.test(name)) {
+          const text = readFileSync(path, "utf8");
+          if (text.includes("Levels are fixed") || text.includes("do not raise or lower it")) hits.push(path);
+        }
+      }
+    }
+    expect(hits).toEqual([]);
+    expect(read("tools/derive-t3.mjs")).not.toContain("Levels are fixed");
+    expect(read("tools/substitutions.json")).not.toContain("do not raise or lower it");
+  });
+
+  test("every Models section, the hook context, and the Cursor rule carry the new muse level sentence", () => {
+    const sentence = "Muse seats start at their listed level and are tuned per job per the **poteto-mode** skill's Subagents section, never above `xhigh`, and a DeepSeek seat always runs at `max`. The sheet `# budget` comment does not set muse levels.";
+    expect(museModeProse(models)).toContain(sentence);
+    for (const skill of new Set(models.roles.map((r) => r.skill))) {
+      expect(read(`plugins/pstack/skills/${skill}/SKILL.md`)).toContain(sentence);
+    }
+    for (const rel of [HOOK, "plugins/pstack/.cursor-plugin/rules/session-start.mdc"]) {
+      expect(read(rel)).toContain(sentence);
+    }
   });
 
   test("the todolist, role-line, reasoning, and handback pins name muse mode", () => {
@@ -138,7 +185,7 @@ describe("muse mode prose", () => {
     expect(byPattern("Open a todolist whose first items are the matched playbook's steps, copied in verbatim, before any task-specific todos.")).toContain("Record `mode: muse` or `mode: standard` after it");
     expect(byPattern("Prose and judgment read `judgment and prose`.")).toContain("or its `muse <role>:` line under `mode: muse`");
     expect(byPattern("Change only the effort level and whether the slug is fast,")).toContain("`reasoningEffort` on Codex and Muse");
-    expect(byPattern("Change only the effort level and whether the slug is fast,")).toContain("muse mode keeps its listed levels");
+    expect(byPattern("Change only the effort level and whether the slug is fast,")).not.toContain("muse mode keeps its listed levels");
     expect(byPattern("Before handing back, spawn a subagent on a different model family from the one that did the work.")).toContain("under `mode: muse`, read `muse interrogate reviewers` instead");
     expect(read("plugins/pstack/skills/show-me-your-work/SKILL.md")).toContain("under `mode: muse`, read `muse interrogate reviewers` instead");
     const poteto = read("plugins/pstack/skills/poteto-mode/SKILL.md");
