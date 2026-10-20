@@ -2,6 +2,13 @@
 
 This file is the release changelog, with one `## <version> - <title>` entry per release, newest first. The Cursor-to-T3 rewrite rules live in [`tools/substitutions.json`](tools/substitutions.json), and the [sync boundary](CONTRIBUTING.md#the-sync-boundary) in `CONTRIBUTING.md` defines how a change to upstream's skill content is declared.
 
+## 2.0.0-rc.15-science.1 - chhoumann's rc.15: Lauren's pstack at 88d4751
+
+The fork now carries chhoumann's 2.0.0-rc.15, Lauren Tan's pstack at cursor/plugins `88d4751`.
+`/sharpen` gives back a rewritten prompt instead of doing the task, after naming what a top professional would do that the user did not ask for, the rawest material they would start from, their methods and tools, and what would show the result is right.
+poteto-help's `/sharpen` row and its recipe follow the new wording.
+The model sheet's roles and defaults did not change, and neither hooks JSON file changes.
+
 ## 2.0.0-rc.14-science.4 - Two routing columns, new defaults, one review round
 
 Routing now has only the `general` and `science` columns, with the same defaults in both.
@@ -67,6 +74,15 @@ The README now says to restart T3 after `install --cursor`, `update --cursor`, o
 The science fork separates general and scientific work into model-routing columns. [PR #1](https://github.com/huankoh/t3-pstack-science/pull/1) adds the two-column policy and sheet checks. [PR #2](https://github.com/huankoh/t3-pstack-science/pull/2) carries the domain gate into the skill and dispatch prose, with term-free briefs for seats outside the science term readers.
 
 The fork now installs as `t3-pstack-science@t3-pstack-science` from `huankoh/t3-pstack-science`, alongside chhoumann's plugin. Its hooks and skills read only `~/.config/t3-pstack-science/models.md`, or that path under `$XDG_CONFIG_HOME`. Without a sheet, each skill's Models table applies. The installer leaves other plugins and their sheets intact. Doctor warns when chhoumann's plugin is enabled and its session hook runs. Before touching any home, the installer refuses a source whose marketplace or plugin is not named `t3-pstack-science` or whose `models.json` lacks domains. Neither hooks JSON file changes.
+
+## 2.0.0-rc.15 - Lauren's `88d4751`: sharpen rewrites the prompt and no longer does the task
+
+t3-pstack moves to Lauren Tan's pstack at cursor/plugins `88d4751` for all three components. Only pstack changed upstream, and its version moves to 0.15.29. `/sharpen` goes back to Lauren's original prompt, written in the user's voice ([pstack #729](https://github.com/cursor/plugins/pull/729)): "I want a deeper version of this task, not a bigger one." Before it rewrites the task, the agent does four things, now a numbered list. It says what a top professional in the field would do that the user isn't asking for, names the rawest material they would start from, names the specific methods and tools they would use, and says what, other than the agent or the user, would show the result is right. It then rewrites the user's prompt to ask for exactly that and does not do the task. Of the last version it keeps only the line that leaves the user's choices open, and its description now reads "Make a task deeper, not bigger, then rewrite the prompt." It keeps Lauren's `disable-model-invocation`, so on Claude Code it runs when the user types `/t3-pstack:sharpen`. On Codex it is `$t3-pstack:sharpen`, and Codex ignores the flag. poteto-help's row for `/sharpen` now says it returns a rewritten prompt and doesn't do the task, and its recipe reads `/sharpen <the prompt you're about to send>`. `bun tools/sync.mjs` updated sharpen, poteto-help, and the recipes cleanly through existing substitutions. The changed lines name no Cursor tool, path, model, or command, so no rule was added, and the 15 declared forks are untouched. #729's version bump, upstream's README row, its two guide pages under `docs/guide/`, and its copies under `harness/pstack/claude-code/` sit outside every synced component. At `88d4751` each component's dry run reports no undeclared fork, no denylist hit, and no substitution that matches nothing. Neither hooks file changes.
+
+| Change | 2.0.0-rc.14 | 2.0.0-rc.15 | Source |
+| --- | --- | --- | --- |
+| `/sharpen` | Asks how a top expert would approach the task, what the user is after, and whether it is over- or underspecified, then does the work with one outside check. | Says what a top professional would do that wasn't asked for, the rawest material, their methods and tools, and what would show the result is right, then hands back the user's prompt rewritten to ask for that. Doesn't do the task. | pstack #729 |
+| poteto-help on `/sharpen` | Aim a task higher before starting. Recipe: `/sharpen <your task>`. | Get a prompt rewritten deeper, not bigger, before sending it. Recipe: `/sharpen <the prompt you're about to send>`. | pstack #729 |
 
 ## 2.0.0-rc.14 - Lauren's `d457567`: a skill that brings formal verification back in line with the code
 
