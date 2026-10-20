@@ -625,6 +625,20 @@ describe("the model sheet", () => {
     expect(rows.filter((r) => !r.ok && !r.warn)).toEqual([]);
   });
 
+  test("doctor keeps a bad standard line out of the muse row", () => {
+    const { sheet } = machine();
+    const catalog = JSON.parse(readFileSync(join(repoRoot, "tests/fixtures/t3-catalog.json"), "utf8"));
+    const museCatalog = JSON.parse(readFileSync(join(repoRoot, "tests/fixtures/t3-muse-catalog.json"), "utf8"));
+    const run = { providers: [...museCatalog.providers, ...catalog.providers.filter((p) => !["muse", "opencode"].includes(p.providerInstanceId))] };
+    mkdirSync(join(sheet, ".."), { recursive: true });
+    writeFileSync(sheet, "bug-fix: opus\n");
+    const rows = doctorSheet(sheet, { catalog: run, models });
+    expect(rows[0].name).toBe("machine sheet valid");
+    expect(rows[0].ok).toBe(false);
+    expect(rows[0].detail).toContain("bug-fix");
+    expect(rows.at(-1)).toEqual({ name: "muse mode", ok: true, detail: "every muse target dispatches on the catalog" });
+  });
+
   test("doctor warns on muse mode without failing, on an old sheet and a catalog without muse", () => {
     const { sheet } = machine();
     const catalog = JSON.parse(readFileSync(join(repoRoot, "tests/fixtures/t3-catalog.json"), "utf8"));

@@ -134,7 +134,9 @@ export function museModeProse(models) {
     `It lasts across later tasks and resumed turns until ${quoted(off)}, which sets \`mode: standard\`. A new top-level chat starts at \`mode: standard\`. Changing mode does not change running children. ` +
     "Record `mode: muse` or `mode: standard` beside `domain:` before the first dispatch. " +
     "Under `mode: muse`, read `muse <role>:` from the sheet, else the muse default. Never read a standard line or a standard default. " +
-    "The domain does not change muse targets. A muse seat whose family is not a science term reader (Opus) gets a term-free brief when the task is science, and Muse seats read the terms. " +
+    "A `muse <role>:` line must name a target. `inherit-parent` and `auto` are rejected on a muse line. " +
+    "The domain does not change muse targets. Muse-mode seats whose family is a science term reader (Muse and DeepSeek) read the terms. Only Opus gets a term-free brief on a science task. " +
+    "Panels in `mode: muse` follow the normal two-family rule. " +
     "Levels are fixed. Do not raise or lower them, and the sheet `# budget` comment does not apply. " +
     "A rejected or unrunnable muse target blocks that dispatch and names the target and the fix. Never use a standard seat or the generic same-family fallback. " +
     "A failed reviewer gets a fresh reviewer on the same entry, or the gate stays `BLOCKED: independent review`. " +
@@ -148,7 +150,7 @@ function museTable(models, roles) {
   const byRole = new Map(seats(models, { mode: MUSE }).map((s) => [s.role, s]));
   const rows = roles.map((role) => {
     const seat = byRole.get(role.role);
-    const entries = seat ? seat.defaults.map((d) => code(d.entry)).join(", ") : "none";
+    const entries = seat ? seat.defaults.map((d) => `${code(d.entry)}${d.termFree ? " (term-free brief in science)" : ""}`).join(", ") : "none";
     return `| ${role.role} | ${entries} |`;
   });
   return `| Role | muse |\n| --- | --- |\n${rows.join("\n")}`;
@@ -178,7 +180,7 @@ export function sheetBlock(models) {
     "# pstack model configuration (T3). One line per role and column. Delete a line to fall back to the skill default.",
     `# \`<role>:\` sets the ${GENERAL} column, as in every sheet before domains. \`${SCIENCE} <role>:\` sets the ${SCIENCE} column.`,
     "# Optional `muse <role>:` lines override muse mode only. A missing muse line uses the muse default, never a standard line.",
-    "# `inherit-parent` or `auto` as a value: the role runs on the parent chat's model (`delegate_task` omits `target`). Alias entries in a panel list still count toward its fan-out.",
+    "# `inherit-parent` or `auto` as a value on a standard line: the role runs on the parent chat's model (`delegate_task` omits `target`). A `muse <role>:` line must name a target. Alias entries in a panel list still count toward its fan-out.",
     "# budget: large (xhigh)",
     ...seats(models).map((s) => `${s.key}: ${s.defaults.map((d) => d.entry).join(", ")}`),
     "session hook: on",

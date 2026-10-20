@@ -71,6 +71,51 @@ describe("muse mode prose", () => {
     }
   });
 
+  test("the muse prose names the target rule, the panel rule, and the term readers by family", () => {
+    const prose = museModeProse(models);
+    expect(prose).toContain("A `muse <role>:` line must name a target.");
+    expect(prose).toContain("`inherit-parent` and `auto` are rejected on a muse line.");
+    expect(prose).toContain("Panels in `mode: muse` follow the normal two-family rule.");
+    expect(prose).toContain("Muse-mode seats whose family is a science term reader (Muse and DeepSeek) read the terms.");
+    expect(prose).toContain("Only Opus gets a term-free brief on a science task.");
+    expect(prose).not.toContain("Muse seats read the terms");
+    for (const skill of new Set(models.roles.map((r) => r.skill))) {
+      expect(read(`plugins/pstack/skills/${skill}/SKILL.md`)).toContain("Panels in `mode: muse` follow the normal two-family rule.");
+    }
+    for (const rel of [HOOK, "plugins/pstack/.cursor-plugin/rules/session-start.mdc"]) {
+      expect(read(rel)).toContain("Panels in `mode: muse` follow the normal two-family rule.");
+    }
+  });
+
+  test("setup qualifies the aliases to standard lines and names every family", () => {
+    const setup = read("plugins/pstack/skills/setup-pstack/SKILL.md");
+    expect(setup).toContain("The aliases `inherit-parent` and `auto` are always valid on a standard line.");
+    expect(setup).toContain("as the options for a standard line.");
+    expect(setup).toContain("A `muse <role>:` line must name a target.");
+    expect(setup).toContain("such as `claude`, `gpt`, `grok`, `muse`, or `deepseek`");
+    expect(setup).not.toContain("`auto` are always valid.");
+    expect(sheetBlock(models)).toContain("# `inherit-parent` or `auto` as a value on a standard line: the role runs on the parent chat's model (`delegate_task` omits `target`). A `muse <role>:` line must name a target. Alias entries in a panel list still count toward its fan-out.");
+  });
+
+  test("the muse table marks only Opus term-free in science", () => {
+    const out = applyRegions("plugins/pstack/skills/arena/SKILL.md", "## Models\n", models);
+    const musePart = out.split("### Muse mode")[1];
+    expect(musePart).toContain("`claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` (term-free brief in science)");
+    expect(musePart).not.toContain("reasoningEffort=xhigh` (term-free");
+    expect(musePart).not.toContain("variant=max` (term-free");
+    expect(read("plugins/pstack/skills/arena/SKILL.md")).toContain("(term-free brief in science)");
+  });
+
+  test("the reasoning-level rule keeps muse levels fixed", () => {
+    const caveat = "In `mode: muse`, use the level on the muse line or default; do not raise or lower it.";
+    expect(read("plugins/pstack/skills/poteto-mode/SKILL.md")).toContain(caveat);
+    for (const skill of ["how", "arena", "interrogate", "reflect", "swarm", "why"]) {
+      expect(read(`plugins/pstack/skills/${skill}/SKILL.md`)).toContain(caveat);
+    }
+    const subs = JSON.parse(read("tools/substitutions.json")).substitutions;
+    expect(subs.filter((r) => r.replacement.includes(caveat)).length).toBeGreaterThanOrEqual(2);
+  });
+
   test("the todolist, role-line, reasoning, and handback pins name muse mode", () => {
     const subs = JSON.parse(read("tools/substitutions.json")).substitutions;
     const byPattern = (p) => subs.find((r) => r.pattern === p)?.replacement ?? "";

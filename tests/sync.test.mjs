@@ -177,11 +177,19 @@ describe("applySubstitutions", () => {
     expect(handback).toContain("The subagent reads the audit trail and the run's transcript, then flags what the user should pay attention to.");
   });
 
-  test.each(["how", "why", "arena", "interrogate", "swarm", "reflect", "show-me-your-work"])("%s preserves the upstream reasoning and speed wording", (skill) => {
+  test.each(["show-me-your-work"])("%s preserves the upstream reasoning and speed wording", (skill) => {
     const rel = `skills/${skill}/SKILL.md`;
     const upstream = "Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.";
     expect(applySubstitutions(upstream, RULES.substitutions, rel).text).toBe(upstream);
     expect(readFileSync(new URL(`../plugins/pstack/${rel}`, import.meta.url), "utf8")).toContain(upstream);
+  });
+
+  test.each(["how", "why", "arena", "interrogate", "swarm", "reflect"])("%s keeps the upstream reasoning wording and adds the muse fixed-level caveat", (skill) => {
+    const rel = `skills/${skill}/SKILL.md`;
+    const upstream = "Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.";
+    const derived = `${upstream} In \`mode: muse\`, use the level on the muse line or default; do not raise or lower it.`;
+    expect(applySubstitutions(upstream, RULES.substitutions, rel).text).toBe(derived);
+    expect(readFileSync(new URL(`../plugins/pstack/${rel}`, import.meta.url), "utf8")).toContain(derived);
   });
 
   test("recall preserves upstream model selection wording", () => {

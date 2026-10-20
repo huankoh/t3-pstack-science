@@ -242,6 +242,12 @@
     },
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",
+      "pattern": "Lower it one step for judgment and two or more steps for routine work.",
+      "replacement": "Lower it one step for judgment and two or more steps for routine work. In `mode: muse`, use the level on the muse line or default; do not raise or lower it.",
+      "rationale": "muse mode: levels are fixed on the muse line or default, so the raise or lower rule does not apply"
+    },
+    {
+      "files": "^skills/poteto-mode/SKILL\\.md$",
       "pattern": "Use fast mode only when the job is urgent, meaning CI or trunk is red or a person is blocked on the result right now. Otherwise use standard speed, the same slug without `-fast`.",
       "replacement": "Every dispatch sets each speed option its model lists to its standard value (`fastMode=false` on Claude and `cursor`, `serviceTier=default` on Codex), as the defaults in [Models](#models) do. This router never uses fast mode, urgent or not, and `t3-sheet.mjs` rejects a fast entry.",
       "rationale": "#613 per-job effort: a T3 entry carries its reasoning and speed as options, not as slug suffixes (The sheet); never fast (design.md, Speed)"
@@ -992,6 +998,12 @@
       "replacement": "hourly schedule_task",
       "rationale": "the plan arms a schedule_task; the checker's marker moves with the template",
       "files": "^skills/poteto-mode/scripts/check-plan\\.(?:mjs|test\\.ts)$"
+    },
+    {
+      "files": "^skills/(how|arena|interrogate|reflect|swarm|why)/SKILL\\.md$",
+      "pattern": "Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.",
+      "replacement": "Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill. In `mode: muse`, use the level on the muse line or default; do not raise or lower it.",
+      "rationale": "muse mode: levels are fixed on the muse line or default, so the per-job reasoning pick does not apply"
     }
   ],
   "denylist": [

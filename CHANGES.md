@@ -9,7 +9,7 @@ Muse mode is the science column with Muse Wonder Full in every GPT seat, so it h
 The science column moved from Muse Wonder to DeepSeek for `code`, `explore`, and `mechanical`, with `opencode/opencode-go/deepseek-v4.1-flash variant=max` in those seats and on its panels.
 Muse Wonder Full joined the science review panel, which now seats GPT, Opus 5.5, DeepSeek, and Wonder Full.
 `deepseek` became a science term reader, so DeepSeek seats read the domain terms and `science how explorer` translates as a DeepSeek seat.
-In muse mode, DeepSeek writes code and explores, Muse Wonder Full 1.0 judges and does final review, and Opus 5.5 and DeepSeek sit on every panel so panels span three families.
+In muse mode, DeepSeek holds the `code`, `explore`, and `mechanical` tiers, Muse Wonder Full 1.0 holds the `judgment` and `final` tiers, and Wonder Full, Opus 5.5, and DeepSeek hold the `runners`, `judges`, and `reviewers` tiers, so every panel spans three families.
 On a science task an Opus panel seat gets a term-free brief, while Muse and DeepSeek seats read the terms.
 The mode lasts for the chat until "normal mode", "standard mode", or "turn off muse mode", and a new chat starts standard.
 Levels are fixed as listed, and a muse target the machine cannot run blocks that dispatch rather than falling back to a standard seat.

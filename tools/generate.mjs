@@ -300,7 +300,7 @@ function parseMuse(raw, tierNames, domains) {
     const list = muse[key];
     if (
       !Array.isArray(list) || !list.length || new Set(list).size !== list.length ||
-      list.some((phrase) => typeof phrase !== "string" || !phrase.trim() || phrase !== phrase.toLowerCase())
+      list.some((phrase) => typeof phrase !== "string" || !phrase.trim() || phrase !== phrase.trim() || phrase !== phrase.toLowerCase())
     ) {
       failModels(`"muse" "${key}" must be a non-empty list of distinct non-empty lowercase phrases`);
     }
