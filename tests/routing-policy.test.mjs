@@ -122,7 +122,11 @@ describe("two-column routing", () => {
     expect(setup).not.toContain("on a re-run keep any role you changed");
     expect(setup).toContain("`variant` on DeepSeek");
     expect(setup.indexOf("- `adopt the current defaults`.")).toBeLessThan(setup.indexOf("**(a) Ask for a budget.**"));
-    for (const text of [read("README.md"), read("CHANGES.md").split(/^## /m)[1]]) {
+    const routingEntry = read("CHANGES.md")
+      .split(/^## /m)
+      .find((entry) => entry.startsWith("2.0.0-rc.14-science.4 - "));
+    expect(routingEntry).toBeDefined();
+    for (const text of [read("README.md"), routingEntry]) {
       expect(text).toContain("`keep the current targets`");
       expect(text).toContain("`adopt the current defaults`");
       expect(text).toContain("A failing artifact check gets another fix run and another check, with at most three fix runs and no re-review.");
