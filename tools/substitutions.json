@@ -3,13 +3,13 @@
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",
       "pattern": "Open a todolist whose first items are the matched playbook's steps, copied in verbatim, before any task-specific todos.",
-      "replacement": "Open a todolist whose first items are the matched playbook's steps, copied in verbatim, before any task-specific todos. The first task-specific todo is the domain gate, `domain: science` or `domain: general`, picked per [Models](#models) before step 1 and before the first `delegate_task`. Record `mode: muse` or `mode: standard` after it, per [Models](#models).",
+      "replacement": "Open a todolist whose first items are the matched playbook's steps, copied in verbatim, before any task-specific todos. The first task-specific todo is the domain gate, `domain: science` or `domain: general`, picked per [Models](#models) before step 1 and before the first `delegate_task`.",
       "rationale": "router: the domain gate records the column every role resolves from"
     },
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",
       "pattern": "Prose and judgment read `judgment and prose`.",
-      "replacement": "Prose and judgment read `judgment and prose`. Trivial mechanical edits read `mechanical code`. Each line is the one in the todolist's `domain:` column ([Models](#models)), or its `muse <role>:` line under `mode: muse`.",
+      "replacement": "Prose and judgment read `judgment and prose`. Trivial mechanical edits read `mechanical code`. Each line is the one in the todolist's `domain:` column ([Models](#models)).",
       "rationale": "router: every role follows its column and keeps the playbook difficulty tiering"
     },
     {
@@ -27,7 +27,7 @@
     {
       "files": "^skills/show-me-your-work/SKILL\\.md$",
       "pattern": "Before handing back, spawn a subagent on a different model family from the one that did the work.",
-      "replacement": "Before handing back, spawn a subagent on a different model family from the one that did the work. \"The work\" is the change being handed back. Count the chat's family when it edited the change itself and every delegate's family whose output is in the change. The `final review` line always reviews (default in poteto-mode's [Models](../poteto-mode/SKILL.md#models)). When that line's family is among those families, the first entry of the same column's `interrogate reviewers` whose family is outside them also reviews; under `mode: muse`, read `muse interrogate reviewers` instead. Both verdicts must pass. When that reviewer's family does not read the column's terms, give it a term-free brief, stage term-free copies of the diff, the trail, and the transcript excerpts it needs, and have it read only those copies in place of the trail and the run's transcript, per [Models](../poteto-mode/SKILL.md#models). In `general`, every family reads the terms. Only when no such reviewer exists, record `BLOCKED: independent review` and keep the handback closed.",
+      "replacement": "Before handing back, spawn a subagent on a different model family from the one that did the work. \"The work\" is the change being handed back. Count the chat's family when it edited the change itself and every delegate's family whose output is in the change. The `final review` line always reviews (default in poteto-mode's [Models](../poteto-mode/SKILL.md#models)). When that line's family is among those families, the first entry of the same column's `interrogate reviewers` whose family is outside them also reviews. Both verdicts must pass. When that reviewer's family does not read the column's terms, give it a term-free brief, stage term-free copies of the diff, the trail, and the transcript excerpts it needs, and have it read only those copies in place of the trail and the run's transcript, per [Models](../poteto-mode/SKILL.md#models). In `general`, every family reads the terms. Only when no such reviewer exists, record `BLOCKED: independent review` and keep the handback closed.",
       "rationale": "router: final review owns handback and preserves the different-family requirement"
     },
     {
@@ -249,8 +249,8 @@
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",
       "pattern": "Lower it one step for judgment and two or more steps for routine work.",
-      "replacement": "Lower it one step for judgment and two or more steps for routine work. No child runs above `xhigh` unless the user asks for more in the chat, or picked the `unlimited` budget in `/setup-pstack`. An entry on the `deepseek` family always runs at `max`, its listed level, in every mode, and is never raised or lowered. In `mode: muse`, start from the level on the `muse <role>:` line or the muse default and raise or lower it per job by this same rule, never above `xhigh` unless the user asks for more or picked the `unlimited` budget. The sheet `# budget` comment does not set muse levels.",
-      "rationale": "per-job levels: xhigh cap with chat or unlimited exceptions, deepseek always at max, muse seats tuned from their listed level like any seat"
+      "replacement": "Lower it one step for judgment and two or more steps for routine work. No child runs above `xhigh` unless the user asks for more in the chat, or picked the `unlimited` budget in `/setup-pstack`. An entry on the `deepseek` family always runs at `max`, its listed level, and is never raised or lowered.",
+      "rationale": "per-job levels: xhigh cap with chat or unlimited exceptions, deepseek always at max"
     },
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",
@@ -396,12 +396,12 @@
     },
     {
       "pattern": "Set `model` to that line's value, or to the default if the rule or the line is missing. Leave `model` unset when the value is `auto` or `inherit-parent`. If the Task tool rejects a slug, use the default and say so. If it rejects the default, use the closest valid slug of the same family from its error message.",
-      "replacement": "Set `target` from that line's entry, or from the default if the sheet or the line is missing. Leave `target` unset when the value is `auto` or `inherit-parent`. If `delegate_task` rejects an entry, use the default and say so. If it rejects the default, use another target of the same family from `orchestrator_capabilities`. Under `mode: muse`, a rejected target never falls back to a standard or same-family default.",
+      "replacement": "Set `target` from that line's entry, or from the default if the sheet or the line is missing. Leave `target` unset when the value is `auto` or `inherit-parent`. If `delegate_task` rejects an entry, use the default and say so. If it rejects the default, use another target of the same family from `orchestrator_capabilities`.",
       "rationale": "The sheet; Subagent policy (rejected target)"
     },
     {
       "pattern": "If the Task tool rejects a slug, use the default and say so. If it rejects the default, use the closest valid slug of the same family from its error message.",
-      "replacement": "If `delegate_task` rejects an entry, use the default and say so. If it rejects the default, use another target of the same family from `orchestrator_capabilities`. Under `mode: muse`, a rejected target never falls back to a standard or same-family default.",
+      "replacement": "If `delegate_task` rejects an entry, use the default and say so. If it rejects the default, use another target of the same family from `orchestrator_capabilities`.",
       "rationale": "Subagent policy (rejected target)"
     },
     {
@@ -471,7 +471,7 @@
     },
     {
       "pattern": "If the Task tool rejects a configured entry, run that reviewer on its family's table default and say so.",
-      "replacement": "If `delegate_task` rejects a configured entry, run that reviewer on another target of the same family from `orchestrator_capabilities` and say so. Under `mode: muse`, a rejected target never falls back to a standard or same-family default.",
+      "replacement": "If `delegate_task` rejects a configured entry, run that reviewer on another target of the same family from `orchestrator_capabilities` and say so.",
       "rationale": "Subagent policy (rejected target)"
     },
     {
@@ -491,7 +491,7 @@
     },
     {
       "pattern": "If it rejects a default, use the closest valid slug of the same family from its error message.",
-      "replacement": "If it rejects a default, use another target of the same family from `orchestrator_capabilities`. Under `mode: muse`, a rejected target never falls back to a standard or same-family default.",
+      "replacement": "If it rejects a default, use another target of the same family from `orchestrator_capabilities`.",
       "rationale": "Subagent policy (rejected target)"
     },
     {

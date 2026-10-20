@@ -154,7 +154,7 @@ describe("applySubstitutions", () => {
     const poteto = readFileSync(new URL("../plugins/pstack/skills/poteto-mode/SKILL.md", import.meta.url), "utf8");
     expect(poteto).toContain("Trivial mechanical edits go to your fast code model.");
     expect(poteto).toContain("Prose and judgment read `judgment and prose`. Trivial mechanical edits read `mechanical code`.");
-    expect(poteto).toContain("Each line is the one in the todolist's `domain:` column ([Models](#models)), or its `muse <role>:` line under `mode: muse`.");
+    expect(poteto).toContain("Each line is the one in the todolist's `domain:` column ([Models](#models)).");
     expect(poteto).toContain("That verdict, and the **show-me-your-work** handback review, run on the `final review` line. Other verification stays on `swarm workers`.");
     const shipping = readFileSync(new URL("../plugins/pstack/skills/poteto-mode/playbooks/shipping.md", import.meta.url), "utf8");
     expect(shipping).toContain("and still performs this step's prescribed verification. Other verification stays on `swarm workers`.");
@@ -162,7 +162,7 @@ describe("applySubstitutions", () => {
     expect(handback).toContain('"The work" is the change being handed back.');
     expect(handback).toContain("Count the chat's family when it edited the change itself and every delegate's family whose output is in the change.");
     expect(handback).toContain("The `final review` line always reviews");
-    expect(handback).toContain("When that line's family is among those families, the first entry of the same column's `interrogate reviewers` whose family is outside them also reviews; under `mode: muse`, read `muse interrogate reviewers` instead.");
+    expect(handback).toContain("When that line's family is among those families, the first entry of the same column's `interrogate reviewers` whose family is outside them also reviews.");
     expect(handback).toContain("Both verdicts must pass.");
     expect(handback).toContain("In `general`, every family reads the terms.");
     expect(handback).toContain("Only when no such reviewer exists, record `BLOCKED: independent review` and keep the handback closed.");
@@ -223,7 +223,7 @@ describe("applySubstitutions", () => {
     [
       "skills/why/SKILL.md",
       "Each spawn below names a role line in the `pstack-models.mdc` rule and a default. Set `model` to that line's value, or to the default if the rule or the line is missing. Leave `model` unset when the value is `auto` or `inherit-parent`. If the Task tool rejects a slug, use the default and say so. If it rejects the default, use the closest valid slug of the same family from its error message.",
-      "Each spawn below names a role line in the model sheet and a default. Set `target` from that line's entry, or from the default if the sheet or the line is missing. Leave `target` unset when the value is `auto` or `inherit-parent`. If `delegate_task` rejects an entry, use the default and say so. If it rejects the default, use another target of the same family from `orchestrator_capabilities`. Under `mode: muse`, a rejected target never falls back to a standard or same-family default.",
+      "Each spawn below names a role line in the model sheet and a default. Set `target` from that line's entry, or from the default if the sheet or the line is missing. Leave `target` unset when the value is `auto` or `inherit-parent`. If `delegate_task` rejects an entry, use the default and say so. If it rejects the default, use another target of the same family from `orchestrator_capabilities`.",
     ],
     [
       "skills/arena/SKILL.md",

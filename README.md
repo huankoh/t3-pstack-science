@@ -50,37 +50,6 @@ The session-start hook tells each new chat when to enter `poteto-mode` on its ow
 The plugin carries 64 skill directories, 24 of them `principle-*` leaves, and 4 agents.
 A bug fix, feature, or refactoring change gets one `interrogate` review round before a PR, then one fix run and an artifact check, unless you ask for more review rounds.
 
-## Muse mode
-
-Say "muse mode" in a chat and every helper that chat dispatches runs on the muse seats instead of the standard routes, for that chat only.
-Muse mode is the science column with Muse Wonder Full in every GPT seat, so it has no Codex target.
-It lasts across later tasks in the chat until "normal mode", "standard mode", or "turn off muse mode".
-A new chat starts in standard mode, and a quoted or discussed use of the phrase switches nothing.
-Muse mode needs the Muse, Claude, and OpenCode providers in T3.
-It moves helpers only, so the chat's own model stays your pick in the composer.
-To keep the whole run on Muse, pick a Muse model for the chat as well.
-Muse runs in contributor mode, so muse mode requests to Muse seats go to Meta under contributor terms.
-
-| Job | Tier | Target |
-| --- | --- | --- |
-| Implementation, swarm workers | `code` | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |
-| Mechanical edits | `mechanical` | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |
-| Research | `explore` | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |
-| Judgment, writing, hardest tasks | `judgment` | `muse/muse-wonder-full-1.0 reasoningEffort=xhigh` |
-| Final review | `final` | `muse/muse-wonder-full-1.0 reasoningEffort=xhigh` |
-| Design candidates | `runners` | Wonder Full xhigh, Opus 5.5 xhigh, DeepSeek V4.1 Flash max |
-| Design judge | `judges` | Wonder Full xhigh, Opus 5.5 xhigh, DeepSeek V4.1 Flash max |
-| Review panel | `reviewers` | Wonder Full xhigh, Opus 5.5 xhigh, DeepSeek V4.1 Flash max |
-
-Wonder Full, Opus 5.5, and DeepSeek sit on every muse mode panel, so each panel spans three families.
-In the science column, DeepSeek writes and researches science code, GPT judges, and Wonder Full sits on the four-seat review panel with GPT, Opus, and DeepSeek.
-On a science task, an Opus panel seat gets a term-free brief, exactly as in the science route.
-Muse and DeepSeek seats read the science terms.
-Muse mode seats start at their listed levels and are tuned per job like any other seat, never above `xhigh` unless you ask for more or picked the `unlimited` budget, and a DeepSeek seat always runs at `max`.
-A muse target this machine cannot run blocks that dispatch instead of falling back to a standard seat.
-`/setup-pstack` writes no muse lines by default.
-An optional `muse <role>:` sheet line overrides one muse seat, and `doctor` warns, without failing, when the catalog cannot run every muse target.
-
 ## Staying current
 
 This repository syncs from Lauren's tree directly, synced against upstream `d457567`. `tools/upstream.json` pins each component, `tools/substitutions.json` holds the rewrite rules and a denylist of Cursor terms, and `tools/forks.json` declares every file the port keeps in its own form and why. `bun tools/sync.mjs <component> <sha>` derives each upstream file through the rules, merges it three ways with the port's copy, and fails on an undeclared fork, a denylist hit, or a rule that no longer matches upstream. [CONTRIBUTING.md](CONTRIBUTING.md#the-sync-boundary) has the details.

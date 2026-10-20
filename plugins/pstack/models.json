@@ -52,20 +52,6 @@
       }
     }
   },
-  "muse": {
-    "on": ["muse mode"],
-    "off": ["normal mode", "standard mode", "turn off muse mode"],
-    "tiers": {
-      "code": "opencode/opencode-go/deepseek-v4.1-flash variant=max",
-      "explore": "opencode/opencode-go/deepseek-v4.1-flash variant=max",
-      "judgment": "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
-      "mechanical": "opencode/opencode-go/deepseek-v4.1-flash variant=max",
-      "final": "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
-      "runners": ["muse/muse-wonder-full-1.0 reasoningEffort=xhigh", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
-      "judges": ["muse/muse-wonder-full-1.0 reasoningEffort=xhigh", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
-      "reviewers": ["muse/muse-wonder-full-1.0 reasoningEffort=xhigh", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", "opencode/opencode-go/deepseek-v4.1-flash variant=max"]
-    }
-  },
   "roles": [
     { "role": "feature, refactoring", "tier": "code", "skill": "poteto-mode" },
     { "role": "bug-fix", "tier": "code", "skill": "poteto-mode" },
