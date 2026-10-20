@@ -45,44 +45,44 @@ Overwrite the sheet with the candidate, creating its directory and writing throu
 # `<role>:` sets the general column, as in every sheet before domains. `science <role>:` sets the science column.
 # `inherit-parent` or `auto` as a value: the role runs on the parent chat's model (`delegate_task` omits `target`). Alias entries in a panel list still count toward its fan-out.
 # budget: large (xhigh)
-feature, refactoring: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
-bug-fix: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
-perf-issue: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
-hillclimb: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+feature, refactoring: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
+bug-fix: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
+perf-issue: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
+hillclimb: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
 judgment and prose: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
 hardest tasks: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
-mechanical code: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+mechanical code: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
 final review: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
-how explorer: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+how explorer: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
 how explainer: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
-why investigators: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+why investigators: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
 why synthesizer: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
-reflect tooling: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+reflect tooling: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
 reflect judgment, divergent, synthesizer: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
-arena runners: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false, codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
-arena cross-judge pool: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
-swarm workers: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
-architect runners: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false, codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
-interrogate reviewers: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false, codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
-science feature, refactoring: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
-science bug-fix: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
-science perf-issue: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
-science hillclimb: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+arena runners: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+arena cross-judge pool: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh
+swarm workers: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
+architect runners: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+interrogate reviewers: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh, codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
+science feature, refactoring: muse/muse-wonder-1.0 reasoningEffort=xhigh
+science bug-fix: muse/muse-wonder-1.0 reasoningEffort=xhigh
+science perf-issue: muse/muse-wonder-1.0 reasoningEffort=xhigh
+science hillclimb: muse/muse-wonder-1.0 reasoningEffort=xhigh
 science judgment and prose: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
 science hardest tasks: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
-science mechanical code: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+science mechanical code: muse/muse-wonder-1.0 reasoningEffort=xhigh
 science final review: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
-science how explorer: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+science how explorer: muse/muse-wonder-1.0 reasoningEffort=xhigh
 science how explainer: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
-science why investigators: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+science why investigators: muse/muse-wonder-1.0 reasoningEffort=xhigh
 science why synthesizer: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
-science reflect tooling: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+science reflect tooling: muse/muse-wonder-1.0 reasoningEffort=xhigh
 science reflect judgment, divergent, synthesizer: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
-science arena runners: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
-science arena cross-judge pool: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
-science swarm workers: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
-science architect runners: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
-science interrogate reviewers: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, cursor/grok-4.7 reasoning_effort=xhigh fastMode=false
+science arena runners: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh
+science arena cross-judge pool: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh
+science swarm workers: muse/muse-wonder-1.0 reasoningEffort=xhigh
+science architect runners: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh
+science interrogate reviewers: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh
 session hook: on
 ```
 

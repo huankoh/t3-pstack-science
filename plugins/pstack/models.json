@@ -2,51 +2,51 @@
   "domains": {
     "general": {
       "tiers": {
-        "code": "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
-        "explore": "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
+        "code": "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
+        "explore": "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
         "judgment": "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-        "mechanical": "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
+        "mechanical": "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
         "final": "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
         "runners": [
           "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-          "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
+          "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
           "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"
         ],
         "judges": [
           "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
           "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-          "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"
+          "muse/muse-wonder-full-1.0 reasoningEffort=xhigh"
         ],
         "reviewers": [
           "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-          "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
+          "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
           "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"
         ]
       }
     },
     "science": {
       "covers": "biology or other scientific work",
-      "termReaders": ["gpt", "grok"],
+      "termReaders": ["gpt", "grok", "muse"],
       "tiers": {
-        "code": "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
-        "explore": "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
+        "code": "muse/muse-wonder-1.0 reasoningEffort=xhigh",
+        "explore": "muse/muse-wonder-1.0 reasoningEffort=xhigh",
         "judgment": "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
-        "mechanical": "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
+        "mechanical": "muse/muse-wonder-1.0 reasoningEffort=xhigh",
         "final": "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
         "runners": [
           "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
           "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-          "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"
+          "muse/muse-wonder-full-1.0 reasoningEffort=xhigh"
         ],
         "judges": [
           "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
           "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-          "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"
+          "muse/muse-wonder-full-1.0 reasoningEffort=xhigh"
         ],
         "reviewers": [
           "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
           "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-          "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"
+          "muse/muse-wonder-full-1.0 reasoningEffort=xhigh"
         ]
       }
     }

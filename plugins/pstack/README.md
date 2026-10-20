@@ -1,6 +1,6 @@
 # t3-pstack-science
 
-Lauren Tan's [pstack](https://github.com/cursor/plugins/tree/main/pstack) for T3 Code: rigorous agent workflows whose subagents, panels, schedules, and PR watches dispatch through T3's orchestration, so a panel can mix Claude, GPT, and Grok.
+Lauren Tan's [pstack](https://github.com/cursor/plugins/tree/main/pstack) for T3 Code: rigorous agent workflows whose subagents, panels, schedules, and PR watches dispatch through T3's orchestration, so a panel can mix Claude, GPT, and Muse.
 
 Tell `poteto-mode` your goal and it runs the workflow that fits: reproduce and root-cause a bug, sketch a design with `architect`, race candidates in `arena`, review a diff with `interrogate`, cut prose with `unslop`. It keeps code concise, simple, and verified, and it reports what it checked.
 

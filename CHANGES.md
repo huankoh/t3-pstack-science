@@ -2,6 +2,10 @@
 
 This file is the release changelog, with one `## <version> - <title>` entry per release, newest first. The Cursor-to-T3 rewrite rules live in [`tools/substitutions.json`](tools/substitutions.json), and the [sync boundary](CONTRIBUTING.md#the-sync-boundary) in `CONTRIBUTING.md` defines how a change to upstream's skill content is declared.
 
+## 2.0.0-rc.14-science.2 - Grok leaves the standard routes: Opus for general, Muse for science
+
+Grok 4.7 no longer holds any standard seat. In the general column, `code`, `explore`, and `mechanical` move from `cursor/grok-4.7` to `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false`, so they run with `judgment` on Opus 5.5. In the science column, `code`, `explore`, and `mechanical` move from `cursor/grok-4.7` to `muse/muse-wonder-1.0 reasoningEffort=xhigh`. In both columns, the Grok entry in `runners`, `judges`, and `reviewers` moves to `muse/muse-wonder-full-1.0 reasoningEffort=xhigh` in the same list position. Every other default stays as it was. Science term readers are now `gpt`, `grok`, and `muse`, because the science code and research seats run on Muse and must read the domain terms, so `science how explorer` translates as a Muse seat that reads the terms. Existing machine sheets keep their explicit lines until `/setup-pstack` reruns or a line is edited. Neither hooks JSON file changes.
+
 ## 2.0.0-rc.14-science.1 - chhoumann's rc.14: formal verification upkeep
 
 The fork now carries chhoumann's 2.0.0-rc.12 to 2.0.0-rc.14, Lauren Tan's pstack at cursor/plugins `d457567`. Users get `maintain-formal-verification-skill`, setup-pstack step 8, and the poteto-help fixes for the install step and Codex skill names. The model sheet's roles did not change. Neither hooks file changes.

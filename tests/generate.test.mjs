@@ -83,18 +83,18 @@ describe("regions", () => {
       expect(stamped).toContain(`\n| ${role.role}`);
     }
     const file = "plugins/pstack/skills/poteto-mode/SKILL.md";
-    expect(applyRegions(file, "## Models\n", models)).toContain("| bug-fix | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` |");
+    expect(applyRegions(file, "## Models\n", models)).toContain("| bug-fix | `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` | `muse/muse-wonder-1.0 reasoningEffort=xhigh` |");
   });
 
   test("the setup sheet lists 19 general seats then 19 science seats", () => {
     const block = sheetBlock(models);
     expect(block[0]).toBe("# pstack model configuration (T3). One line per role and column. Delete a line to fall back to the skill default.");
     expect(block[1]).toBe("# `<role>:` sets the general column, as in every sheet before domains. `science <role>:` sets the science column.");
-    expect(block[4]).toBe("feature, refactoring: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false");
-    expect(block[23]).toBe("science feature, refactoring: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false");
-    expect(block).toContain("science how explorer: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false");
-    expect(block).toContain("science why investigators: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false");
-    expect(block).toContain("science reflect tooling: cursor/grok-4.7 reasoning_effort=xhigh fastMode=false");
+    expect(block[4]).toBe("feature, refactoring: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false");
+    expect(block[23]).toBe("science feature, refactoring: muse/muse-wonder-1.0 reasoningEffort=xhigh");
+    expect(block).toContain("science how explorer: muse/muse-wonder-1.0 reasoningEffort=xhigh");
+    expect(block).toContain("science why investigators: muse/muse-wonder-1.0 reasoningEffort=xhigh");
+    expect(block).toContain("science reflect tooling: muse/muse-wonder-1.0 reasoningEffort=xhigh");
     expect(block.at(-1)).toBe("session hook: on");
     expect(block).toHaveLength(43);
   });
@@ -113,7 +113,7 @@ describe("regions", () => {
       expect(out).toContain("The column picks only the target.");
       expect(out).toContain("up to `max` and never a level above it.");
       expect(out).not.toContain("`ultra`");
-      expect(out).toContain("In `science`, only `gpt` and `grok` models read the domain's terms.");
+      expect(out).toContain("In `science`, only `gpt`, `grok`, and `muse` models read the domain's terms.");
       expect(out).toContain("A `science` dispatch to any other family carries a term-free brief. A default marked (term-free brief) gets one.");
       expect(out).toContain("Resolve an `inherit-parent` or `auto` seat's family from `orchestrator_capabilities`' `inheritedModel` before choosing its brief; an unknown family gets a term-free brief.");
       expect(out).toContain("no vocabulary of biology or other scientific work.");
@@ -154,8 +154,8 @@ describe("regions", () => {
   test("a missing seat renders none and panels mark term-free defaults", () => {
     const policy = structuredClone(models);
     policy.domains.general.tiers.explore = null;
-    expect(applyRegions("plugins/pstack/skills/how/SKILL.md", "## Models\n", policy)).toContain("| how explorer | none | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` |");
-    expect(applyRegions("plugins/pstack/skills/arena/SKILL.md", "## Models\n", models)).toContain("| arena runners | `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false`, `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false`, `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default`, `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` (term-free brief), `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` |");
+    expect(applyRegions("plugins/pstack/skills/how/SKILL.md", "## Models\n", policy)).toContain("| how explorer | none | `muse/muse-wonder-1.0 reasoningEffort=xhigh` |");
+    expect(applyRegions("plugins/pstack/skills/arena/SKILL.md", "## Models\n", models)).toContain("| arena runners | `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false`, `muse/muse-wonder-full-1.0 reasoningEffort=xhigh`, `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default`, `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` (term-free brief), `muse/muse-wonder-full-1.0 reasoningEffort=xhigh` |");
   });
 
   test("applyRegions stamps in place and is idempotent", () => {
@@ -164,7 +164,7 @@ describe("regions", () => {
     const once = applyRegions(file, text, models, { strict: true });
     expect(once).not.toContain("stale");
     expect(once).toContain("## After\nkeep\n");
-    expect(once).toContain("| how explorer | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` | `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` |");
+    expect(once).toContain("| how explorer | `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` | `muse/muse-wonder-1.0 reasoningEffort=xhigh` |");
     expect(applyRegions(file, once, models, { strict: true })).toBe(once);
   });
 
@@ -182,8 +182,8 @@ describe("regions", () => {
     expect(stamped).toContain(
       [
         "| Reviewer A | general `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false`; science `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |",
-        "| Reviewer B | general `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false`; science `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` (term-free brief) |",
-        "| Reviewer C | general `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default`; science `cursor/grok-4.7 reasoning_effort=xhigh fastMode=false` |",
+        "| Reviewer B | general `muse/muse-wonder-full-1.0 reasoningEffort=xhigh`; science `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` (term-free brief) |",
+        "| Reviewer C | general `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default`; science `muse/muse-wonder-full-1.0 reasoningEffort=xhigh` |",
       ].join("\n"),
     );
   });

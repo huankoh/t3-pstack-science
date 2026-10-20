@@ -35,35 +35,35 @@ describe("committed models.json", () => {
     expect(Object.keys(models.domains.science.tiers)).toEqual(["code", "explore", "judgment", "mechanical", "final", "runners", "judges", "reviewers"]);
   });
 
-  test("science workers and research delegates promise Grok defaults", () => {
+  test("science workers and research delegates promise Muse defaults", () => {
     const science = sheet.seats(models).filter((s) => s.domain === "science" && !s.panel);
     expect(science.map((s) => [s.role, s.defaults[0].entry])).toEqual([
-      ["feature, refactoring", "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"],
-      ["bug-fix", "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"],
-      ["perf-issue", "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"],
-      ["hillclimb", "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"],
+      ["feature, refactoring", "muse/muse-wonder-1.0 reasoningEffort=xhigh"],
+      ["bug-fix", "muse/muse-wonder-1.0 reasoningEffort=xhigh"],
+      ["perf-issue", "muse/muse-wonder-1.0 reasoningEffort=xhigh"],
+      ["hillclimb", "muse/muse-wonder-1.0 reasoningEffort=xhigh"],
       ["judgment and prose", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
       ["hardest tasks", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
-      ["mechanical code", "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"],
+      ["mechanical code", "muse/muse-wonder-1.0 reasoningEffort=xhigh"],
       ["final review", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
-      ["how explorer", "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"],
+      ["how explorer", "muse/muse-wonder-1.0 reasoningEffort=xhigh"],
       ["how explainer", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
-      ["why investigators", "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"],
+      ["why investigators", "muse/muse-wonder-1.0 reasoningEffort=xhigh"],
       ["why synthesizer", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
-      ["reflect tooling", "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"],
+      ["reflect tooling", "muse/muse-wonder-1.0 reasoningEffort=xhigh"],
       ["reflect judgment, divergent, synthesizer", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
-      ["swarm workers", "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false"],
+      ["swarm workers", "muse/muse-wonder-1.0 reasoningEffort=xhigh"],
     ]);
     expect(models.roles.filter((r) => r.tier === "explore").map((r) => r.role)).toEqual([
       "how explorer", "why investigators", "reflect tooling",
     ]);
   });
 
-  test("mechanical code and final review promise the same defaults in both columns", () => {
+  test("mechanical code promises its column default and final review promises the same default in both columns", () => {
     expect(sheet.seats(models).filter((s) => ["mechanical code", "final review"].includes(s.role)).map((s) => [s.key, s.defaults])).toEqual([
-      ["mechanical code", [{ entry: "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false", termFree: false }]],
+      ["mechanical code", [{ entry: "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", termFree: false }]],
       ["final review", [{ entry: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default", termFree: false }]],
-      ["science mechanical code", [{ entry: "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false", termFree: false }]],
+      ["science mechanical code", [{ entry: "muse/muse-wonder-1.0 reasoningEffort=xhigh", termFree: false }]],
       ["science final review", [{ entry: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default", termFree: false }]],
     ]);
     expect(["mechanical code", "final review"].map((role) => models.roles.find((r) => r.role === role))).toEqual([
@@ -74,8 +74,8 @@ describe("committed models.json", () => {
   });
 
   test.each([
-    [["feature, refactoring"], ["grok"], null],
-    [["feature, refactoring", "hardest tasks"], ["gpt", "grok"], {
+    [["feature, refactoring"], ["muse"], null],
+    [["feature, refactoring", "hardest tasks"], ["gpt", "muse"], {
       entry: "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", termFree: true,
     }],
   ])("science handback selects an independent reviewer for authors %j", (roles, expectedFamilies, expectedExtra) => {
@@ -100,12 +100,13 @@ describe("committed models.json", () => {
     ]);
   });
 
-  test("every default promises xhigh and explicit standard speed", () => {
+  test("every default promises xhigh, with explicit standard speed where the provider lists a speed option", () => {
     expect([...new Set(sheet.seats(models).flatMap((s) => s.defaults.map((d) => d.entry)))].sort()).toEqual([
       "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
       "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
       "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
-      "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false",
+      "muse/muse-wonder-1.0 reasoningEffort=xhigh",
+      "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
     ]);
   });
 
