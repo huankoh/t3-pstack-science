@@ -116,16 +116,16 @@ describe("checkSheet against a catalog", () => {
     }
   });
 
-  test("a missing line checks its column default on a machine without cursor", () => {
-    const noCursor = structuredClone(catalog);
-    noCursor.providers = noCursor.providers.filter((p) => p.providerInstanceId !== "cursor");
-    expect(check("session hook: on", noCursor)).toEqual([
-      "feature, refactoring", "bug-fix", "perf-issue", "hillclimb", "mechanical code", "how explorer", "why investigators", "reflect tooling",
-      "arena runners", "arena cross-judge pool", "swarm workers", "architect runners", "interrogate reviewers",
+  test("a missing line checks its column default on a machine without muse", () => {
+    const noMuse = structuredClone(catalog);
+    noMuse.providers = noMuse.providers.filter((p) => p.providerInstanceId !== "muse");
+    const panel = /(?:arena runners|arena cross-judge pool|architect runners|interrogate reviewers)$/;
+    expect(check("session hook: on", noMuse)).toEqual([
+      "arena runners", "arena cross-judge pool", "architect runners", "interrogate reviewers",
       "science feature, refactoring", "science bug-fix", "science perf-issue", "science hillclimb",
       "science mechanical code", "science how explorer", "science why investigators", "science reflect tooling",
       "science arena runners", "science arena cross-judge pool", "science swarm workers", "science architect runners", "science interrogate reviewers",
-    ].map((key) => `${key} (no line, tier default): cursor/grok-4.7: no provider instance "cursor" in this T3`));
+    ].map((key) => `${key} (no line, tier default): muse/${panel.test(key) ? "muse-wonder-full-1.0" : "muse-wonder-1.0"}: no provider instance "muse" in this T3`));
   });
 
   test("a panel on one family fails, whatever providers serve it", () => {
@@ -275,7 +275,7 @@ describe("seats", () => {
     expect(keys.at(-1)).toBe("science interrogate reviewers");
     expect(seats(models).find((s) => s.key === "science bug-fix")).toEqual({
       key: "science bug-fix", alias: null, domain: "science", role: "bug-fix", skill: "poteto-mode", panel: false,
-      defaults: [{ entry: "cursor/grok-4.7 reasoning_effort=xhigh fastMode=false", termFree: false }],
+      defaults: [{ entry: "muse/muse-wonder-1.0 reasoningEffort=xhigh", termFree: false }],
     });
   });
 

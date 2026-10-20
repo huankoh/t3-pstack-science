@@ -85,6 +85,27 @@
       "constraints": ["Provider is not authenticated."]
     },
     {
+      "providerInstanceId": "muse",
+      "driverKind": "muse",
+      "models": [
+        {
+          "id": "muse-wonder-1.0",
+          "options": [
+            { "id": "reasoningEffort", "type": "select", "options": [{ "id": "minimal" }, { "id": "low" }, { "id": "medium" }, { "id": "high" }, { "id": "xhigh" }, { "id": "max" }] }
+          ]
+        },
+        {
+          "id": "muse-wonder-full-1.0",
+          "options": [
+            { "id": "reasoningEffort", "type": "select", "options": [{ "id": "minimal" }, { "id": "low" }, { "id": "medium" }, { "id": "high" }, { "id": "xhigh" }, { "id": "max" }] }
+          ]
+        }
+      ],
+      "canRunChildTask": true,
+      "canRunCrossProviderChildTask": true,
+      "constraints": []
+    },
+    {
       "providerInstanceId": "grok",
       "driverKind": "grok",
       "models": [
