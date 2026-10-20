@@ -2,6 +2,19 @@
 
 This file is the release changelog, with one `## <version> - <title>` entry per release, newest first. The Cursor-to-T3 rewrite rules live in [`tools/substitutions.json`](tools/substitutions.json), and the [sync boundary](CONTRIBUTING.md#the-sync-boundary) in `CONTRIBUTING.md` defines how a change to upstream's skill content is declared.
 
+## 2.0.0-rc.15-science.2 - Muse Code install with --muse
+
+`install`, `update`, `doctor`, and `uninstall` accept the opt-in `--muse` flag, alone or with `--cursor`.
+The installer finds T3's configured Muse binary, then PATH, then `~/.local/bin/muse`, and installs a user-scope cached copy.
+Repeated runs converge without changes, and updates replace the active plugin record.
+Only this plugin's session-start hook and four agent definitions are approved, with each capability id reported.
+Muse's built-in `git` skill is disabled, with ownership recorded so uninstall restores it only when this installer disabled it.
+Every runtime receives one shared Git rule that recognizes commits and pushes covered by a PR, merge, or release task, while forbidding removal of Git lock holders.
+Muse uses the existing Claude-compatible hook and stdout context, so neither frozen hooks JSON file changes.
+Doctor verifies the CLI, release, active state, approvals, Git skill, and session context with a schema-derived hook fixture.
+Fake-CLI tests and a throwaway-home E2E test cover installation, updates, approvals, context delivery, and uninstall.
+Restart T3 after `update --muse`.
+
 ## 2.0.0-rc.15-science.1 - chhoumann's rc.15: Lauren's pstack at 88d4751
 
 The fork now carries chhoumann's 2.0.0-rc.15, Lauren Tan's pstack at cursor/plugins `88d4751`.
