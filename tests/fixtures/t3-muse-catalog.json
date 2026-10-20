@@ -26,6 +26,21 @@
       "canRunChildTask": true,
       "canRunCrossProviderChildTask": true,
       "constraints": []
+    },
+    {
+      "providerInstanceId": "opencode",
+      "driverKind": "opencode",
+      "models": [
+        {
+          "id": "opencode-go/deepseek-v4.1-flash",
+          "options": [
+            { "id": "variant", "type": "select", "options": [{ "id": "low" }, { "id": "high" }, { "id": "max" }] }
+          ]
+        }
+      ],
+      "canRunChildTask": true,
+      "canRunCrossProviderChildTask": true,
+      "constraints": []
     }
   ]
 }

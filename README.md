@@ -1,6 +1,8 @@
 # t3-pstack-science
 
-pstack for [T3 Code](https://github.com/pingdotgg/t3code). It is Lauren Tan's (poteto's) [pstack](https://github.com/cursor/plugins/tree/main/pstack), with its Cursor mechanics rewritten in place for T3. Every subagent, panel, fan-out, schedule, and PR watch dispatches through T3's `t3-code` MCP tools, so an `interrogate`, `arena`, or `architect` panel can run Claude, GPT, and Muse reviewers side by side, from a Claude Code thread or a Codex thread.
+pstack for [T3 Code](https://github.com/pingdotgg/t3code).
+It is Lauren Tan's (poteto's) [pstack](https://github.com/cursor/plugins/tree/main/pstack), with its Cursor mechanics rewritten in place for T3.
+Every subagent, panel, fan-out, schedule, and PR watch dispatches through T3's `t3-code` MCP tools, so an `interrogate`, `arena`, or `architect` panel can run Claude, GPT, Muse, and DeepSeek reviewers side by side, from a Claude Code thread or a Codex thread.
 
 The skill text is Lauren's. A generated set of substitutions rewrites only what names Cursor (its `Task` tool, its model slugs, its `.mdc` rule, its cloud agents, `/loop`), and a few declared forks carry what a substitution cannot. Nothing else needs loading: the T3 rules sit where Lauren's dispatch rules sit.
 
@@ -49,20 +51,33 @@ The plugin carries 64 skill directories, 24 of them `principle-*` leaves, and 4 
 
 ## Muse mode
 
-Say "muse mode" in a chat and every helper that chat dispatches runs on Muse seats instead of the standard routes, for that chat only. It lasts across later tasks in the chat until "normal mode", "standard mode", or "turn off muse mode". A new chat starts in standard mode, and a quoted or discussed use of the phrase switches nothing. Muse mode needs the Muse provider in T3. It moves helpers only, so the chat's own model stays your pick in the composer. To keep the whole run on Muse, pick a Muse model for the chat as well. Muse runs in contributor mode, so muse mode requests go to Meta under contributor terms.
+Say "muse mode" in a chat and every helper that chat dispatches runs on the muse seats instead of the standard routes, for that chat only.
+Muse mode is the science column with Muse Wonder Full in every GPT seat, so it has no Codex target.
+It lasts across later tasks in the chat until "normal mode", "standard mode", or "turn off muse mode".
+A new chat starts in standard mode, and a quoted or discussed use of the phrase switches nothing.
+Muse mode needs the Muse and OpenCode providers in T3.
+It moves helpers only, so the chat's own model stays your pick in the composer.
+To keep the whole run on Muse, pick a Muse model for the chat as well.
+Muse runs in contributor mode, so muse mode requests to Muse seats go to Meta under contributor terms.
 
 | Job | Tier | Target |
 | --- | --- | --- |
-| Implementation, swarm workers | `code` | `muse/muse-wonder-1.0 reasoningEffort=xhigh` |
-| Mechanical edits | `mechanical` | `muse/muse-spark-1.3 reasoningEffort=max` |
-| Research | `explore` | `muse/muse-wonder-1.0 reasoningEffort=xhigh` |
+| Implementation, swarm workers | `code` | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |
+| Mechanical edits | `mechanical` | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |
+| Research | `explore` | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |
 | Judgment, writing, hardest tasks | `judgment` | `muse/muse-wonder-full-1.0 reasoningEffort=xhigh` |
 | Final review | `final` | `muse/muse-wonder-full-1.0 reasoningEffort=xhigh` |
-| Design candidates | `runners` | Wonder Full xhigh, Opus 5.5 xhigh |
-| Design judge | `judges` | Wonder xhigh (ran no candidate), Opus 5.5 xhigh |
-| Review panel | `reviewers` | Wonder Full xhigh, Opus 5.5 xhigh |
+| Design candidates | `runners` | Wonder Full xhigh, Opus 5.5 xhigh, DeepSeek V4.1 Flash max |
+| Design judge | `judges` | Wonder Full xhigh, Opus 5.5 xhigh, DeepSeek V4.1 Flash max |
+| Review panel | `reviewers` | Wonder Full xhigh, Opus 5.5 xhigh, DeepSeek V4.1 Flash max |
 
-Opus 5.5 sits on every muse mode panel, so each panel spans two families. On a science task, an Opus panel seat gets a term-free brief, exactly as in the science route. Muse seats read the science terms. Muse mode levels are fixed as listed, and a muse target this machine cannot run blocks that dispatch instead of falling back to a standard seat. `/setup-pstack` writes no muse lines by default. An optional `muse <role>:` sheet line overrides one muse seat, and `doctor` warns, without failing, when the catalog cannot run every muse target.
+Opus 5.5 and DeepSeek sit on every muse mode panel, so each panel spans three families.
+In the science column, DeepSeek writes and researches science code, GPT judges, and Wonder Full sits on the four-seat review panel with GPT, Opus, and DeepSeek.
+On a science task, an Opus panel seat gets a term-free brief, exactly as in the science route.
+Muse and DeepSeek seats read the science terms.
+Muse mode levels are fixed as listed, and a muse target this machine cannot run blocks that dispatch instead of falling back to a standard seat.
+`/setup-pstack` writes no muse lines by default.
+An optional `muse <role>:` sheet line overrides one muse seat, and `doctor` warns, without failing, when the catalog cannot run every muse target.
 
 ## Staying current
 

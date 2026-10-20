@@ -35,24 +35,24 @@ describe("committed models.json", () => {
     expect(Object.keys(models.domains.science.tiers)).toEqual(["code", "explore", "judgment", "mechanical", "final", "runners", "judges", "reviewers"]);
   });
 
-  test("science workers and research delegates promise Muse defaults", () => {
+  test("science workers and research delegates promise DeepSeek defaults", () => {
     const science = sheet.seats(models).filter((s) => s.domain === "science" && !s.panel);
     expect(science.map((s) => [s.role, s.defaults[0].entry])).toEqual([
-      ["feature, refactoring", "muse/muse-wonder-1.0 reasoningEffort=xhigh"],
-      ["bug-fix", "muse/muse-wonder-1.0 reasoningEffort=xhigh"],
-      ["perf-issue", "muse/muse-wonder-1.0 reasoningEffort=xhigh"],
-      ["hillclimb", "muse/muse-wonder-1.0 reasoningEffort=xhigh"],
+      ["feature, refactoring", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
+      ["bug-fix", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
+      ["perf-issue", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
+      ["hillclimb", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
       ["judgment and prose", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
       ["hardest tasks", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
-      ["mechanical code", "muse/muse-wonder-1.0 reasoningEffort=xhigh"],
+      ["mechanical code", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
       ["final review", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
-      ["how explorer", "muse/muse-wonder-1.0 reasoningEffort=xhigh"],
+      ["how explorer", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
       ["how explainer", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
-      ["why investigators", "muse/muse-wonder-1.0 reasoningEffort=xhigh"],
+      ["why investigators", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
       ["why synthesizer", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
-      ["reflect tooling", "muse/muse-wonder-1.0 reasoningEffort=xhigh"],
+      ["reflect tooling", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
       ["reflect judgment, divergent, synthesizer", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
-      ["swarm workers", "muse/muse-wonder-1.0 reasoningEffort=xhigh"],
+      ["swarm workers", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
     ]);
     expect(models.roles.filter((r) => r.tier === "explore").map((r) => r.role)).toEqual([
       "how explorer", "why investigators", "reflect tooling",
@@ -63,7 +63,7 @@ describe("committed models.json", () => {
     expect(sheet.seats(models).filter((s) => ["mechanical code", "final review"].includes(s.role)).map((s) => [s.key, s.defaults])).toEqual([
       ["mechanical code", [{ entry: "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", termFree: false }]],
       ["final review", [{ entry: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default", termFree: false }]],
-      ["science mechanical code", [{ entry: "muse/muse-wonder-1.0 reasoningEffort=xhigh", termFree: false }]],
+      ["science mechanical code", [{ entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }]],
       ["science final review", [{ entry: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default", termFree: false }]],
     ]);
     expect(["mechanical code", "final review"].map((role) => models.roles.find((r) => r.role === role))).toEqual([
@@ -74,8 +74,8 @@ describe("committed models.json", () => {
   });
 
   test.each([
-    [["feature, refactoring"], ["muse"], null],
-    [["feature, refactoring", "hardest tasks"], ["gpt", "muse"], {
+    [["feature, refactoring"], ["deepseek"], null],
+    [["feature, refactoring", "hardest tasks"], ["deepseek", "gpt"], {
       entry: "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", termFree: true,
     }],
   ])("science handback selects an independent reviewer for authors %j", (roles, expectedFamilies, expectedExtra) => {
@@ -100,14 +100,28 @@ describe("committed models.json", () => {
     ]);
   });
 
-  test("every default promises xhigh, with explicit standard speed where the provider lists a speed option", () => {
+  test("every default promises its pinned entry, with explicit standard speed where the provider lists a speed option", () => {
     expect([...new Set(sheet.seats(models).flatMap((s) => s.defaults.map((d) => d.entry)))].sort()).toEqual([
       "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
       "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
       "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
-      "muse/muse-wonder-1.0 reasoningEffort=xhigh",
       "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
+      "opencode/opencode-go/deepseek-v4.1-flash variant=max",
     ]);
+  });
+
+  test("every DeepSeek entry is variant=max with no speed option", () => {
+    const tierEntries = [
+      ...Object.values(raw.domains.science.tiers).flatMap((v) => [v].flat()),
+      ...Object.values(raw.muse.tiers).flatMap((v) => [v].flat()),
+    ];
+    const deepseek = tierEntries.filter((e) => sheet.family(sheet.parseEntry(e).model) === "deepseek");
+    expect(deepseek).toHaveLength(12);
+    for (const entry of deepseek) {
+      expect(entry).toBe("opencode/opencode-go/deepseek-v4.1-flash variant=max");
+      expect(sheet.parseEntry(entry).options).toEqual({ variant: "max" });
+    }
+    expect(raw.domains.science.termReaders).toEqual(["gpt", "grok", "muse", "deepseek"]);
   });
 
 });
@@ -275,39 +289,54 @@ describe("muse mode policy", () => {
       on: ["muse mode"],
       off: ["normal mode", "standard mode", "turn off muse mode"],
       tiers: {
-        code: "muse/muse-wonder-1.0 reasoningEffort=xhigh",
-        explore: "muse/muse-wonder-1.0 reasoningEffort=xhigh",
+        code: "opencode/opencode-go/deepseek-v4.1-flash variant=max",
+        explore: "opencode/opencode-go/deepseek-v4.1-flash variant=max",
         judgment: "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
-        mechanical: "muse/muse-spark-1.3 reasoningEffort=max",
+        mechanical: "opencode/opencode-go/deepseek-v4.1-flash variant=max",
         final: "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
-        runners: ["muse/muse-wonder-full-1.0 reasoningEffort=xhigh", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false"],
-        judges: ["muse/muse-wonder-1.0 reasoningEffort=xhigh", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false"],
-        reviewers: ["muse/muse-wonder-full-1.0 reasoningEffort=xhigh", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false"],
+        runners: ["muse/muse-wonder-full-1.0 reasoningEffort=xhigh", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
+        judges: ["muse/muse-wonder-full-1.0 reasoningEffort=xhigh", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
+        reviewers: ["muse/muse-wonder-full-1.0 reasoningEffort=xhigh", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
       },
     });
   });
 
-  test("muse tiers run Muse at fixed levels and Opus on every panel", () => {
-    for (const value of Object.values(models.muse.tiers)) {
+  test("muse mode has no codex target", () => {
+    expect(JSON.stringify(models.muse.tiers)).not.toContain("codex/");
+    const entries = Object.values(models.muse.tiers).flatMap((v) => [v].flat());
+    expect(entries.some((e) => sheet.parseEntry(e).providerInstanceId === "codex")).toBe(false);
+    expect([...new Set(entries.map((e) => sheet.parseEntry(e).providerInstanceId))].sort()).toEqual(["claudeAgent", "muse", "opencode"]);
+  });
+
+  test("muse tiers run Wonder Full and DeepSeek at fixed levels and Opus and DeepSeek on every panel", () => {
+    for (const [tier, value] of Object.entries(models.muse.tiers)) {
       const entries = [value].flat().map((entry) => sheet.parseEntry(entry));
       for (const entry of entries) {
         if (entry.model === "claude-opus-5-5") {
           expect(entry.providerInstanceId).toBe("claudeAgent");
           expect(entry.options).toEqual({ effort: "xhigh", fastMode: "false" });
+        } else if (entry.providerInstanceId === "opencode") {
+          expect(entry.model).toBe("opencode-go/deepseek-v4.1-flash");
+          expect(sheet.family(entry.model)).toBe("deepseek");
+          expect(entry.options).toEqual({ variant: "max" });
         } else {
           expect(entry.providerInstanceId).toBe("muse");
           expect(sheet.family(entry.model)).toBe("muse");
-          expect(["muse-wonder-1.0", "muse-wonder-full-1.0", "muse-spark-1.3"]).toContain(entry.model);
-          expect(entry.options.reasoningEffort).toBe(entry.model === "muse-spark-1.3" ? "max" : "xhigh");
+          expect(entry.model).toBe("muse-wonder-full-1.0");
+          expect(entry.options).toEqual({ reasoningEffort: "xhigh" });
         }
       }
       if (Array.isArray(value)) {
-        expect([...sheet.panelFamilies(entries)].sort()).toEqual(["claude", "muse"]);
+        expect([...sheet.panelFamilies(entries)].sort()).toEqual(["claude", "deepseek", "muse"]);
       } else {
-        expect(entries[0].providerInstanceId).toBe("muse");
+        expect(entries[0].providerInstanceId).toBe(["judgment", "final"].includes(tier) ? "muse" : "opencode");
       }
     }
-    expect(sheet.parseEntry(models.muse.tiers.mechanical).model).toBe("muse-spark-1.3");
+    expect(sheet.parseEntry(models.muse.tiers.mechanical)).toEqual({
+      providerInstanceId: "opencode",
+      model: "opencode-go/deepseek-v4.1-flash",
+      options: { variant: "max" },
+    });
   });
 });
 

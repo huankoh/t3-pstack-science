@@ -18,7 +18,7 @@ const catalogPath = join(root, "tests/fixtures/t3-catalog.json");
 const catalog = JSON.parse(readFileSync(catalogPath, "utf8"));
 const museCatalogPath = join(root, "tests/fixtures/t3-muse-catalog.json");
 const museCatalog = JSON.parse(readFileSync(museCatalogPath, "utf8"));
-const museRunCatalog = { providers: [...museCatalog.providers, ...catalog.providers.filter((p) => p.providerInstanceId !== "muse")] };
+const museRunCatalog = { providers: [...museCatalog.providers, ...catalog.providers.filter((p) => !["muse", "opencode"].includes(p.providerInstanceId))] };
 const models = loadModels();
 const check = (text, over = catalog) => checkSheet(parseSheet(text), { models, catalog: over });
 const checkMuse = (text, over = museRunCatalog) => checkSheet(parseSheet(text), { models, catalog: over, mode: "muse" });
@@ -124,13 +124,10 @@ describe("checkSheet against a catalog", () => {
   test("a missing line checks its column default on a machine without muse", () => {
     const noMuse = structuredClone(catalog);
     noMuse.providers = noMuse.providers.filter((p) => p.providerInstanceId !== "muse");
-    const panel = /(?:arena runners|arena cross-judge pool|architect runners|interrogate reviewers)$/;
     expect(check("session hook: on", noMuse)).toEqual([
       "arena runners", "arena cross-judge pool", "architect runners", "interrogate reviewers",
-      "science feature, refactoring", "science bug-fix", "science perf-issue", "science hillclimb",
-      "science mechanical code", "science how explorer", "science why investigators", "science reflect tooling",
-      "science arena runners", "science arena cross-judge pool", "science swarm workers", "science architect runners", "science interrogate reviewers",
-    ].map((key) => `${key} (no line, tier default): muse/${panel.test(key) ? "muse-wonder-full-1.0" : "muse-wonder-1.0"}: no provider instance "muse" in this T3`));
+      "science interrogate reviewers",
+    ].map((key) => `${key} (no line, tier default): muse/muse-wonder-full-1.0: no provider instance "muse" in this T3`));
   });
 
   test("a panel on one family fails, whatever providers serve it", () => {
@@ -335,7 +332,7 @@ describe("seats", () => {
     expect(keys.at(-1)).toBe("science interrogate reviewers");
     expect(seats(models).find((s) => s.key === "science bug-fix")).toEqual({
       key: "science bug-fix", alias: null, domain: "science", role: "bug-fix", skill: "poteto-mode", panel: false,
-      defaults: [{ entry: "muse/muse-wonder-1.0 reasoningEffort=xhigh", termFree: false }],
+      defaults: [{ entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }],
     });
   });
 
@@ -350,7 +347,7 @@ describe("muse seats", () => {
   test("lists 19 muse seats in role order, marking only Opus defaults term-free in science", () => {
     const muse = seats(models, { mode: "muse" });
     expect(muse.map((s) => s.key)).toEqual(models.roles.map((r) => `muse ${r.role}`));
-    expect(muse.flatMap((s) => s.defaults)).toHaveLength(23);
+    expect(muse.flatMap((s) => s.defaults)).toHaveLength(27);
     for (const seat of muse) {
       expect(seat.alias).toBeNull();
       for (const d of seat.defaults) {
@@ -371,17 +368,18 @@ describe("muse seats", () => {
   test("derives muse defaults from the muse tiers", () => {
     expect(seats(models, { mode: "muse" }).find((s) => s.key === "muse bug-fix")).toEqual({
       key: "muse bug-fix", alias: null, domain: "muse", role: "bug-fix", skill: "poteto-mode", panel: false,
-      defaults: [{ entry: "muse/muse-wonder-1.0 reasoningEffort=xhigh", termFree: false }],
+      defaults: [{ entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }],
     });
     expect(seats(models, { mode: "muse" }).find((s) => s.key === "muse mechanical code")).toEqual({
       key: "muse mechanical code", alias: null, domain: "muse", role: "mechanical code", skill: "poteto-mode", panel: false,
-      defaults: [{ entry: "muse/muse-spark-1.3 reasoningEffort=max", termFree: false }],
+      defaults: [{ entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }],
     });
     expect(seats(models, { mode: "muse" }).find((s) => s.key === "muse interrogate reviewers")).toEqual({
       key: "muse interrogate reviewers", alias: null, domain: "muse", role: "interrogate reviewers", skill: "interrogate", panel: true,
       defaults: [
         { entry: "muse/muse-wonder-full-1.0 reasoningEffort=xhigh", termFree: false },
         { entry: "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", termFree: true },
+        { entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false },
       ],
     });
   });
@@ -512,31 +510,20 @@ describe("muse sheet lines", () => {
   test("muse mode names every muse seat whose default cannot run here", () => {
     const lacking = structuredClone(catalog);
     lacking.providers = lacking.providers.filter((p) => !["muse", "claudeAgent"].includes(p.providerInstanceId));
-    const wonder = 'muse/muse-wonder-1.0: no provider instance "muse" in this T3';
     const full = 'muse/muse-wonder-full-1.0: no provider instance "muse" in this T3';
-    const spark = 'muse/muse-spark-1.3: no provider instance "muse" in this T3';
     const opus = 'claudeAgent/claude-opus-5-5: no provider instance "claudeAgent" in this T3';
     const missing = (key, target) => `${key} (no line, tier default): ${target}`;
     expect(checkSheet(parseSheet("session hook: on\n"), { models, catalog: lacking, mode: "muse" })).toEqual([
-      missing("muse feature, refactoring", wonder),
-      missing("muse bug-fix", wonder),
-      missing("muse perf-issue", wonder),
-      missing("muse hillclimb", wonder),
       missing("muse judgment and prose", full),
       missing("muse hardest tasks", full),
-      missing("muse mechanical code", spark),
       missing("muse final review", full),
-      missing("muse how explorer", wonder),
       missing("muse how explainer", full),
-      missing("muse why investigators", wonder),
       missing("muse why synthesizer", full),
-      missing("muse reflect tooling", wonder),
       missing("muse reflect judgment, divergent, synthesizer", full),
       missing("muse arena runners", full),
       missing("muse arena runners", opus),
-      missing("muse arena cross-judge pool", wonder),
+      missing("muse arena cross-judge pool", full),
       missing("muse arena cross-judge pool", opus),
-      missing("muse swarm workers", wonder),
       missing("muse architect runners", full),
       missing("muse architect runners", opus),
       missing("muse interrogate reviewers", full),
@@ -544,7 +531,7 @@ describe("muse sheet lines", () => {
     ]);
   });
 
-  test("muse mode passes on a catalog that lists the Muse and Opus models", () => {
+  test("muse mode passes on a catalog that lists the Muse, Opus, and DeepSeek models", () => {
     expect(checkMuse("session hook: on\n")).toEqual([]);
     expect(checkMuse("muse bug-fix: muse/muse-wonder-1.0 reasoningEffort=xhigh\nmuse interrogate reviewers: muse/muse-wonder-full-1.0 reasoningEffort=xhigh, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false\n")).toEqual([]);
   });

@@ -138,7 +138,7 @@ export function museModeProse(models) {
     "Levels are fixed. Do not raise or lower them, and the sheet `# budget` comment does not apply. " +
     "A rejected or unrunnable muse target blocks that dispatch and names the target and the fix. Never use a standard seat or the generic same-family fallback. " +
     "A failed reviewer gets a fresh reviewer on the same entry, or the gate stays `BLOCKED: independent review`. " +
-    "The handback's extra reviewer under `mode: muse` comes from `muse interrogate reviewers`, by family as usual (Opus when Muse wrote the work and Muse did the final review). " +
+    "The handback's extra reviewer under `mode: muse` is the first `muse interrogate reviewers` entry outside the work's families, by family as usual. " +
     "Every brief to a child that can dispatch carries `mode: muse` and the domain. " +
     "Muse mode moves helpers only. To keep the whole run on Muse, the user picks a Muse model for the chat in the composer."
   );

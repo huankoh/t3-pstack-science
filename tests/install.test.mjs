@@ -617,7 +617,7 @@ describe("the model sheet", () => {
     const { sheet } = machine();
     const catalog = JSON.parse(readFileSync(join(repoRoot, "tests/fixtures/t3-catalog.json"), "utf8"));
     const museCatalog = JSON.parse(readFileSync(join(repoRoot, "tests/fixtures/t3-muse-catalog.json"), "utf8"));
-    const run = { providers: [...museCatalog.providers, ...catalog.providers.filter((p) => p.providerInstanceId !== "muse")] };
+    const run = { providers: [...museCatalog.providers, ...catalog.providers.filter((p) => !["muse", "opencode"].includes(p.providerInstanceId))] };
     mkdirSync(join(sheet, ".."), { recursive: true });
     writeFileSync(sheet, SHEET);
     const rows = doctorSheet(sheet, { catalog: run, models });

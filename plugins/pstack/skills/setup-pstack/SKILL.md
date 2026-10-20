@@ -65,25 +65,25 @@ arena cross-judge pool: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=defa
 swarm workers: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
 architect runners: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
 interrogate reviewers: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh, codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
-science feature, refactoring: muse/muse-wonder-1.0 reasoningEffort=xhigh
-science bug-fix: muse/muse-wonder-1.0 reasoningEffort=xhigh
-science perf-issue: muse/muse-wonder-1.0 reasoningEffort=xhigh
-science hillclimb: muse/muse-wonder-1.0 reasoningEffort=xhigh
+science feature, refactoring: opencode/opencode-go/deepseek-v4.1-flash variant=max
+science bug-fix: opencode/opencode-go/deepseek-v4.1-flash variant=max
+science perf-issue: opencode/opencode-go/deepseek-v4.1-flash variant=max
+science hillclimb: opencode/opencode-go/deepseek-v4.1-flash variant=max
 science judgment and prose: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
 science hardest tasks: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
-science mechanical code: muse/muse-wonder-1.0 reasoningEffort=xhigh
+science mechanical code: opencode/opencode-go/deepseek-v4.1-flash variant=max
 science final review: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
-science how explorer: muse/muse-wonder-1.0 reasoningEffort=xhigh
+science how explorer: opencode/opencode-go/deepseek-v4.1-flash variant=max
 science how explainer: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
-science why investigators: muse/muse-wonder-1.0 reasoningEffort=xhigh
+science why investigators: opencode/opencode-go/deepseek-v4.1-flash variant=max
 science why synthesizer: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
-science reflect tooling: muse/muse-wonder-1.0 reasoningEffort=xhigh
+science reflect tooling: opencode/opencode-go/deepseek-v4.1-flash variant=max
 science reflect judgment, divergent, synthesizer: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
-science arena runners: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh
-science arena cross-judge pool: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh
-science swarm workers: muse/muse-wonder-1.0 reasoningEffort=xhigh
-science architect runners: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh
-science interrogate reviewers: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh
+science arena runners: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, opencode/opencode-go/deepseek-v4.1-flash variant=max
+science arena cross-judge pool: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, opencode/opencode-go/deepseek-v4.1-flash variant=max
+science swarm workers: opencode/opencode-go/deepseek-v4.1-flash variant=max
+science architect runners: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, opencode/opencode-go/deepseek-v4.1-flash variant=max
+science interrogate reviewers: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, opencode/opencode-go/deepseek-v4.1-flash variant=max, muse/muse-wonder-full-1.0 reasoningEffort=xhigh
 session hook: on
 ```
 
