@@ -51,6 +51,20 @@
       }
     }
   },
+  "muse": {
+    "on": ["muse mode"],
+    "off": ["normal mode", "standard mode", "turn off muse mode"],
+    "tiers": {
+      "code": "muse/muse-wonder-1.0 reasoningEffort=xhigh",
+      "explore": "muse/muse-wonder-1.0 reasoningEffort=xhigh",
+      "judgment": "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
+      "mechanical": "muse/muse-spark-1.3 reasoningEffort=max",
+      "final": "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
+      "runners": ["muse/muse-wonder-full-1.0 reasoningEffort=xhigh", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false"],
+      "judges": ["muse/muse-wonder-1.0 reasoningEffort=xhigh", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false"],
+      "reviewers": ["muse/muse-wonder-full-1.0 reasoningEffort=xhigh", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false"]
+    }
+  },
   "roles": [
     { "role": "feature, refactoring", "tier": "code", "skill": "poteto-mode" },
     { "role": "bug-fix", "tier": "code", "skill": "poteto-mode" },

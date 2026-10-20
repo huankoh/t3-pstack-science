@@ -16,9 +16,14 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 const script = join(root, "plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs");
 const catalogPath = join(root, "tests/fixtures/t3-catalog.json");
 const catalog = JSON.parse(readFileSync(catalogPath, "utf8"));
+const museCatalogPath = join(root, "tests/fixtures/t3-muse-catalog.json");
+const museCatalog = JSON.parse(readFileSync(museCatalogPath, "utf8"));
+const museRunCatalog = { providers: [...museCatalog.providers, ...catalog.providers.filter((p) => p.providerInstanceId !== "muse")] };
 const models = loadModels();
 const check = (text, over = catalog) => checkSheet(parseSheet(text), { models, catalog: over });
+const checkMuse = (text, over = museRunCatalog) => checkSheet(parseSheet(text), { models, catalog: over, mode: "muse" });
 const PANEL = "interrogate reviewers";
+const v2 = "# pstack model configuration (T3). One line per role. Delete a line to fall back to the skill default.\n# `inherit-parent` or `auto` as a value: the role runs on the parent chat's model (`delegate_task` omits `target`). Alias entries in a panel list still count toward its fan-out.\n# budget: large (xhigh)\nfeature, refactoring: claudeAgent/claude-opus-5-5 effort=xhigh\nbug-fix: claudeAgent/claude-fable-5-1 effort=xhigh\nperf-issue: claudeAgent/claude-fable-5-1 effort=xhigh\nhillclimb: claudeAgent/claude-fable-5-1 effort=xhigh\njudgment and prose: claudeAgent/claude-opus-5-5 effort=xhigh\nhardest tasks: claudeAgent/claude-fable-5-1 effort=xhigh\nhow explorer: claudeAgent/claude-opus-5-5 effort=xhigh\nhow explainer: claudeAgent/claude-opus-5-5 effort=xhigh\nwhy investigators: claudeAgent/claude-opus-5-5 effort=xhigh\nwhy synthesizer: claudeAgent/claude-opus-5-5 effort=xhigh\nreflect tooling: claudeAgent/claude-opus-5-5 effort=xhigh\nreflect judgment, divergent, synthesizer: claudeAgent/claude-opus-5-5 effort=xhigh\narena runners: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh\narena cross-judge pool: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh\nswarm workers: claudeAgent/claude-opus-5-5 effort=xhigh\narchitect runners: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh\ninterrogate reviewers: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh\nsession hook: on\n";
 
 describe("parseEntry", () => {
   test("keeps a Pi model ID that has its own provider prefix", () => {
@@ -245,6 +250,61 @@ describe("t3-sheet.mjs CLI", () => {
   }, CLI_TIMEOUT);
 });
 
+describe("t3-sheet.mjs --mode", () => {
+  const dir = mkdtempSync(join(tmpdir(), "t3-sheet-mode-"));
+  const write = (name, text) => {
+    writeFileSync(join(dir, name), text);
+    return join(dir, name);
+  };
+  const cli = (...args) => spawnSync("node", [script, ...args], { encoding: "utf8" });
+  const usage = "usage: t3-sheet.mjs [--mode standard|muse] <sheet.md> <catalog.json>\n";
+
+  test("--mode muse exits 0 when the muse seats dispatch, wherever the flag sits", () => {
+    const sheet = write("sheet.md", "session hook: on\n");
+    const runCatalog = write("muse-run-catalog.json", JSON.stringify(museRunCatalog));
+    for (const args of [
+      ["--mode", "muse", sheet, runCatalog],
+      [sheet, "--mode", "muse", runCatalog],
+      [sheet, runCatalog, "--mode", "muse"],
+    ]) {
+      const result = cli(...args);
+      expect({ status: result.status, stdout: result.stdout }).toEqual({ status: 0, stdout: "ok: every role line parses and dispatches on this T3\n" });
+    }
+  }, CLI_TIMEOUT);
+
+  test("--mode muse exits 1 on a muse problem", () => {
+    const sheet = write("bad.md", "muse bug-fix: muse/muse-wonder-1.0 reasoningEffort=extreme\n");
+    const runCatalog = write("muse-run-catalog-bad.json", JSON.stringify(museRunCatalog));
+    const result = cli("--mode", "muse", sheet, runCatalog);
+    expect({ status: result.status, stdout: result.stdout }).toEqual({
+      status: 1,
+      stdout: "muse bug-fix: muse/muse-wonder-1.0: reasoningEffort=extreme is not one of minimal, low, medium, high, xhigh, max\n",
+    });
+  }, CLI_TIMEOUT);
+
+  test("--mode standard matches the default", () => {
+    const sheet = write("std.md", "bug-fix: grok/grok-9\n");
+    const plain = cli(sheet, catalogPath);
+    const explicit = cli("--mode", "standard", sheet, catalogPath);
+    expect([plain.status, plain.stdout, plain.stderr]).toEqual([explicit.status, explicit.stdout, explicit.stderr]);
+    expect(plain.status).toBe(1);
+  }, CLI_TIMEOUT);
+
+  test.each([
+    ["unknown mode", ["--mode", "fast", "<sheet>", "<catalog>"]],
+    ["missing mode value", ["--mode"]],
+    ["unknown flag", ["<sheet>", "<catalog>", "--speed"]],
+    ["joined flag", ["--mode=muse", "<sheet>", "<catalog>"]],
+    ["one path", ["<sheet>"]],
+    ["three paths", ["<sheet>", "<catalog>", "<sheet>"]],
+  ])("bad usage exits 2: %s", (_, template) => {
+    const sheet = write("usage.md", "session hook: on\n");
+    const args = template.map((a) => (a === "<sheet>" ? sheet : a === "<catalog>" ? museCatalogPath : a));
+    const result = cli(...args);
+    expect({ status: result.status, stdout: result.stdout, stderr: result.stderr }).toEqual({ status: 2, stdout: "", stderr: usage });
+  }, CLI_TIMEOUT);
+});
+
 describe("the T3 session-start context", () => {
   const pluginRoot = join(root, "plugins/pstack");
 
@@ -286,8 +346,48 @@ describe("seats", () => {
   });
 });
 
+describe("muse seats", () => {
+  test("lists 19 muse seats in role order, marking only Opus defaults term-free in science", () => {
+    const muse = seats(models, { mode: "muse" });
+    expect(muse.map((s) => s.key)).toEqual(models.roles.map((r) => `muse ${r.role}`));
+    expect(muse.flatMap((s) => s.defaults)).toHaveLength(23);
+    for (const seat of muse) {
+      expect(seat.alias).toBeNull();
+      for (const d of seat.defaults) {
+        expect(d.termFree).toBe(family(parseEntry(d.entry).model) === "claude");
+      }
+    }
+    expect(muse.flatMap((s) => s.defaults.filter((d) => d.termFree).map((d) => `${s.key}: ${d.entry}`))).toEqual([
+      "muse arena runners: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
+      "muse arena cross-judge pool: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
+      "muse architect runners: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
+      "muse interrogate reviewers: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
+    ]);
+    for (const d of muse.flatMap((s) => s.defaults)) {
+      if (family(parseEntry(d.entry).model) === "muse") expect(d.termFree).toBe(false);
+    }
+  });
+
+  test("derives muse defaults from the muse tiers", () => {
+    expect(seats(models, { mode: "muse" }).find((s) => s.key === "muse bug-fix")).toEqual({
+      key: "muse bug-fix", alias: null, domain: "muse", role: "bug-fix", skill: "poteto-mode", panel: false,
+      defaults: [{ entry: "muse/muse-wonder-1.0 reasoningEffort=xhigh", termFree: false }],
+    });
+    expect(seats(models, { mode: "muse" }).find((s) => s.key === "muse mechanical code")).toEqual({
+      key: "muse mechanical code", alias: null, domain: "muse", role: "mechanical code", skill: "poteto-mode", panel: false,
+      defaults: [{ entry: "muse/muse-spark-1.3 reasoningEffort=max", termFree: false }],
+    });
+    expect(seats(models, { mode: "muse" }).find((s) => s.key === "muse interrogate reviewers")).toEqual({
+      key: "muse interrogate reviewers", alias: null, domain: "muse", role: "interrogate reviewers", skill: "interrogate", panel: true,
+      defaults: [
+        { entry: "muse/muse-wonder-full-1.0 reasoningEffort=xhigh", termFree: false },
+        { entry: "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", termFree: true },
+      ],
+    });
+  });
+});
+
 describe("domain sheet keys", () => {
-  const v2 = "# pstack model configuration (T3). One line per role. Delete a line to fall back to the skill default.\n# `inherit-parent` or `auto` as a value: the role runs on the parent chat's model (`delegate_task` omits `target`). Alias entries in a panel list still count toward its fan-out.\n# budget: large (xhigh)\nfeature, refactoring: claudeAgent/claude-opus-5-5 effort=xhigh\nbug-fix: claudeAgent/claude-fable-5-1 effort=xhigh\nperf-issue: claudeAgent/claude-fable-5-1 effort=xhigh\nhillclimb: claudeAgent/claude-fable-5-1 effort=xhigh\njudgment and prose: claudeAgent/claude-opus-5-5 effort=xhigh\nhardest tasks: claudeAgent/claude-fable-5-1 effort=xhigh\nhow explorer: claudeAgent/claude-opus-5-5 effort=xhigh\nhow explainer: claudeAgent/claude-opus-5-5 effort=xhigh\nwhy investigators: claudeAgent/claude-opus-5-5 effort=xhigh\nwhy synthesizer: claudeAgent/claude-opus-5-5 effort=xhigh\nreflect tooling: claudeAgent/claude-opus-5-5 effort=xhigh\nreflect judgment, divergent, synthesizer: claudeAgent/claude-opus-5-5 effort=xhigh\narena runners: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh\narena cross-judge pool: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh\nswarm workers: claudeAgent/claude-opus-5-5 effort=xhigh\narchitect runners: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh\ninterrogate reviewers: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh\nsession hook: on\n";
   test("a literal v2 sheet passes the grammar check", () => {
     expect(check(v2, null)).toEqual([]);
     expect(check("bug-fix: claudeAgent/claude-fable-5-1 effort=xhigh\nscience bug-fix: claudeAgent/claude-fable-5-1 effort=xhigh")).toEqual([]);
@@ -327,6 +427,117 @@ describe("domain sheet keys", () => {
     ["science swarm workers: grok/grok-4.7\nscience swarm workers: grok/grok-4.7", ['"science swarm workers" appears twice; only one line may set it']],
     ["science interrogate reviewers: codex/gpt-6-astra serviceTier=default, codex/gpt-6.1-sol serviceTier=default", ['science interrogate reviewers: a panel needs at least two model families among its targets (inherit-parent does not count), got gpt']],
   ])("checks %s", (text, expected) => expect(check(text)).toEqual(expected));
+});
+
+describe("muse sheet lines", () => {
+  const fence = () => {
+    const setup = readFileSync(join(root, "plugins/pstack/skills/setup-pstack/SKILL.md"), "utf8");
+    return setup.match(/```markdown\n(# pstack model configuration \(T3\)[\s\S]*?)```/)[1];
+  };
+
+  test("existing sheets read the same with and without an explicit standard mode", () => {
+    expect(checkSheet(parseSheet(v2), { models, catalog, mode: "standard" })).toEqual(check(v2));
+    expect(checkSheet(parseSheet(fence()), { models, catalog, mode: "standard" })).toEqual([]);
+    expect(check(fence())).toEqual([]);
+  });
+
+  test("a muse line is checked like any line", () => {
+    expect(checkMuse("muse bug-fix: muse/muse-wonder-1.0 reasoningEffort=xhigh")).toEqual([]);
+    expect(checkMuse("muse bug-fix: opus")).toEqual(['muse bug-fix: "opus" does not start with <providerInstanceId>/<modelId>']);
+    expect(checkMuse("muse bug-fix: muse/muse-wonder-1.0 reasoningEffort=extreme")).toEqual([
+      "muse bug-fix: muse/muse-wonder-1.0: reasoningEffort=extreme is not one of minimal, low, medium, high, xhigh, max",
+    ]);
+    expect(checkMuse("muse bug-fix: muse/muse-wonder-1.0 reasoningEffort=xhigh\nmuse bug-fix: muse/muse-wonder-1.0 reasoningEffort=xhigh")).toEqual([
+      '"muse bug-fix" appears twice; only one line may set it',
+    ]);
+  });
+
+  test("a muse panel needs two runnable families, like a standard panel", () => {
+    expect(checkMuse("muse interrogate reviewers: muse/muse-wonder-full-1.0 reasoningEffort=xhigh, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false")).toEqual([]);
+    expect(check("interrogate reviewers: muse/muse-wonder-full-1.0 reasoningEffort=xhigh, muse/muse-wonder-1.0 reasoningEffort=xhigh", null)).toEqual([
+      "interrogate reviewers: a panel needs at least two model families among its targets (inherit-parent does not count), got muse",
+    ]);
+    expect(checkMuse("muse interrogate reviewers: muse/muse-wonder-full-1.0 reasoningEffort=xhigh, muse/muse-wonder-1.0 reasoningEffort=xhigh")).toEqual([
+      "muse interrogate reviewers: a panel needs at least two model families among its targets (inherit-parent does not count), got muse",
+    ]);
+    expect(checkMuse("muse interrogate reviewers: muse/muse-wonder-1.0 reasoningEffort=xhigh")).toEqual([
+      "muse interrogate reviewers: a panel needs at least two model families among its targets (inherit-parent does not count), got muse",
+    ]);
+    expect(checkMuse("muse interrogate reviewers: muse/muse-wonder-1.0 reasoningEffort=xhigh, muse/muse-wonder-1.0 reasoningEffort=xhigh")).toEqual([
+      "muse interrogate reviewers: lists the same target twice",
+      "muse interrogate reviewers: a panel needs at least two model families among its targets (inherit-parent does not count), got muse",
+    ]);
+    expect(checkMuse("muse interrogate reviewers: muse/muse-wonder-full-1.0 reasoningEffort=xhigh, claudeAgent/claude-opus-5-5 effort=extreme fastMode=false")).toEqual([
+      "muse interrogate reviewers: claudeAgent/claude-opus-5-5: effort=extreme is not one of low, medium, high, xhigh, max",
+      "muse interrogate reviewers: a panel needs at least two model families among its targets (inherit-parent does not count), got muse",
+    ]);
+  });
+
+  test("a muse line rejects inherit-parent and auto", () => {
+    expect(check("muse bug-fix: inherit-parent")).toEqual(['muse bug-fix: "inherit-parent" is not allowed on a muse line; write a target']);
+    expect(check("muse bug-fix: auto")).toEqual(['muse bug-fix: "auto" is not allowed on a muse line; write a target']);
+    expect(checkMuse("muse bug-fix: inherit-parent")).toEqual(['muse bug-fix: "inherit-parent" is not allowed on a muse line; write a target']);
+  });
+
+  test.each([
+    ["muse science bug-fix", '"muse science bug-fix": a muse seat takes no domain; write "muse bug-fix"'],
+    ["science muse bug-fix", '"science muse bug-fix": a muse seat takes no domain; write "muse bug-fix"'],
+    ["muse strongest judgment", '"muse strongest judgment": write "muse hardest tasks"; the old name counts only on an unprefixed line'],
+  ])("hint %s", (text, expected) => {
+    expect(check(`${text}: grok/grok-4.7`)).toEqual([expected]);
+    expect(checkMuse(`${text}: grok/grok-4.7`)).toEqual([expected]);
+  });
+
+  test("a muse line whose target this catalog lacks stays silent without muse mode", () => {
+    const noSpark = structuredClone(museRunCatalog);
+    const museProvider = noSpark.providers.find((p) => p.providerInstanceId === "muse");
+    museProvider.models = museProvider.models.filter((m) => m.id !== "muse-spark-1.3");
+    expect(check("muse mechanical code: muse/muse-spark-1.3 reasoningEffort=max", noSpark)).toEqual([]);
+    expect(check("muse interrogate reviewers: muse/muse-spark-1.3 reasoningEffort=max, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", noSpark)).toEqual([]);
+    expect(checkSheet(parseSheet("muse mechanical code: muse/muse-spark-1.3 reasoningEffort=max"), { models, catalog: noSpark, mode: "muse" })).toEqual([
+      'muse mechanical code: muse/muse-spark-1.3: "muse" does not list model "muse-spark-1.3"',
+    ]);
+  });
+
+  test("muse mode names every muse seat whose default cannot run here", () => {
+    const lacking = structuredClone(catalog);
+    lacking.providers = lacking.providers.filter((p) => !["muse", "claudeAgent"].includes(p.providerInstanceId));
+    const wonder = 'muse/muse-wonder-1.0: no provider instance "muse" in this T3';
+    const full = 'muse/muse-wonder-full-1.0: no provider instance "muse" in this T3';
+    const spark = 'muse/muse-spark-1.3: no provider instance "muse" in this T3';
+    const opus = 'claudeAgent/claude-opus-5-5: no provider instance "claudeAgent" in this T3';
+    const missing = (key, target) => `${key} (no line, tier default): ${target}`;
+    expect(checkSheet(parseSheet("session hook: on\n"), { models, catalog: lacking, mode: "muse" })).toEqual([
+      missing("muse feature, refactoring", wonder),
+      missing("muse bug-fix", wonder),
+      missing("muse perf-issue", wonder),
+      missing("muse hillclimb", wonder),
+      missing("muse judgment and prose", full),
+      missing("muse hardest tasks", full),
+      missing("muse mechanical code", spark),
+      missing("muse final review", full),
+      missing("muse how explorer", wonder),
+      missing("muse how explainer", full),
+      missing("muse why investigators", wonder),
+      missing("muse why synthesizer", full),
+      missing("muse reflect tooling", wonder),
+      missing("muse reflect judgment, divergent, synthesizer", full),
+      missing("muse arena runners", full),
+      missing("muse arena runners", opus),
+      missing("muse arena cross-judge pool", wonder),
+      missing("muse arena cross-judge pool", opus),
+      missing("muse swarm workers", wonder),
+      missing("muse architect runners", full),
+      missing("muse architect runners", opus),
+      missing("muse interrogate reviewers", full),
+      missing("muse interrogate reviewers", opus),
+    ]);
+  });
+
+  test("muse mode passes on a catalog that lists the Muse and Opus models", () => {
+    expect(checkMuse("session hook: on\n")).toEqual([]);
+    expect(checkMuse("muse bug-fix: muse/muse-wonder-1.0 reasoningEffort=xhigh\nmuse interrogate reviewers: muse/muse-wonder-full-1.0 reasoningEffort=xhigh, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false\n")).toEqual([]);
+  });
 });
 
 describe("standard speed", () => {

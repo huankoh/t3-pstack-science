@@ -7,7 +7,7 @@
 // the generator checks the models.json tiers with it, and setup-pstack checks
 // a sheet against the live `orchestrator_capabilities` catalog with it.
 //
-//   node t3-sheet.mjs <sheet.md> <catalog.json>
+//   node t3-sheet.mjs [--mode standard|muse] <sheet.md> <catalog.json>
 //
 // prints one line per problem and exits 1 when there is any.
 
@@ -17,6 +17,8 @@ import { fileURLToPath } from "node:url";
 export const GENERAL = "general";
 export const SCIENCE = "science";
 export const DOMAINS = Object.freeze([GENERAL, SCIENCE]);
+export const MUSE = "muse";
+const STANDARD = "standard";
 export const SHEET_DIR = "t3-pstack-science";
 const STANDARD_SPEED = { fastMode: "false", serviceTier: "default" };
 
@@ -24,6 +26,11 @@ const STANDARD_SPEED = { fastMode: "false", serviceTier: "default" };
  * @typedef {object} Models
  * @property {{ general: Domain, science: Domain }} domains Ordered columns, general then science.
  * @property {Role[]} roles Ordered labels shared by every column.
+ * @property {Muse} [muse] Muse mode policy, one tier per standard tier.
+ * @typedef {object} Muse
+ * @property {string[]} on Phrases that switch muse mode on.
+ * @property {string[]} off Phrases that switch it off.
+ * @property {Record<string, string | string[]>} tiers No null; every tier seats.
  * @typedef {object} Domain
  * @property {string} [covers]
  * @property {string[]} [termReaders] Families allowed to read this column's terms.
@@ -40,7 +47,7 @@ const STANDARD_SPEED = { fastMode: "false", serviceTier: "default" };
  * @property {string} role
  * @property {string} skill
  * @property {boolean} panel
- * @property {{ entry: string, termFree: boolean }[]} defaults
+ * @property {{ entry: string, termFree: boolean }[]} defaults `termFree` marks a default that gets a term-free brief. On a science seat it always applies. On a muse seat it applies only when the task is science, never for general tasks. A muse default whose family is in science `termReaders` is unmarked; one outside it (Opus) is marked.
  */
 
 const INHERIT = ["inherit-parent", "auto"];
@@ -88,8 +95,27 @@ export function speedProblems({ options }) {
     .map(([id, value]) => speedProblem(id, value));
 }
 
-/** @param {Models} models Validated at build time by parseModels. @returns {Seat[]} */
-export function seats(models) {
+/** @param {Models} models Validated at build time by parseModels. @param {{ mode?: string }} [opts] `muse` lists the muse seats instead of the domain seats. @returns {Seat[]} */
+export function seats(models, { mode = STANDARD } = {}) {
+  if (mode === MUSE) {
+    if (!models.muse) return [];
+    const termReaders = models.domains?.[SCIENCE]?.termReaders;
+    return models.roles.map((role) => {
+      const value = models.muse.tiers[role.tier];
+      return {
+        key: `${MUSE} ${role.role}`,
+        alias: null,
+        domain: MUSE,
+        role: role.role,
+        skill: role.skill,
+        panel: Array.isArray(value),
+        defaults: [value].flat().map((entry) => ({
+          entry,
+          termFree: !!termReaders && !termReaders.includes(family(parseEntry(entry).model)),
+        })),
+      };
+    });
+  }
   return DOMAINS.flatMap((domain) => {
     const { tiers, termReaders } = models.domains[domain];
     return models.roles.flatMap((role) => {
@@ -127,11 +153,13 @@ export function parseSheet(markdown) {
 }
 
 /** @param {{ line: number, key?: string, value?: string }[]} sheet
- * @param {{ models: Models, catalog: object | null }} context
+ * @param {{ models: Models, catalog: object | null, mode?: string }} context `muse` checks the muse seats' omitted defaults instead of the standard ones.
  */
-export function checkSheet(sheet, { models, catalog }) {
+export function checkSheet(sheet, { models, catalog, mode = STANDARD }) {
   const problems = [];
-  const all = seats(models);
+  const standard = seats(models);
+  const muse = seats(models, { mode: MUSE });
+  const all = [...standard, ...muse];
   const byKey = new Map(all.flatMap((s) => [[s.key, s], ...(s.alias ? [[s.alias, s]] : [])]));
   const seen = new Set();
   for (const { line, key, value } of sheet) {
@@ -166,10 +194,16 @@ export function checkSheet(sheet, { models, catalog }) {
       }
     }
     const runnable = [];
+    const isMuse = seat.domain === MUSE;
     for (const entry of entries.filter(Boolean)) {
-      const found = entryProblems(entry, catalog);
+      const found = entryProblems(entry, catalog, { includeUnavailable: !isMuse || mode === MUSE });
       problems.push(...found.map((p) => `${key}: ${p}`));
       if (!found.length) runnable.push(entry);
+    }
+    if (isMuse) {
+      for (const text of texts.map((t) => t.trim()).filter((t) => INHERIT.includes(t))) {
+        problems.push(`${key}: "${text}" is not allowed on a muse line; write a target`);
+      }
     }
     const targets = texts.map((t) => t.trim()).filter((t) => !INHERIT.includes(t));
     if (new Set(targets).size < targets.length) problems.push(`${key}: lists the same target twice`);
@@ -182,7 +216,7 @@ export function checkSheet(sheet, { models, catalog }) {
       }
     }
   }
-  for (const seat of all.filter((s) => !seen.has(s.key))) {
+  for (const seat of (mode === MUSE ? muse : standard).filter((s) => !seen.has(s.key))) {
     for (const { entry } of seat.defaults) {
       problems.push(...entryProblems(parseEntry(entry), catalog).map((p) => `${seat.key} (no line, tier default): ${p}`));
     }
@@ -199,6 +233,14 @@ function unknownKey(key, all, models) {
   }
   const role = models.roles.find((r) => r.alias && key === `${SCIENCE} ${r.alias}`);
   if (role) return `"${key}": write "${SCIENCE} ${role.role}"; the old name counts only on an unprefixed line`;
+  for (const prefix of [`${MUSE} ${SCIENCE} `, `${SCIENCE} ${MUSE} `]) {
+    if (key.startsWith(prefix)) {
+      const museRole = models.roles.find((r) => r.role === key.slice(prefix.length) || r.alias === key.slice(prefix.length));
+      if (museRole) return `"${key}": a muse seat takes no domain; write "${MUSE} ${museRole.role}"`;
+    }
+  }
+  const museAlias = models.roles.find((r) => r.alias && key === `${MUSE} ${r.alias}`);
+  if (museAlias) return `"${key}": write "${MUSE} ${museAlias.role}"; the old name counts only on an unprefixed line`;
   return `"${key}" is not a pstack role`;
 }
 
@@ -216,7 +258,7 @@ function catalogOptions({ providerInstanceId, model }, catalog) {
   return { known: listed.options ?? [] };
 }
 
-function entryProblems(target, catalog) {
+function entryProblems(target, catalog, { includeUnavailable = true } = {}) {
   const { providerInstanceId, model, options } = target;
   const at = `${providerInstanceId}/${model}`;
   const { known, unavailable } = catalogOptions(target, catalog);
@@ -238,21 +280,37 @@ function entryProblems(target, catalog) {
       problems.push(`${at}: sets no ${option.id}; this router never runs fast, so write ${option.id}=${STANDARD_SPEED[option.id]}`);
     }
   }
-  if (unavailable) problems.push(unavailable);
+  if (unavailable && includeUnavailable) problems.push(unavailable);
   return problems;
 }
 
 const invoked = process.argv[1] && existsSync(process.argv[1]) ? realpathSync(process.argv[1]) : null;
 if (invoked === fileURLToPath(import.meta.url)) {
-  const [sheetPath, catalogPath] = process.argv.slice(2);
-  if (!sheetPath || !catalogPath) {
-    console.error("usage: t3-sheet.mjs <sheet.md> <catalog.json>");
+  const usage = () => {
+    console.error("usage: t3-sheet.mjs [--mode standard|muse] <sheet.md> <catalog.json>");
     process.exit(2);
+  };
+  const args = process.argv.slice(2);
+  let mode = STANDARD;
+  const paths = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "--mode") {
+      const value = args[++i];
+      if (value !== STANDARD && value !== MUSE) usage();
+      mode = value;
+    } else if (args[i].startsWith("--")) {
+      usage();
+    } else {
+      paths.push(args[i]);
+    }
   }
+  if (paths.length !== 2) usage();
+  const [sheetPath, catalogPath] = paths;
   const models = JSON.parse(readFileSync(new URL("../../../models.json", import.meta.url), "utf8"));
   const problems = checkSheet(parseSheet(readFileSync(sheetPath, "utf8")), {
     models,
     catalog: JSON.parse(readFileSync(catalogPath, "utf8")),
+    mode,
   });
   for (const problem of problems) console.log(problem);
   if (problems.length) process.exit(1);
