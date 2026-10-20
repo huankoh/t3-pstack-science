@@ -10,7 +10,7 @@ Names for the concepts this repo's design discussions keep reaching for. Archite
 - **Frozen hooks file** - `hooks/hooks.json` or `hooks/codex-hooks.json`, pinned in `tools/frozen-hooks.json`. Codex trusts a hook by a hash of its entry, so a change stops the hook in every Codex home until the installer reruns. What the hook says lives in `session-start.sh` and the routing text, which change freely.
 - **Model policy** - the role defaults in `plugins/pstack/models.json`, as tiers of T3 entries. The generator stamps them into each skill's Models section, interrogate's reviewer table, and setup-pstack's sheet block.
 - **Role** - a named unit of delegated work with its own model choice (`arena runners`, `how explorer`, `swarm workers`). The role vocabulary lives in `models.json`.
-- **Muse mode** - a chat-local switch that routes every dispatched helper to the `muse` block in `models.json` (the science column with Muse Wonder Full in every GPT seat, so DeepSeek writes code and Opus 5.5 and DeepSeek sit on panels) instead of the standard domain columns.
+- **Muse mode** - a chat-local switch that routes every dispatched helper to the `muse` block in `models.json` (the science column with Muse Wonder Full in every GPT seat, so DeepSeek writes code and Wonder Full, Opus 5.5, and DeepSeek sit on panels) instead of the standard domain columns.
   Saying "muse mode" turns it on for that chat.
   Saying "normal mode", "standard mode", or "turn off muse mode" turns it off.
   A sheet line `muse <role>:` optionally overrides one muse seat.

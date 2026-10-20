@@ -93,7 +93,7 @@ const sheetProse =
   "maps onto `delegate_task`'s `target`, with the provider instance as `providerInstanceId`, the model as `model`, " +
   "and the pairs as `options`. It splits at its first `/`, so a model ID with its own `/`, such as OpenCode's " +
   "`<provider>/<model>`, is written whole after it. Option IDs differ per provider, so take them from " +
-  "`orchestrator_capabilities`. `inherit-parent` or `auto` omits `target`.";
+  "`orchestrator_capabilities`. On a standard line, `inherit-parent` or `auto` omits `target`.";
 
 function routerProse(models) {
   const { covers, termReaders } = models.domains[SCIENCE];
@@ -135,7 +135,7 @@ export function museModeProse(models) {
     "Record `mode: muse` or `mode: standard` beside `domain:` before the first dispatch. " +
     "Under `mode: muse`, read `muse <role>:` from the sheet, else the muse default. Never read a standard line or a standard default. " +
     "A `muse <role>:` line must name a target. `inherit-parent` and `auto` are rejected on a muse line. " +
-    "The domain does not change muse targets. Muse-mode seats whose family is a science term reader (Muse and DeepSeek) read the terms. Only Opus gets a term-free brief on a science task. " +
+    "The domain does not change muse targets. Muse-mode seats whose family is a science term reader (by default Muse and DeepSeek) read the terms. A muse-mode seat whose family is not a science term reader (by default Opus) gets a term-free brief on a science task. " +
     "Panels in `mode: muse` follow the normal two-family rule. " +
     "Levels are fixed. Do not raise or lower them, and the sheet `# budget` comment does not apply. " +
     "A rejected or unrunnable muse target blocks that dispatch and names the target and the fix. Never use a standard seat or the generic same-family fallback. " +

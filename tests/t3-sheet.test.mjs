@@ -279,6 +279,23 @@ describe("t3-sheet.mjs --mode", () => {
     });
   }, CLI_TIMEOUT);
 
+  test("--mode muse exits 0 on a sheet whose only problem is a standard line", () => {
+    const sheet = write("std-bad.md", "bug-fix: grok/grok-9\n");
+    const runCatalog = write("muse-run-catalog-std.json", JSON.stringify(museRunCatalog));
+    const result = cli("--mode", "muse", sheet, runCatalog);
+    expect({ status: result.status, stdout: result.stdout }).toEqual({ status: 0, stdout: "ok: every role line parses and dispatches on this T3\n" });
+  }, CLI_TIMEOUT);
+
+  test("--mode muse exits 1 naming a malformed muse line", () => {
+    const sheet = write("muse-malformed.md", "muse bug-fix auto\n");
+    const runCatalog = write("muse-run-catalog-malformed.json", JSON.stringify(museRunCatalog));
+    const result = cli("--mode", "muse", sheet, runCatalog);
+    expect({ status: result.status, stdout: result.stdout }).toEqual({
+      status: 1,
+      stdout: 'line 1: not a "<role>: <value>" line (lowercase role, one space after the colon, no indent or markup)\n',
+    });
+  }, CLI_TIMEOUT);
+
   test("--mode standard matches the default", () => {
     const sheet = write("std.md", "bug-fix: grok/grok-9\n");
     const plain = cli(sheet, catalogPath);
@@ -488,12 +505,25 @@ describe("muse sheet lines", () => {
   });
 
   test.each([
-    ["muse science bug-fix", '"muse science bug-fix": a muse seat takes no domain; write "muse bug-fix"'],
-    ["science muse bug-fix", '"science muse bug-fix": a muse seat takes no domain; write "muse bug-fix"'],
-    ["muse strongest judgment", '"muse strongest judgment": write "muse hardest tasks"; the old name counts only on an unprefixed line'],
-  ])("hint %s", (text, expected) => {
+    ["muse science bug-fix", '"muse science bug-fix": a muse seat takes no domain; write "muse bug-fix"', true],
+    ["science muse bug-fix", '"science muse bug-fix": a muse seat takes no domain; write "muse bug-fix"', false],
+    ["muse strongest judgment", '"muse strongest judgment": write "muse hardest tasks"; the old name counts only on an unprefixed line', true],
+  ])("hint %s", (text, expected, inMuse) => {
     expect(check(`${text}: grok/grok-4.7`)).toEqual([expected]);
-    expect(checkMuse(`${text}: grok/grok-4.7`)).toEqual([expected]);
+    expect(checkMuse(`${text}: grok/grok-4.7`)).toEqual(inMuse ? [expected] : []);
+  });
+
+  test("muse mode checks only muse lines, malformed muse lines included, plus omitted muse defaults", () => {
+    const malformed = 'line 1: not a "<role>: <value>" line (lowercase role, one space after the colon, no indent or markup)';
+    expect(parseSheet(" muse bug-fix: x\n")).toEqual([{ line: 1, text: " muse bug-fix: x", key: undefined, value: undefined }]);
+    expect(checkMuse("bug-fix: opus\n")).toEqual([]);
+    expect(checkMuse(" bug-fix: x\n")).toEqual([]);
+    expect(checkMuse("muse bug-fix auto\n")).toEqual([malformed]);
+    expect(checkMuse("muse bug-fix:auto\n")).toEqual([malformed]);
+    expect(checkMuse(" muse bug-fix: x\n")).toEqual([malformed]);
+    expect(checkMuse("bug-fix: opus\nmuse bug-fix auto\n")).toEqual([
+      'line 2: not a "<role>: <value>" line (lowercase role, one space after the colon, no indent or markup)',
+    ]);
   });
 
   test("a muse line whose target this catalog lacks stays silent without muse mode", () => {

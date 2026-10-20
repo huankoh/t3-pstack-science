@@ -32,7 +32,7 @@ function museModeRow(parsed, { catalog, models }) {
   if (!catalog) {
     return check("muse mode", false, "not checked (pass --catalog to check targets); standard mode is unaffected", SETUP_HINT, true);
   }
-  const problems = checkSheet(parsed.filter(({ key }) => key?.startsWith("muse ")), { models, catalog, mode: "muse" });
+  const problems = checkSheet(parsed, { models, catalog, mode: "muse" });
   return problems.length
     ? check("muse mode", false, `${problems.join("; ")}; standard mode is unaffected`, SETUP_HINT, true)
     : check("muse mode", true, "every muse target dispatches on the catalog");

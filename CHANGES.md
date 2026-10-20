@@ -16,7 +16,7 @@ Levels are fixed as listed, and a muse target the machine cannot run blocks that
 Doctor gains an optional muse mode row that warns, and never fails, when the catalog cannot run every muse target, and `/setup-pstack` now reports muse readiness and the trigger words.
 Existing sheet roles are unchanged.
 `muse <role>:` keys are optional overrides for one muse seat each, and setup writes none by default.
-Muse mode needs the Muse and OpenCode providers in T3 and moves helpers only, so the chat's own model stays the user's composer pick.
+Muse mode needs the Muse, Claude, and OpenCode providers in T3 and moves helpers only, so the chat's own model stays the user's composer pick.
 Muse runs in contributor mode, so muse mode requests to Muse seats go to Meta under contributor terms.
 Neither hooks JSON file changes.
 

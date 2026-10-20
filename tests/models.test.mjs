@@ -245,7 +245,7 @@ describe("parseModels", () => {
     ["uppercase", "off", ["Normal mode"]],
     ["untrimmed", "off", ["normal mode "]],
   ])("muse switch phrases reject %s %s", (_, key, value) => {
-    expect(parse((p) => p.muse[key] = value)).toThrow(`models.json: "muse" "${key}" must be a non-empty list of distinct non-empty lowercase phrases`);
+    expect(parse((p) => p.muse[key] = value)).toThrow(`models.json: "muse" "${key}" must be a non-empty list of distinct non-empty lowercase phrases with no surrounding spaces`);
   });
 
   test("muse on and off share no phrase", () => {

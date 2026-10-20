@@ -76,8 +76,9 @@ describe("muse mode prose", () => {
     expect(prose).toContain("A `muse <role>:` line must name a target.");
     expect(prose).toContain("`inherit-parent` and `auto` are rejected on a muse line.");
     expect(prose).toContain("Panels in `mode: muse` follow the normal two-family rule.");
-    expect(prose).toContain("Muse-mode seats whose family is a science term reader (Muse and DeepSeek) read the terms.");
-    expect(prose).toContain("Only Opus gets a term-free brief on a science task.");
+    expect(prose).toContain("Muse-mode seats whose family is a science term reader (by default Muse and DeepSeek) read the terms.");
+    expect(prose).toContain("A muse-mode seat whose family is not a science term reader (by default Opus) gets a term-free brief on a science task.");
+    expect(prose).not.toContain("Only Opus gets a term-free brief");
     expect(prose).not.toContain("Muse seats read the terms");
     for (const skill of new Set(models.roles.map((r) => r.skill))) {
       expect(read(`plugins/pstack/skills/${skill}/SKILL.md`)).toContain("Panels in `mode: muse` follow the normal two-family rule.");
@@ -106,10 +107,25 @@ describe("muse mode prose", () => {
     expect(read("plugins/pstack/skills/arena/SKILL.md")).toContain("(term-free brief in science)");
   });
 
+  test("the shared sheet paragraph qualifies the aliases to a standard line", () => {
+    const out = applyRegions("plugins/pstack/skills/poteto-mode/SKILL.md", "## Models\n", models);
+    expect(out).toContain("On a standard line, `inherit-parent` or `auto` omits `target`.");
+    expect(read("plugins/pstack/skills/poteto-mode/SKILL.md")).toContain("On a standard line, `inherit-parent` or `auto` omits `target`.");
+  });
+
+  test("the docs name every provider muse mode needs and every panel family", () => {
+    expect(read("README.md")).toContain("Muse mode needs the Muse, Claude, and OpenCode providers in T3.");
+    expect(read("CHANGES.md")).toContain("Muse mode needs the Muse, Claude, and OpenCode providers in T3");
+    expect(read("README.md")).toContain("Wonder Full, Opus 5.5, and DeepSeek sit on every muse mode panel");
+    expect(read("CONTEXT.md")).toContain("Wonder Full, Opus 5.5, and DeepSeek sit on panels");
+    expect(read("README.md")).not.toContain("Muse mode needs the Muse and OpenCode providers");
+    expect(read("README.md")).not.toContain("Opus 5.5 and DeepSeek sit on every muse mode panel");
+  });
+
   test("the reasoning-level rule keeps muse levels fixed", () => {
     const caveat = "In `mode: muse`, use the level on the muse line or default; do not raise or lower it.";
     expect(read("plugins/pstack/skills/poteto-mode/SKILL.md")).toContain(caveat);
-    for (const skill of ["how", "arena", "interrogate", "reflect", "swarm", "why"]) {
+    for (const skill of ["how", "arena", "interrogate", "reflect", "swarm", "why", "show-me-your-work", "automate-me", "figure-it-out", "no-comments", "recall"]) {
       expect(read(`plugins/pstack/skills/${skill}/SKILL.md`)).toContain(caveat);
     }
     const subs = JSON.parse(read("tools/substitutions.json")).substitutions;

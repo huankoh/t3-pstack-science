@@ -137,10 +137,11 @@ export function seats(models, { mode = STANDARD } = {}) {
   });
 }
 
-// Every line but blank lines and `#` headings, as `{ line, key, value }`, with
-// no key or value when the line is not exactly `<key>: <value>`. setup-pstack
-// writes the sheet, so it holds no prose, and one strict rule leaves no shape a
-// misspelled role line can slip through.
+// Every line but blank lines and `#` headings, as `{ line, text, key, value }`,
+// with no key or value when the line is not exactly `<key>: <value>`. `text`
+// keeps the raw line, so a malformed muse line is still recognizable as one.
+// setup-pstack writes the sheet, so it holds no prose, and one strict rule
+// leaves no shape a misspelled role line can slip through.
 export function parseSheet(markdown) {
   return markdown
     .replace(/^\uFEFF/, "")
@@ -148,12 +149,12 @@ export function parseSheet(markdown) {
     .flatMap((line, i) => {
       if (line.trim() === "" || line.startsWith("#")) return [];
       const match = line.match(/^([a-z][a-z ,-]*[a-z]): (\S(?:.*\S)?)$/);
-      return [{ line: i + 1, key: match?.[1], value: match?.[2] }];
+      return [{ line: i + 1, text: line, key: match?.[1], value: match?.[2] }];
     });
 }
 
-/** @param {{ line: number, key?: string, value?: string }[]} sheet
- * @param {{ models: Models, catalog: object | null, mode?: string }} context `muse` checks the muse seats' omitted defaults instead of the standard ones.
+/** @param {{ line: number, text?: string, key?: string, value?: string }[]} sheet
+ * @param {{ models: Models, catalog: object | null, mode?: string }} context `muse` checks only the lines meant as muse lines, plus the omitted muse defaults.
  */
 export function checkSheet(sheet, { models, catalog, mode = STANDARD }) {
   const problems = [];
@@ -162,7 +163,11 @@ export function checkSheet(sheet, { models, catalog, mode = STANDARD }) {
   const all = [...standard, ...muse];
   const byKey = new Map(all.flatMap((s) => [[s.key, s], ...(s.alias ? [[s.alias, s]] : [])]));
   const seen = new Set();
-  for (const { line, key, value } of sheet) {
+  for (const { line, text, key, value } of sheet) {
+    if (mode === MUSE) {
+      const museLine = key ? key.startsWith(`${MUSE} `) : (text ?? "").trim().startsWith(MUSE);
+      if (!museLine) continue;
+    }
     if (!key) {
       problems.push(`line ${line}: not a "<role>: <value>" line (lowercase role, one space after the colon, no indent or markup)`);
       continue;

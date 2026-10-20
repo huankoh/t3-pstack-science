@@ -639,6 +639,25 @@ describe("the model sheet", () => {
     expect(rows.at(-1)).toEqual({ name: "muse mode", ok: true, detail: "every muse target dispatches on the catalog" });
   });
 
+  test.each(["muse bug-fix auto\n", " muse bug-fix: x\n"])("doctor fails both rows on a malformed muse line %j", (text) => {
+    const { sheet } = machine();
+    const catalog = JSON.parse(readFileSync(join(repoRoot, "tests/fixtures/t3-catalog.json"), "utf8"));
+    const museCatalog = JSON.parse(readFileSync(join(repoRoot, "tests/fixtures/t3-muse-catalog.json"), "utf8"));
+    const run = { providers: [...museCatalog.providers, ...catalog.providers.filter((p) => !["muse", "opencode"].includes(p.providerInstanceId))] };
+    mkdirSync(join(sheet, ".."), { recursive: true });
+    writeFileSync(sheet, text);
+    const rows = doctorSheet(sheet, { catalog: run, models });
+    expect(rows[0].name).toBe("machine sheet valid");
+    expect(rows[0].ok).toBe(false);
+    expect(rows[0].detail).toContain("line 1:");
+    const muse = rows.at(-1);
+    expect(muse.name).toBe("muse mode");
+    expect(muse.ok).toBe(false);
+    expect(muse.warn).toBe(true);
+    expect(muse.detail).toContain("line 1:");
+    expect(muse.detail).toContain("standard mode is unaffected");
+  });
+
   test("doctor warns on muse mode without failing, on an old sheet and a catalog without muse", () => {
     const { sheet } = machine();
     const catalog = JSON.parse(readFileSync(join(repoRoot, "tests/fixtures/t3-catalog.json"), "utf8"));

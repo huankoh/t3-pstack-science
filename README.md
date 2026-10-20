@@ -55,7 +55,7 @@ Say "muse mode" in a chat and every helper that chat dispatches runs on the muse
 Muse mode is the science column with Muse Wonder Full in every GPT seat, so it has no Codex target.
 It lasts across later tasks in the chat until "normal mode", "standard mode", or "turn off muse mode".
 A new chat starts in standard mode, and a quoted or discussed use of the phrase switches nothing.
-Muse mode needs the Muse and OpenCode providers in T3.
+Muse mode needs the Muse, Claude, and OpenCode providers in T3.
 It moves helpers only, so the chat's own model stays your pick in the composer.
 To keep the whole run on Muse, pick a Muse model for the chat as well.
 Muse runs in contributor mode, so muse mode requests to Muse seats go to Meta under contributor terms.
@@ -71,7 +71,7 @@ Muse runs in contributor mode, so muse mode requests to Muse seats go to Meta un
 | Design judge | `judges` | Wonder Full xhigh, Opus 5.5 xhigh, DeepSeek V4.1 Flash max |
 | Review panel | `reviewers` | Wonder Full xhigh, Opus 5.5 xhigh, DeepSeek V4.1 Flash max |
 
-Opus 5.5 and DeepSeek sit on every muse mode panel, so each panel spans three families.
+Wonder Full, Opus 5.5, and DeepSeek sit on every muse mode panel, so each panel spans three families.
 In the science column, DeepSeek writes and researches science code, GPT judges, and Wonder Full sits on the four-seat review panel with GPT, Opus, and DeepSeek.
 On a science task, an Opus panel seat gets a term-free brief, exactly as in the science route.
 Muse and DeepSeek seats read the science terms.
