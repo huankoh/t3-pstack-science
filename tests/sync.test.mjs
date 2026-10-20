@@ -100,7 +100,7 @@ describe("applySubstitutions", () => {
 
   test("the effort port rule names cursor's option ID and keeps speed standard", () => {
     expect(applySubstitutions("Change only the effort level and whether the slug is fast,", RULES.substitutions, "skills/poteto-mode/SKILL.md").text).toBe(
-      "Change only the entry's reasoning option (`effort` on Claude, `reasoningEffort` on Codex, `reasoning_effort` on `cursor` targets),",
+      "Change only the entry's reasoning option (`effort` on Claude, `reasoningEffort` on Codex and Muse, `reasoning_effort` on `cursor` targets; muse mode keeps its listed levels),",
     );
   });
 
@@ -113,7 +113,7 @@ describe("applySubstitutions", () => {
     expect(text).not.toContain("or no speed option");
     expect(text).toContain("pick the reasoning level the job needs.");
     expect(text).toContain("If the model has no value at that reasoning level, use its nearest one in `orchestrator_capabilities`. Omit a speed option the model does not list.");
-    expect(text).toContain("Change only the entry's reasoning option (`effort` on Claude, `reasoningEffort` on Codex, `reasoning_effort` on `cursor` targets),");
+    expect(text).toContain("Change only the entry's reasoning option (`effort` on Claude, `reasoningEffort` on Codex and Muse, `reasoning_effort` on `cursor` targets; muse mode keeps its listed levels),");
   });
 
   test("every rule's replacement is free of the denylist", () => {
@@ -154,7 +154,7 @@ describe("applySubstitutions", () => {
     const poteto = readFileSync(new URL("../plugins/pstack/skills/poteto-mode/SKILL.md", import.meta.url), "utf8");
     expect(poteto).toContain("Trivial mechanical edits go to your fast code model.");
     expect(poteto).toContain("Prose and judgment read `judgment and prose`. Trivial mechanical edits read `mechanical code`.");
-    expect(poteto).toContain("Each line is the one in the todolist's `domain:` column ([Models](#models)).");
+    expect(poteto).toContain("Each line is the one in the todolist's `domain:` column ([Models](#models)), or its `muse <role>:` line under `mode: muse`.");
     expect(poteto).toContain("That verdict, and the **show-me-your-work** handback review, run on the `final review` line. Other verification stays on `swarm workers`.");
     const shipping = readFileSync(new URL("../plugins/pstack/skills/poteto-mode/playbooks/shipping.md", import.meta.url), "utf8");
     expect(shipping).toContain("and still performs this step's prescribed verification. Other verification stays on `swarm workers`.");
@@ -162,7 +162,7 @@ describe("applySubstitutions", () => {
     expect(handback).toContain('"The work" is the change being handed back.');
     expect(handback).toContain("Count the chat's family when it edited the change itself and every delegate's family whose output is in the change.");
     expect(handback).toContain("The `final review` line always reviews");
-    expect(handback).toContain("When that line's family is among those families, the first entry of the same column's `interrogate reviewers` whose family is outside them also reviews.");
+    expect(handback).toContain("When that line's family is among those families, the first entry of the same column's `interrogate reviewers` whose family is outside them also reviews; under `mode: muse`, read `muse interrogate reviewers` instead.");
     expect(handback).toContain("Both verdicts must pass.");
     expect(handback).toContain("In `general`, every family reads the terms.");
     expect(handback).toContain("Only when no such reviewer exists, record `BLOCKED: independent review` and keep the handback closed.");
@@ -177,11 +177,12 @@ describe("applySubstitutions", () => {
     expect(handback).toContain("The subagent reads the audit trail and the run's transcript, then flags what the user should pay attention to.");
   });
 
-  test.each(["how", "why", "arena", "interrogate", "swarm", "reflect", "show-me-your-work"])("%s preserves the upstream reasoning and speed wording", (skill) => {
+  test.each(["how", "why", "arena", "interrogate", "swarm", "reflect", "show-me-your-work", "automate-me", "figure-it-out", "no-comments", "recall"])("%s keeps the upstream reasoning wording and adds the muse fixed-level caveat", (skill) => {
     const rel = `skills/${skill}/SKILL.md`;
     const upstream = "Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.";
-    expect(applySubstitutions(upstream, RULES.substitutions, rel).text).toBe(upstream);
-    expect(readFileSync(new URL(`../plugins/pstack/${rel}`, import.meta.url), "utf8")).toContain(upstream);
+    const derived = `${upstream} In \`mode: muse\`, use the level on the muse line or default; do not raise or lower it.`;
+    expect(applySubstitutions(upstream, RULES.substitutions, rel).text).toBe(derived);
+    expect(readFileSync(new URL(`../plugins/pstack/${rel}`, import.meta.url), "utf8")).toContain(derived);
   });
 
   test("recall preserves upstream model selection wording", () => {
@@ -222,17 +223,17 @@ describe("applySubstitutions", () => {
     [
       "skills/why/SKILL.md",
       "Each spawn below names a role line in the `pstack-models.mdc` rule and a default. Set `model` to that line's value, or to the default if the rule or the line is missing. Leave `model` unset when the value is `auto` or `inherit-parent`. If the Task tool rejects a slug, use the default and say so. If it rejects the default, use the closest valid slug of the same family from its error message.",
-      "Each spawn below names a role line in the model sheet and a default. Set `target` from that line's entry, or from the default if the sheet or the line is missing. Leave `target` unset when the value is `auto` or `inherit-parent`. If `delegate_task` rejects an entry, use the default and say so. If it rejects the default, use another target of the same family from `orchestrator_capabilities`.",
+      "Each spawn below names a role line in the model sheet and a default. Set `target` from that line's entry, or from the default if the sheet or the line is missing. Leave `target` unset when the value is `auto` or `inherit-parent`. If `delegate_task` rejects an entry, use the default and say so. If it rejects the default, use another target of the same family from `orchestrator_capabilities`. Under `mode: muse`, a rejected target never falls back to a standard or same-family default.",
     ],
     [
       "skills/arena/SKILL.md",
       "Families go by prefix: `claude-*`, and `grok-*` with `cursor-grok-*` and `composer-*`. A refused `composer-*` entry runs on `grok-4.7-xhigh-fast`.",
-      "A model's family is the first segment of its ID's last `/` part, such as `claude`, `gpt`, or `grok`, whatever provider instance serves it.",
+      "A model's family is the first segment of its ID's last `/` part, such as `claude`, `gpt`, `grok`, or `muse`, whatever provider instance serves it.",
     ],
     [
       "skills/interrogate/SKILL.md",
       "Families go by prefix: `claude-*`, and `grok-*` with `cursor-grok-*` and `composer-*`. A refused `composer-*` entry runs on Reviewer B's default.",
-      "A model's family is the first segment of its ID's last `/` part, such as `claude`, `gpt`, or `grok`, whatever provider instance serves it.",
+      "A model's family is the first segment of its ID's last `/` part, such as `claude`, `gpt`, `grok`, or `muse`, whatever provider instance serves it.",
     ],
     [
       "skills/poteto-mode/SKILL.md",

@@ -3,7 +3,7 @@
 // the regions rendered from plugins/pstack/models.json. Models sections carry
 // the column gate and term rule. Anchored dispatch hooks live in substitutions.
 
-import { DOMAINS, GENERAL, SCIENCE, SHEET_DIR, seats } from "../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
+import { DOMAINS, GENERAL, MUSE, SCIENCE, SHEET_DIR, seats } from "../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
 import { code } from "./plugin.mjs";
 
 // Split a Markdown file into its YAML frontmatter and the text after it.
@@ -65,6 +65,15 @@ export const tableRows = (header, rowPrefix) => (lines) => {
   return [start + 2, end];
 };
 
+// The lines strictly between two marker lines, for a port-owned file with no
+// heading the section locator can sit on (the session-start context).
+export const between = (start, end) => (lines) => {
+  const from = lines.indexOf(start);
+  if (from === -1) return null;
+  const to = lines.indexOf(end, from + 1);
+  return to === -1 ? null : [from + 1, to];
+};
+
 // The inside of the first ```<lang> fence after the `### N. <title>` step
 // heading. The ordinal is not part of the anchor.
 export const fenceUnder = (title, lang) => (lines) => {
@@ -84,7 +93,7 @@ const sheetProse =
   "maps onto `delegate_task`'s `target`, with the provider instance as `providerInstanceId`, the model as `model`, " +
   "and the pairs as `options`. It splits at its first `/`, so a model ID with its own `/`, such as OpenCode's " +
   "`<provider>/<model>`, is written whole after it. Option IDs differ per provider, so take them from " +
-  "`orchestrator_capabilities`. `inherit-parent` or `auto` omits `target`.";
+  "`orchestrator_capabilities`. On a standard line, `inherit-parent` or `auto` omits `target`.";
 
 function routerProse(models) {
   const { covers, termReaders } = models.domains[SCIENCE];
@@ -116,6 +125,37 @@ function routerProse(models) {
 const defaultCell = (value) => value ? `${code(value.entry)}${value.termFree ? " (term-free brief)" : ""}` : "none";
 const cell = (seat) => seat ? seat.defaults.map(defaultCell).join(", ") : "none";
 
+const quoted = (phrases) => new Intl.ListFormat("en", { style: "long", type: "disjunction" }).format(phrases.map((p) => `"${p}"`));
+
+export function museModeProse(models) {
+  const { on, off } = models.muse;
+  return (
+    `An instruction from the user to use ${quoted(on)} sets \`mode: muse\` for this chat. A quoted, discussed, or example use of the phrase does not. ` +
+    `It lasts across later tasks and resumed turns until ${quoted(off)}, which sets \`mode: standard\`. A new top-level chat starts at \`mode: standard\`. Changing mode does not change running children. ` +
+    "Record `mode: muse` or `mode: standard` beside `domain:` before the first dispatch. " +
+    "Under `mode: muse`, read `muse <role>:` from the sheet, else the muse default. Never read a standard line or a standard default. " +
+    "A `muse <role>:` line must name a target. `inherit-parent` and `auto` are rejected on a muse line. " +
+    "The domain does not change muse targets. Muse-mode seats whose family is a science term reader (by default Muse and DeepSeek) read the terms. A muse-mode seat whose family is not a science term reader (by default Opus) gets a term-free brief on a science task. " +
+    "Panels in `mode: muse` follow the normal two-family rule. " +
+    "Levels are fixed. Do not raise or lower them, and the sheet `# budget` comment does not apply. " +
+    "A rejected or unrunnable muse target blocks that dispatch and names the target and the fix. Never use a standard seat or the generic same-family fallback. " +
+    "A failed reviewer gets a fresh reviewer on the same entry, or the gate stays `BLOCKED: independent review`. " +
+    "The handback's extra reviewer under `mode: muse` is the first `muse interrogate reviewers` entry outside the work's families, by family as usual. " +
+    "Every brief to a child that can dispatch carries `mode: muse` and the domain. " +
+    "Muse mode moves helpers only. To keep the whole run on Muse, the user picks a Muse model for the chat in the composer."
+  );
+}
+
+function museTable(models, roles) {
+  const byRole = new Map(seats(models, { mode: MUSE }).map((s) => [s.role, s]));
+  const rows = roles.map((role) => {
+    const seat = byRole.get(role.role);
+    const entries = seat ? seat.defaults.map((d) => `${code(d.entry)}${d.termFree ? " (term-free brief in science)" : ""}`).join(", ") : "none";
+    return `| ${role.role} | ${entries} |`;
+  });
+  return `| Role | muse |\n| --- | --- |\n${rows.join("\n")}`;
+}
+
 export function modelsSection(models, roles) {
   const byRole = Map.groupBy(seats(models), (s) => s.role);
   const header = `| Role | ${DOMAINS.join(" | ")} |\n| --- |${" --- |".repeat(DOMAINS.length)}`;
@@ -124,7 +164,7 @@ export function modelsSection(models, roles) {
     const columns = DOMAINS.map((domain) => cell(byRole.get(role.role).find((s) => s.domain === domain)));
     return `| ${label} | ${columns.join(" | ")} |`;
   });
-  return `Role defaults on T3, stamped from \`plugins/pstack/models.json\`, one column per domain. ${routerProse(models)}\n\n${header}\n${rows.join("\n")}`;
+  return `Role defaults on T3, stamped from \`plugins/pstack/models.json\`, one column per domain. ${routerProse(models)}\n\n${header}\n${rows.join("\n")}\n\n### Muse mode\n\n${museModeProse(models)}\n\n${museTable(models, roles)}`;
 }
 
 export function reviewerRows(models) {
@@ -139,7 +179,8 @@ export function sheetBlock(models) {
   return [
     "# pstack model configuration (T3). One line per role and column. Delete a line to fall back to the skill default.",
     `# \`<role>:\` sets the ${GENERAL} column, as in every sheet before domains. \`${SCIENCE} <role>:\` sets the ${SCIENCE} column.`,
-    "# `inherit-parent` or `auto` as a value: the role runs on the parent chat's model (`delegate_task` omits `target`). Alias entries in a panel list still count toward its fan-out.",
+    "# Optional `muse <role>:` lines override muse mode only. A missing muse line uses the muse default, never a standard line.",
+    "# `inherit-parent` or `auto` as a value on a standard line: the role runs on the parent chat's model (`delegate_task` omits `target`). A `muse <role>:` line must name a target. Alias entries in a panel list still count toward its fan-out.",
     "# budget: large (xhigh)",
     ...seats(models).map((s) => `${s.key}: ${s.defaults.map((d) => d.entry).join(", ")}`),
     "session hook: on",
@@ -172,6 +213,12 @@ export function t3Regions(models) {
       name: "sheet block",
       locate: fenceUnder("Write the sheet", "markdown"),
       render: () => sheetBlock(models),
+    },
+    {
+      file: "plugins/pstack/hooks/session-start-context.md",
+      name: "muse mode prose",
+      locate: between("<!-- muse-mode:start -->", "<!-- muse-mode:end -->"),
+      render: () => padded(museModeProse(models)),
     },
   ];
 }

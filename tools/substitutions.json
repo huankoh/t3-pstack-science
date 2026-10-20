@@ -3,13 +3,13 @@
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",
       "pattern": "Open a todolist whose first items are the matched playbook's steps, copied in verbatim, before any task-specific todos.",
-      "replacement": "Open a todolist whose first items are the matched playbook's steps, copied in verbatim, before any task-specific todos. The first task-specific todo is the domain gate, `domain: science` or `domain: general`, picked per [Models](#models) before step 1 and before the first `delegate_task`.",
+      "replacement": "Open a todolist whose first items are the matched playbook's steps, copied in verbatim, before any task-specific todos. The first task-specific todo is the domain gate, `domain: science` or `domain: general`, picked per [Models](#models) before step 1 and before the first `delegate_task`. Record `mode: muse` or `mode: standard` after it, per [Models](#models).",
       "rationale": "router: the domain gate records the column every role resolves from"
     },
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",
       "pattern": "Prose and judgment read `judgment and prose`.",
-      "replacement": "Prose and judgment read `judgment and prose`. Trivial mechanical edits read `mechanical code`. Each line is the one in the todolist's `domain:` column ([Models](#models)).",
+      "replacement": "Prose and judgment read `judgment and prose`. Trivial mechanical edits read `mechanical code`. Each line is the one in the todolist's `domain:` column ([Models](#models)), or its `muse <role>:` line under `mode: muse`.",
       "rationale": "router: every role follows its column and keeps the playbook difficulty tiering"
     },
     {
@@ -27,7 +27,7 @@
     {
       "files": "^skills/show-me-your-work/SKILL\\.md$",
       "pattern": "Before handing back, spawn a subagent on a different model family from the one that did the work.",
-      "replacement": "Before handing back, spawn a subagent on a different model family from the one that did the work. \"The work\" is the change being handed back. Count the chat's family when it edited the change itself and every delegate's family whose output is in the change. The `final review` line always reviews (default in poteto-mode's [Models](../poteto-mode/SKILL.md#models)). When that line's family is among those families, the first entry of the same column's `interrogate reviewers` whose family is outside them also reviews. Both verdicts must pass. When that reviewer's family does not read the column's terms, give it a term-free brief, stage term-free copies of the diff, the trail, and the transcript excerpts it needs, and have it read only those copies in place of the trail and the run's transcript, per [Models](../poteto-mode/SKILL.md#models). In `general`, every family reads the terms. Only when no such reviewer exists, record `BLOCKED: independent review` and keep the handback closed.",
+      "replacement": "Before handing back, spawn a subagent on a different model family from the one that did the work. \"The work\" is the change being handed back. Count the chat's family when it edited the change itself and every delegate's family whose output is in the change. The `final review` line always reviews (default in poteto-mode's [Models](../poteto-mode/SKILL.md#models)). When that line's family is among those families, the first entry of the same column's `interrogate reviewers` whose family is outside them also reviews; under `mode: muse`, read `muse interrogate reviewers` instead. Both verdicts must pass. When that reviewer's family does not read the column's terms, give it a term-free brief, stage term-free copies of the diff, the trail, and the transcript excerpts it needs, and have it read only those copies in place of the trail and the run's transcript, per [Models](../poteto-mode/SKILL.md#models). In `general`, every family reads the terms. Only when no such reviewer exists, record `BLOCKED: independent review` and keep the handback closed.",
       "rationale": "router: final review owns handback and preserves the different-family requirement"
     },
     {
@@ -242,6 +242,12 @@
     },
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",
+      "pattern": "Lower it one step for judgment and two or more steps for routine work.",
+      "replacement": "Lower it one step for judgment and two or more steps for routine work. In `mode: muse`, use the level on the muse line or default; do not raise or lower it.",
+      "rationale": "muse mode: levels are fixed on the muse line or default, so the raise or lower rule does not apply"
+    },
+    {
+      "files": "^skills/poteto-mode/SKILL\\.md$",
       "pattern": "Use fast mode only when the job is urgent, meaning CI or trunk is red or a person is blocked on the result right now. Otherwise use standard speed, the same slug without `-fast`.",
       "replacement": "Every dispatch sets each speed option its model lists to its standard value (`fastMode=false` on Claude and `cursor`, `serviceTier=default` on Codex), as the defaults in [Models](#models) do. This router never uses fast mode, urgent or not, and `t3-sheet.mjs` rejects a fast entry.",
       "rationale": "#613 per-job effort: a T3 entry carries its reasoning and speed as options, not as slug suffixes (The sheet); never fast (design.md, Speed)"
@@ -255,7 +261,7 @@
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",
       "pattern": "Change only the effort level and whether the slug is fast,",
-      "replacement": "Change only the entry's reasoning option (`effort` on Claude, `reasoningEffort` on Codex, `reasoning_effort` on `cursor` targets),",
+      "replacement": "Change only the entry's reasoning option (`effort` on Claude, `reasoningEffort` on Codex and Muse, `reasoning_effort` on `cursor` targets; muse mode keeps its listed levels),",
       "rationale": "#613 per-job effort: a T3 entry carries its reasoning as an option; speed stays standard (design.md, Speed)"
     },
     {
@@ -296,7 +302,7 @@
     },
     {
       "pattern": "Interrupt-chained resumes silently drop directives, so fire a fresh subagent with consolidated scope rather than trusting a \"done\" summary.",
-      "replacement": "Interrupt-chained resumes silently drop directives, so fire a fresh subagent with consolidated scope rather than trusting a \"done\" summary.\n\n**Dispatch on T3.** Every subagent is a `delegate_task` call from the chat that runs the playbook, same model family included, so every child shows up in T3. Give each call its own `clientRequestId`, stable across retries of that call, and keep each returned `taskId`. A child's completion wakes this thread, so end the turn instead of polling, and call `task_status` only when a result is needed mid-turn. `task_cancel` stops a child, and `task_status` confirms it stopped. A child gets only its brief, never your context, so pass absolute paths. `<plugin root>` is the absolute path of the directory that holds this plugin's `skills/` and `agents/`. A persona (`poteto-agent`, `comment-sicko`, `thermo-nuclear-review-subagent`, `thermo-nuclear-code-quality-review-subagent`) is a brief that opens with \"Read `<plugin root>/agents/<name>.md` in full and act as it says\", and a `poteto-agent` brief also names this file's absolute path.\n\nA child starts in your checkout. One that writes gets its own worktree, created with `git worktree add` from `HEAD` so it builds on your branch's commits. The brief names that absolute path as the only place it writes, and tells it to run every command there (`workdir` on Codex) and to edit by absolute path. Record your own `git status --porcelain` before you dispatch, check after the result that it is unchanged, then remove the worktree and its branch. A step a playbook says to delegate goes to `delegate_task` on that role's sheet entry, not into your own tool calls, unless you state a reason such as a step too small to brief. A research delegate no role names runs on the `how explorer` entry. A model's family is the first segment of its ID's last `/` part, such as `claude`, `gpt`, or `grok`, whatever provider instance serves it, and your own family is the one in `orchestrator_capabilities`' `inheritedModel`. A rejected target runs on another target of the same family from `orchestrator_capabilities`, and you say so. A required review with no reviewer from another family stays `BLOCKED: independent review`.\n\nEnd every reply that ran a playbook with a dispatch ledger: one line per delegated step, naming the role and the `providerInstanceId/model` it ran on, or `in-thread: <reason>`.",
+      "replacement": "Interrupt-chained resumes silently drop directives, so fire a fresh subagent with consolidated scope rather than trusting a \"done\" summary.\n\n**Dispatch on T3.** Every subagent is a `delegate_task` call from the chat that runs the playbook, same model family included, so every child shows up in T3. Give each call its own `clientRequestId`, stable across retries of that call, and keep each returned `taskId`. A child's completion wakes this thread, so end the turn instead of polling, and call `task_status` only when a result is needed mid-turn. `task_cancel` stops a child, and `task_status` confirms it stopped. A child gets only its brief, never your context, so pass absolute paths. `<plugin root>` is the absolute path of the directory that holds this plugin's `skills/` and `agents/`. A persona (`poteto-agent`, `comment-sicko`, `thermo-nuclear-review-subagent`, `thermo-nuclear-code-quality-review-subagent`) is a brief that opens with \"Read `<plugin root>/agents/<name>.md` in full and act as it says\", and a `poteto-agent` brief also names this file's absolute path.\n\nA child starts in your checkout. One that writes gets its own worktree, created with `git worktree add` from `HEAD` so it builds on your branch's commits. The brief names that absolute path as the only place it writes, and tells it to run every command there (`workdir` on Codex) and to edit by absolute path. Record your own `git status --porcelain` before you dispatch, check after the result that it is unchanged, then remove the worktree and its branch. A step a playbook says to delegate goes to `delegate_task` on that role's sheet entry, not into your own tool calls, unless you state a reason such as a step too small to brief. A research delegate no role names runs on the `how explorer` entry. A model's family is the first segment of its ID's last `/` part, such as `claude`, `gpt`, `grok`, or `muse`, whatever provider instance serves it, and your own family is the one in `orchestrator_capabilities`' `inheritedModel`. A rejected target runs on another target of the same family from `orchestrator_capabilities`, and you say so. A required review with no reviewer from another family stays `BLOCKED: independent review`.\n\nEnd every reply that ran a playbook with a dispatch ledger: one line per delegated step, naming the role and the `providerInstanceId/model` it ran on, or `in-thread: <reason>`.",
       "rationale": "inserts the T3 dispatch policy at the end of the Subagents section (Tool actions; Subagent policy)",
       "files": "^skills/poteto-mode/SKILL\\.md$"
     },
@@ -384,12 +390,12 @@
     },
     {
       "pattern": "Set `model` to that line's value, or to the default if the rule or the line is missing. Leave `model` unset when the value is `auto` or `inherit-parent`. If the Task tool rejects a slug, use the default and say so. If it rejects the default, use the closest valid slug of the same family from its error message.",
-      "replacement": "Set `target` from that line's entry, or from the default if the sheet or the line is missing. Leave `target` unset when the value is `auto` or `inherit-parent`. If `delegate_task` rejects an entry, use the default and say so. If it rejects the default, use another target of the same family from `orchestrator_capabilities`.",
+      "replacement": "Set `target` from that line's entry, or from the default if the sheet or the line is missing. Leave `target` unset when the value is `auto` or `inherit-parent`. If `delegate_task` rejects an entry, use the default and say so. If it rejects the default, use another target of the same family from `orchestrator_capabilities`. Under `mode: muse`, a rejected target never falls back to a standard or same-family default.",
       "rationale": "The sheet; Subagent policy (rejected target)"
     },
     {
       "pattern": "If the Task tool rejects a slug, use the default and say so. If it rejects the default, use the closest valid slug of the same family from its error message.",
-      "replacement": "If `delegate_task` rejects an entry, use the default and say so. If it rejects the default, use another target of the same family from `orchestrator_capabilities`.",
+      "replacement": "If `delegate_task` rejects an entry, use the default and say so. If it rejects the default, use another target of the same family from `orchestrator_capabilities`. Under `mode: muse`, a rejected target never falls back to a standard or same-family default.",
       "rationale": "Subagent policy (rejected target)"
     },
     {
@@ -459,7 +465,7 @@
     },
     {
       "pattern": "If the Task tool rejects a configured entry, run that reviewer on its family's table default and say so.",
-      "replacement": "If `delegate_task` rejects a configured entry, run that reviewer on another target of the same family from `orchestrator_capabilities` and say so.",
+      "replacement": "If `delegate_task` rejects a configured entry, run that reviewer on another target of the same family from `orchestrator_capabilities` and say so. Under `mode: muse`, a rejected target never falls back to a standard or same-family default.",
       "rationale": "Subagent policy (rejected target)"
     },
     {
@@ -479,7 +485,7 @@
     },
     {
       "pattern": "If it rejects a default, use the closest valid slug of the same family from its error message.",
-      "replacement": "If it rejects a default, use another target of the same family from `orchestrator_capabilities`.",
+      "replacement": "If it rejects a default, use another target of the same family from `orchestrator_capabilities`. Under `mode: muse`, a rejected target never falls back to a standard or same-family default.",
       "rationale": "Subagent policy (rejected target)"
     },
     {
@@ -932,7 +938,7 @@
     },
     {
       "regex": "Families go by prefix: .*?`composer-\\*`\\. A refused `composer-\\*` entry runs on (?:`[^`]+`|Reviewer B's default)\\.",
-      "replacement": "A model's family is the first segment of its ID's last `/` part, such as `claude`, `gpt`, or `grok`, whatever provider instance serves it.",
+      "replacement": "A model's family is the first segment of its ID's last `/` part, such as `claude`, `gpt`, `grok`, or `muse`, whatever provider instance serves it.",
       "rationale": "The sheet (family rule); a refused entry already runs on another target of its family"
     },
     {
@@ -992,6 +998,12 @@
       "replacement": "hourly schedule_task",
       "rationale": "the plan arms a schedule_task; the checker's marker moves with the template",
       "files": "^skills/poteto-mode/scripts/check-plan\\.(?:mjs|test\\.ts)$"
+    },
+    {
+      "files": "^skills/(how|arena|interrogate|reflect|swarm|why|show-me-your-work|automate-me|figure-it-out|no-comments|recall)/SKILL\\.md$",
+      "pattern": "Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.",
+      "replacement": "Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill. In `mode: muse`, use the level on the muse line or default; do not raise or lower it.",
+      "rationale": "muse mode: levels are fixed on the muse line or default, so the per-job reasoning pick does not apply"
     }
   ],
   "denylist": [

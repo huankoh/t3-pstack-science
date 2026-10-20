@@ -2,6 +2,24 @@
 
 This file is the release changelog, with one `## <version> - <title>` entry per release, newest first. The Cursor-to-T3 rewrite rules live in [`tools/substitutions.json`](tools/substitutions.json), and the [sync boundary](CONTRIBUTING.md#the-sync-boundary) in `CONTRIBUTING.md` defines how a change to upstream's skill content is declared.
 
+## 2.0.0-rc.14-science.3 - Muse mode
+
+Saying "muse mode" in a chat routes every helper that chat dispatches to the muse seats.
+Muse mode is the science column with Muse Wonder Full in every GPT seat, so it has no Codex target.
+The science column moved from Muse Wonder to DeepSeek for `code`, `explore`, and `mechanical`, with `opencode/opencode-go/deepseek-v4.1-flash variant=max` in those seats and on its panels.
+Muse Wonder Full joined the science review panel, which now seats GPT, Opus 5.5, DeepSeek, and Wonder Full.
+`deepseek` became a science term reader, so DeepSeek seats read the domain terms and `science how explorer` translates as a DeepSeek seat.
+In muse mode, DeepSeek holds the `code`, `explore`, and `mechanical` tiers, Muse Wonder Full 1.0 holds the `judgment` and `final` tiers, and Wonder Full, Opus 5.5, and DeepSeek hold the `runners`, `judges`, and `reviewers` tiers, so every panel spans three families.
+On a science task an Opus panel seat gets a term-free brief, while Muse and DeepSeek seats read the terms.
+The mode lasts for the chat until "normal mode", "standard mode", or "turn off muse mode", and a new chat starts standard.
+Levels are fixed as listed, and a muse target the machine cannot run blocks that dispatch rather than falling back to a standard seat.
+Doctor gains an optional muse mode row that warns, and never fails, when the catalog cannot run every muse target, and `/setup-pstack` now reports muse readiness and the trigger words.
+Existing sheet roles are unchanged.
+`muse <role>:` keys are optional overrides for one muse seat each, and setup writes none by default.
+Muse mode needs the Muse, Claude, and OpenCode providers in T3 and moves helpers only, so the chat's own model stays the user's composer pick.
+Muse runs in contributor mode, so muse mode requests to Muse seats go to Meta under contributor terms.
+Neither hooks JSON file changes.
+
 ## 2.0.0-rc.14-science.2 - Grok leaves the standard routes: Opus for general, Muse for science
 
 Grok 4.7 no longer holds any standard seat. In the general column, `code`, `explore`, and `mechanical` move from `cursor/grok-4.7` to `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false`, so they run with `judgment` on Opus 5.5. In the science column, `code`, `explore`, and `mechanical` move from `cursor/grok-4.7` to `muse/muse-wonder-1.0 reasoningEffort=xhigh`. In both columns, the Grok entry in `runners`, `judges`, and `reviewers` moves to `muse/muse-wonder-full-1.0 reasoningEffort=xhigh` in the same list position. Every other default stays as it was. Science term readers are now `gpt`, `grok`, and `muse`, because the science code and research seats run on Muse and must read the domain terms, so `science how explorer` translates as a Muse seat that reads the terms. Existing machine sheets keep their explicit lines until `/setup-pstack` reruns or a line is edited. Neither hooks JSON file changes.
