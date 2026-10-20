@@ -11,11 +11,11 @@ Write the model sheet, `~/.config/t3-pstack-science/models.md` (`$XDG_CONFIG_HOM
 
 ### 1. Detect available models
 
-Call `orchestrator_capabilities`, or `acp-mcp-call orchestrator_capabilities '{}'` where the T3 tools are not exposed. Its provider instances and their models are the dependable source. A target is valid only when its provider instance can run a child task and lists the model. Note each provider's own option IDs and values, such as `effort` on Claude and `reasoningEffort` on Codex and Grok. Never write a target you have not seen there. The aliases `inherit-parent` and `auto` are always valid.
+Call `orchestrator_capabilities`, or `acp-mcp-call orchestrator_capabilities '{}'` where the T3 tools are not exposed. Its provider instances and their models are the dependable source. A target is valid only when its provider instance can run a child task and lists the model. Note each provider's own option IDs and values, such as `effort` on Claude and `reasoningEffort` on Codex, Grok, and Muse. Never write a target you have not seen there. The aliases `inherit-parent` and `auto` are always valid.
 
 ### 2. Load current state
 
-The default role-to-target mapping is the sheet shape in step 5 below. If the sheet already exists, read it and treat its `# budget` line and its role values as the current choices. If it does not exist, start from those defaults. A line whose role is not in step 5, such as `how critics`, is from a retired role. Drop it. Carry a `strongest judgment` value over to `hardest tasks`, its new name. Also drop any value that is not a T3 entry, such as a bare family name, a `claude-` slug, or an `@<level>` suffix, and a `default effort` line.
+The default role-to-target mapping is the sheet shape in step 5 below. If the sheet already exists, read it and treat its `# budget` line and its role values as the current choices. If it does not exist, start from those defaults. A line whose role is not in step 5, such as `how critics`, is from a retired role. Drop it. Carry a `strongest judgment` value over to `hardest tasks`, its new name. Also drop any value that is not a T3 entry, such as a bare family name, a `claude-` slug, or an `@<level>` suffix, and a `default effort` line. Keep any `muse <role>:` lines. They are muse mode overrides, not retired roles, and a re-run carries them over unchanged unless the user asks to change one.
 
 ### 3. Budget, map, and confirm
 
@@ -26,15 +26,15 @@ The default role-to-target mapping is the sheet shape in step 5 below. If the sh
 - `medium - high reasoning`
 - `small - medium reasoning`
 
-**(b) Apply it.** Build the working table from the defaults, and on a re-run keep any role you changed by provider, list, or alias (`inherit-parent`, `auto`). `unlimited`, `large`, `medium`, and `small` set the reasoning option of every entry, panel entries included, to `max`, `xhigh`, `high`, or `medium`. Use the option ID that provider lists. If the provider does not offer that value, use its highest value at or below the target, else mark the role as needing a choice. So Grok, whose reasoning tops out at `xhigh`, stays at `xhigh` under `unlimited`. `inherit-parent` and `auto` do not change.
+**(b) Apply it.** Build the working table from the defaults, and on a re-run keep any role you changed by provider, list, or alias (`inherit-parent`, `auto`). `unlimited`, `large`, `medium`, and `small` set the reasoning option of every entry, panel entries included, to `max`, `xhigh`, `high`, or `medium`. Use the option ID that provider lists. If the provider does not offer that value, use its highest value at or below the target, else mark the role as needing a choice. So Grok, whose reasoning tops out at `xhigh`, stays at `xhigh` under `unlimited`, and Muse reaches `max` under `unlimited`. `inherit-parent` and `auto` do not change. The budget never rewrites a `muse <role>:` line. Muse mode keeps its listed levels.
 
-**(c) Show the roles and confirm.** Show every role with its entry, marking any target not in the detected set as needing a choice. Also list each line step 2 dropped. Ask whether to accept as-is or change specific roles, offering the detected targets plus `inherit-parent` and `auto` (both mean: this role runs on the parent chat's model) as the options. For panel roles (`arena runners`, `architect runners`, `interrogate reviewers`) the value is a list, and one subagent runs per entry, alias entries included, so the list length sets the count. A panel needs at least two model families among its targets. A model's family is the first segment of its ID's last `/` part, such as `claude`, `gpt`, or `grok`. `arena cross-judge pool` is also a list, but Arena selects one value from it whose model ran no candidate and whose family differs from the parent's when possible. `swarm workers` is the default target for every worker unless a race or comparison assigns another per arm.
+**(c) Show the roles and confirm.** Show every role with its entry, marking any target not in the detected set as needing a choice. Also list each line step 2 dropped. Ask whether to accept as-is or change specific roles, offering the detected targets plus `inherit-parent` and `auto` (both mean: this role runs on the parent chat's model) as the options. Write no `muse <role>:` lines unless the user asks to override a muse seat. A missing muse line uses the muse default. For panel roles (`arena runners`, `architect runners`, `interrogate reviewers`) the value is a list, and one subagent runs per entry, alias entries included, so the list length sets the count. A panel needs at least two model families among its targets. A model's family is the first segment of its ID's last `/` part, such as `claude`, `gpt`, or `grok`. `arena cross-judge pool` is also a list, but Arena selects one value from it whose model ran no candidate and whose family differs from the parent's when possible. `swarm workers` is the default target for every worker unless a race or comparison assigns another per arm.
 
 **(d) Ask about the session-start hook.** Ask whether t3-pstack-science's session-start hook should keep telling new chats when to enter `/poteto-mode`. Write `session hook: on` or `session hook: off`.
 
 ### 4. Validate
 
-Write the candidate to a temp file. Call `orchestrator_capabilities` again and save its result to a temp file as `{"providers": [...]}`, copying verbatim the entry of every provider instance the candidate or the defaults name. Run `node <plugin root>/skills/setup-pstack/scripts/t3-sheet.mjs <candidate> <catalog.json>`, where `<plugin root>` is the directory that holds this plugin's `skills/`, and fix every line it prints. If `node` is missing, check each entry against the catalog by reading, and say so. A role with no line runs on its default, so add a line for any role whose default this machine cannot run.
+Write the candidate to a temp file. Call `orchestrator_capabilities` again and save its result to a temp file as `{"providers": [...]}`, copying verbatim the entry of every provider instance the candidate or the defaults name. Run `node <plugin root>/skills/setup-pstack/scripts/t3-sheet.mjs <candidate> <catalog.json>`, where `<plugin root>` is the directory that holds this plugin's `skills/`, and fix every line it prints. If `node` is missing, check each entry against the catalog by reading, and say so. A role with no line runs on its default, so add a line for any role whose default this machine cannot run. Also run `node <plugin root>/skills/setup-pstack/scripts/t3-sheet.mjs --mode muse <candidate> <catalog.json>` and show muse readiness from its output. A muse target this machine cannot run warns only. It never blocks the standard sheet.
 
 ### 5. Write the sheet
 
@@ -43,6 +43,7 @@ Overwrite the sheet with the candidate, creating its directory and writing throu
 ```markdown
 # pstack model configuration (T3). One line per role and column. Delete a line to fall back to the skill default.
 # `<role>:` sets the general column, as in every sheet before domains. `science <role>:` sets the science column.
+# Optional `muse <role>:` lines override muse mode only. A missing muse line uses the muse default, never a standard line.
 # `inherit-parent` or `auto` as a value: the role runs on the parent chat's model (`delegate_task` omits `target`). Alias entries in a panel list still count toward its fan-out.
 # budget: large (xhigh)
 feature, refactoring: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
@@ -88,7 +89,7 @@ session hook: on
 
 ### 6. Confirm
 
-Tell the user the sheet was written and that it applies to new sessions. Re-running this skill updates it.
+Tell the user the sheet was written and that it applies to new sessions. Re-running this skill updates it. Tell the user the muse mode trigger words. Saying "muse mode" in a chat turns it on for that chat, and "normal mode", "standard mode", or "turn off muse mode" turns it off. Report the muse readiness from step 4 with the confirmation.
 
 ### 7. Offer a verification skill (optional)
 

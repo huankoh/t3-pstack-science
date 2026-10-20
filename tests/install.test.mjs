@@ -568,6 +568,11 @@ describe("the model sheet", () => {
         detail: "none, so every role runs on its skill's defaults",
         fix: "run /t3-pstack-science:setup-pstack in a T3 thread",
       },
+      {
+        name: "muse mode", ok: false, warn: true,
+        detail: "not checked (pass --catalog to check targets); standard mode is unaffected",
+        fix: "run /t3-pstack-science:setup-pstack in a T3 thread",
+      },
     ]);
   });
 
@@ -580,6 +585,11 @@ describe("the model sheet", () => {
         detail: "none, so every role runs on its skill's defaults",
         fix: "run /t3-pstack-science:setup-pstack in a T3 thread",
         warn: true,
+      },
+      {
+        name: "muse mode", ok: false, warn: true,
+        detail: "not checked (pass --catalog to check targets); standard mode is unaffected",
+        fix: "run /t3-pstack-science:setup-pstack in a T3 thread",
       },
     ]);
     mkdirSync(join(sheet, ".."), { recursive: true });
@@ -601,5 +611,33 @@ describe("the model sheet", () => {
       detail: 'science bug-fix: "opus" does not start with <providerInstanceId>/<modelId>',
       fix: "run /t3-pstack-science:setup-pstack in a T3 thread",
     });
+  });
+
+  test("doctor reports muse mode ready when the catalog runs every muse target", () => {
+    const { sheet } = machine();
+    const catalog = JSON.parse(readFileSync(join(repoRoot, "tests/fixtures/t3-catalog.json"), "utf8"));
+    const museCatalog = JSON.parse(readFileSync(join(repoRoot, "tests/fixtures/t3-muse-catalog.json"), "utf8"));
+    const run = { providers: [...museCatalog.providers, ...catalog.providers.filter((p) => p.providerInstanceId !== "muse")] };
+    mkdirSync(join(sheet, ".."), { recursive: true });
+    writeFileSync(sheet, SHEET);
+    const rows = doctorSheet(sheet, { catalog: run, models });
+    expect(rows.at(-1)).toEqual({ name: "muse mode", ok: true, detail: "every muse target dispatches on the catalog" });
+    expect(rows.filter((r) => !r.ok && !r.warn)).toEqual([]);
+  });
+
+  test("doctor warns on muse mode without failing, on an old sheet and a catalog without muse", () => {
+    const { sheet } = machine();
+    const catalog = JSON.parse(readFileSync(join(repoRoot, "tests/fixtures/t3-catalog.json"), "utf8"));
+    const noMuse = { providers: catalog.providers.filter((p) => p.providerInstanceId !== "muse") };
+    mkdirSync(join(sheet, ".."), { recursive: true });
+    writeFileSync(sheet, SHEET);
+    const rows = doctorSheet(sheet, { catalog: noMuse, models });
+    const muse = rows.at(-1);
+    expect(muse.name).toBe("muse mode");
+    expect(muse.ok).toBe(false);
+    expect(muse.warn).toBe(true);
+    expect(muse.detail).toContain('no provider instance "muse" in this T3');
+    expect(muse.detail).toContain("standard mode is unaffected");
+    expect(rows.filter((r) => !r.ok && !r.warn).map((r) => r.name)).toEqual(["machine sheet valid"]);
   });
 });

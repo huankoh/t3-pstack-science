@@ -28,11 +28,25 @@ export function sessionHookOff(sheet) {
   return text.split("\n").some((line) => (line.endsWith("\r") ? line.slice(0, -1) : line) === "session hook: off");
 }
 
+function museModeRow(parsed, { catalog, models }) {
+  if (!catalog) {
+    return check("muse mode", false, "not checked (pass --catalog to check targets); standard mode is unaffected", SETUP_HINT, true);
+  }
+  const problems = checkSheet(parsed, { models, catalog, mode: "muse" });
+  return problems.length
+    ? check("muse mode", false, `${problems.join("; ")}; standard mode is unaffected`, SETUP_HINT, true)
+    : check("muse mode", true, "every muse target dispatches on the catalog");
+}
+
 export function doctorSheet(sheet, { catalog, models }) {
   if (!isFile(sheet)) {
-    return [check("machine sheet", false, "none, so every role runs on its skill's defaults", SETUP_HINT, true)];
+    return [
+      check("machine sheet", false, "none, so every role runs on its skill's defaults", SETUP_HINT, true),
+      museModeRow([], { catalog, models }),
+    ];
   }
-  const problems = checkSheet(parseSheet(readFileSync(sheet, "utf8")), { models, catalog });
+  const parsed = parseSheet(readFileSync(sheet, "utf8"));
+  const problems = checkSheet(parsed, { models, catalog });
   return [
     check(
       "machine sheet valid",
@@ -44,5 +58,6 @@ export function doctorSheet(sheet, { catalog, models }) {
           : "every line parses (pass --catalog to check targets)",
       SETUP_HINT,
     ),
+    museModeRow(parsed, { catalog, models }),
   ];
 }

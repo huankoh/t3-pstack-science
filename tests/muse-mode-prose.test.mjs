@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { applyRegions, museModeProse } from "../tools/derive-t3.mjs";
+import { applyRegions, museModeProse, sheetBlock } from "../tools/derive-t3.mjs";
 import { loadModels } from "../tools/generate.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
@@ -49,6 +49,13 @@ describe("muse mode prose", () => {
       expect(text).toContain(museModeProse(models));
       for (const phrase of phrases) expect(text).toContain(`"${phrase}"`);
     }
+  });
+
+  test("the generated sheet fence names optional muse overrides and writes no muse lines", () => {
+    const block = sheetBlock(models);
+    expect(block).toContain("# Optional `muse <role>:` lines override muse mode only. A missing muse line uses the muse default, never a standard line.");
+    expect(block.some((line) => line.startsWith("muse "))).toBe(false);
+    expect(read("plugins/pstack/skills/setup-pstack/SKILL.md")).toContain("# Optional `muse <role>:` lines override muse mode only.");
   });
 
   test("poteto-mode stays under the byte cap with the muse section in", () => {

@@ -177,6 +177,7 @@ export function sheetBlock(models) {
   return [
     "# pstack model configuration (T3). One line per role and column. Delete a line to fall back to the skill default.",
     `# \`<role>:\` sets the ${GENERAL} column, as in every sheet before domains. \`${SCIENCE} <role>:\` sets the ${SCIENCE} column.`,
+    "# Optional `muse <role>:` lines override muse mode only. A missing muse line uses the muse default, never a standard line.",
     "# `inherit-parent` or `auto` as a value: the role runs on the parent chat's model (`delegate_task` omits `target`). Alias entries in a panel list still count toward its fan-out.",
     "# budget: large (xhigh)",
     ...seats(models).map((s) => `${s.key}: ${s.defaults.map((d) => d.entry).join(", ")}`),

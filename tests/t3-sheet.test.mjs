@@ -388,6 +388,16 @@ describe("muse seats", () => {
 });
 
 describe("domain sheet keys", () => {
+  test("a catalog without claudeAgent names the general seats that now default to Opus", () => {
+    const noClaudeAgent = { providers: museRunCatalog.providers.filter((p) => p.providerInstanceId !== "claudeAgent") };
+    const problems = check("", noClaudeAgent);
+    const named = problems.map((p) => p.split(" (no line, tier default):")[0]);
+    const opusSeats = seats(models).filter((s) => s.defaults.some((d) => d.entry.startsWith("claudeAgent/claude-opus-5-5"))).map((s) => s.key);
+    expect(named).toEqual(opusSeats);
+    expect(named.filter((k) => !k.startsWith("science "))).toEqual(models.roles.map((r) => r.role).filter((r) => r !== "final review"));
+    expect(problems[0]).toBe('feature, refactoring (no line, tier default): claudeAgent/claude-opus-5-5: no provider instance "claudeAgent" in this T3');
+  });
+
   test("a literal v2 sheet passes the grammar check", () => {
     expect(check(v2, null)).toEqual([]);
     expect(check("bug-fix: claudeAgent/claude-fable-5-1 effort=xhigh\nscience bug-fix: claudeAgent/claude-fable-5-1 effort=xhigh")).toEqual([]);

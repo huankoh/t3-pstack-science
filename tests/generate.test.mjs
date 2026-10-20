@@ -90,13 +90,13 @@ describe("regions", () => {
     const block = sheetBlock(models);
     expect(block[0]).toBe("# pstack model configuration (T3). One line per role and column. Delete a line to fall back to the skill default.");
     expect(block[1]).toBe("# `<role>:` sets the general column, as in every sheet before domains. `science <role>:` sets the science column.");
-    expect(block[4]).toBe("feature, refactoring: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false");
-    expect(block[23]).toBe("science feature, refactoring: muse/muse-wonder-1.0 reasoningEffort=xhigh");
+    expect(block[5]).toBe("feature, refactoring: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false");
+    expect(block[24]).toBe("science feature, refactoring: muse/muse-wonder-1.0 reasoningEffort=xhigh");
     expect(block).toContain("science how explorer: muse/muse-wonder-1.0 reasoningEffort=xhigh");
     expect(block).toContain("science why investigators: muse/muse-wonder-1.0 reasoningEffort=xhigh");
     expect(block).toContain("science reflect tooling: muse/muse-wonder-1.0 reasoningEffort=xhigh");
     expect(block.at(-1)).toBe("session hook: on");
-    expect(block).toHaveLength(43);
+    expect(block).toHaveLength(44);
   });
 
   test("every model-consuming skill carries the gate, term rule, and sheet paragraph", () => {
