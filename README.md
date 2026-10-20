@@ -16,7 +16,7 @@ npx -y github:huankoh/t3-pstack-science update
 npx -y github:huankoh/t3-pstack-science doctor
 ```
 
-`npx -y github:huankoh/t3-pstack-science` runs the installer from the latest commit on `main`. That is the rolling channel, the same one each home's marketplace auto-updates from. To run one release's installer, name its tag, as in `npx -y github:huankoh/t3-pstack-science#v2.0.0-rc.14-science.3 doctor`.
+`npx -y github:huankoh/t3-pstack-science` runs the installer from the latest commit on `main`. That is the rolling channel, the same one each home's marketplace auto-updates from. To run one release's installer, name its tag, as in `npx -y github:huankoh/t3-pstack-science#v2.0.0-rc.14-science.4 doctor`.
 
 `install` and `update` are the same command, and a second run changes nothing. With Node 20 or later, it installs or updates the `t3-pstack-science@t3-pstack-science` plugin in every Claude Code and Codex config home T3 can run: `~/.claude` and `~/.codex`, `$CLAUDE_CONFIG_DIR` and `$CODEX_HOME`, and the home of each `claudeAgent` and `codex` instance in T3's settings, disabled ones included. Name any other home with `--claude-home <dir>` or `--codex-home <dir>`. Each home's `t3-pstack-science` marketplace must come from `huankoh/t3-pstack-science`, or from `--source <owner/repo|git URL|dir>` on the same run, and a home whose marketplace has another source is left as it is. A local directory needs a path such as `./t3-pstack-science`, since `owner/repo` always means GitHub. On Codex it also trusts t3-pstack-science's session-start hook, once its hooks file is the one this release pins. Codex runs a plugin's hook only once it is trusted, and T3's Codex sessions never ask, so without this step the hook never runs. Run `update` after each release.
 
@@ -48,6 +48,7 @@ Use poteto-mode to fix the search filter resetting when I change pages.
 The session-start hook tells each new chat when to enter `poteto-mode` on its own: work that touches more than one file, a design choice, or a bug whose cause is unknown. `poteto-mode` matches the task to a playbook and opens the other skills from there. They ship as upstream ships them, invoked by `poteto-mode` or typed by you (`/t3-pstack-science:<name>` on Claude Code, `$t3-pstack-science:<name>` on Codex).
 
 The plugin carries 64 skill directories, 24 of them `principle-*` leaves, and 4 agents.
+A bug fix, feature, or refactoring change gets one `interrogate` review round before a PR, then one fix run and an artifact check, unless you ask for more review rounds.
 
 ## Muse mode
 
@@ -75,7 +76,8 @@ Wonder Full, Opus 5.5, and DeepSeek sit on every muse mode panel, so each panel 
 In the science column, DeepSeek writes and researches science code, GPT judges, and Wonder Full sits on the four-seat review panel with GPT, Opus, and DeepSeek.
 On a science task, an Opus panel seat gets a term-free brief, exactly as in the science route.
 Muse and DeepSeek seats read the science terms.
-Muse mode levels are fixed as listed, and a muse target this machine cannot run blocks that dispatch instead of falling back to a standard seat.
+Muse mode seats start at their listed levels and are tuned per job like any other seat, never above `xhigh` unless you ask for more or picked the `unlimited` budget, and a DeepSeek seat always runs at `max`.
+A muse target this machine cannot run blocks that dispatch instead of falling back to a standard seat.
 `/setup-pstack` writes no muse lines by default.
 An optional `muse <role>:` sheet line overrides one muse seat, and `doctor` warns, without failing, when the catalog cannot run every muse target.
 

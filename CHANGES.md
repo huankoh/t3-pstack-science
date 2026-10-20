@@ -2,6 +2,18 @@
 
 This file is the release changelog, with one `## <version> - <title>` entry per release, newest first. The Cursor-to-T3 rewrite rules live in [`tools/substitutions.json`](tools/substitutions.json), and the [sync boundary](CONTRIBUTING.md#the-sync-boundary) in `CONTRIBUTING.md` defines how a change to upstream's skill content is declared.
 
+## 2.0.0-rc.14-science.4 - Per-job levels capped at xhigh, one review round
+
+Every helper's reasoning level is now tuned per job in every mode, muse mode included.
+No child runs above `xhigh` unless you ask for more in the chat, or you picked the `unlimited` budget in `/setup-pstack`.
+A DeepSeek seat always runs at `max`, its listed level, in every mode.
+Muse mode seats start at their listed level and are raised or lowered per job like any other seat, and the sheet `# budget` comment does not set muse levels.
+A bug fix, feature, or refactoring change now gets one `interrogate` review round by default, with every reviewer on the panel.
+One fix run addresses that round, then an artifact check runs the real artifact, and the fix is not re-reviewed unless you ask for more rounds.
+When you ask for more rounds, each later round reviews only the fix diff.
+Model sheets and seats are unchanged.
+Neither hooks JSON file changes.
+
 ## 2.0.0-rc.14-science.3 - Muse mode
 
 Saying "muse mode" in a chat routes every helper that chat dispatches to the muse seats.
