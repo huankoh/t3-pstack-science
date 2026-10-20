@@ -56,7 +56,7 @@
     },
     {
       "pattern": "1. Install with `/add-plugin pstack` in chat, or from Customize in the sidebar.",
-      "replacement": "1. Run `npx -y github:huankoh/t3-pstack-science install` to install in every Claude Code and Codex home T3 runs. Run the same command with `update` to update or `doctor` to check. See the [README](https://github.com/huankoh/t3-pstack-science#readme).",
+      "replacement": "1. Install t3-pstack-science per its [README](https://github.com/huankoh/t3-pstack-science#readme). One `npx -y github:huankoh/t3-pstack-science install` run installs it in every Claude Code and Codex config home T3 can run. Run the same command with `update` to update or `doctor` to check.",
       "rationale": "Cursor's install UI does not exist on T3 (Per-skill notes: poteto-help)",
       "files": "^skills/poteto-help/SKILL\\.md$"
     },
@@ -85,9 +85,9 @@
       "files": "^skills/poteto-help/SKILL\\.md$"
     },
     {
-      "pattern": "pstack is built for Cursor. Its skills use the Agent Skills format, so other tools can read them. But most workflow skills, including `/poteto-mode`, `/how`, `/why`, and `/teach`, spawn Cursor subagents with per-role models, and Custom Modes and `/loop` are Cursor features, so those parts may not work there.",
-      "replacement": "t3-pstack-science is pstack rewritten for T3 Code. Its workflow skills, including `/poteto-mode`, `/how`, `/why`, and `/teach`, dispatch subagents through T3's `delegate_task` with per-role models, so those parts need a T3 thread.",
-      "rationale": "states where the port runs (Precedence)",
+      "pattern": "pstack is built for Cursor, and it also installs in Claude Code with `/plugin marketplace add cursor/plugins`, then `/plugin install pstack@cursor-plugins`. There, each command takes a `pstack:` prefix, such as `/pstack:poteto-mode`. The [Claude Code adapter](../../docs/harness/claude-code.md) maps the Cursor names, and a step that needs a Cursor-only feature, such as Bugbot or Automations, is skipped with a one-line note.\n\nOther tools can read the skills, because they use the Agent Skills format. But most workflow skills, including `/poteto-mode`, `/how`, `/why`, and `/teach`, spawn Cursor subagents with per-role models, and Custom Modes and `/loop` are Cursor features, so those parts may not work there.",
+      "replacement": "t3-pstack-science is pstack rewritten for T3 Code, and it installs in Claude Code and Codex with `npx -y github:huankoh/t3-pstack-science install`.\n\nIts workflow skills, including `/poteto-mode`, `/how`, `/why`, and `/teach`, dispatch subagents through T3's `delegate_task` with per-role models, so those parts need a T3 thread.",
+      "rationale": "states where the port runs and how it installs (Precedence)",
       "files": "^skills/poteto-help/SKILL\\.md$"
     },
     {
