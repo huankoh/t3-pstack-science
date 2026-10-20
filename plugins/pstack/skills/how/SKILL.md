@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Explore the codebase to answer "how does X work?" questions. Produce architectural explanations at the level of a senior engineer onboarding onto a subsystem, enough to build a working mental model, not so much that it reads like annotated source code.
 
-Every spawn is a `delegate_task` child with `role: "research"` and a brief that says to inspect only and change no file. Explorers use the `how explorer` line in the model sheet (default in [Models](#models)), and every explainer uses the `how explainer` line (default in [Models](#models)). Set `target` from that line's entry, or from the default if the sheet or the line is missing. Leave `target` unset when the value is `auto` or `inherit-parent`. If `delegate_task` rejects an entry, use the default and say so. If it rejects the default, use another target of the same family from `orchestrator_capabilities`. Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.
+Every spawn is a `delegate_task` child with `role: "research"` and a brief that says to inspect only and change no file. Explorers use the `how explorer` line in the model sheet (default in [Models](#models)), and every explainer uses the `how explainer` line (default in [Models](#models)). Set `target` from that line's entry, or from the default if the sheet or the line is missing. Leave `target` unset when the value is `auto` or `inherit-parent`. If `delegate_task` rejects an entry, use the default and say so. If it rejects the default, use another target of the same family from `orchestrator_capabilities`. Under `mode: muse`, a rejected target never falls back to a standard or same-family default. Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.
 
 ## 1. Assess complexity
 
@@ -47,3 +47,12 @@ A line in the model sheet overrides each default. `<role>: <entry>` sets the gen
 | --- | --- | --- |
 | how explorer | `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` | `muse/muse-wonder-1.0 reasoningEffort=xhigh` |
 | how explainer | `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |
+
+### Muse mode
+
+An instruction from the user to use "muse mode" sets `mode: muse` for this chat. A quoted, discussed, or example use of the phrase does not. It lasts across later tasks and resumed turns until "normal mode", "standard mode", or "turn off muse mode", which sets `mode: standard`. A new top-level chat starts at `mode: standard`. Changing mode does not change running children. Record `mode: muse` or `mode: standard` beside `domain:` before the first dispatch. Under `mode: muse`, read `muse <role>:` from the sheet, else the muse default. Never read a standard line or a standard default. The domain does not change muse targets. A muse seat whose family is not a science term reader (Opus) gets a term-free brief when the task is science, and Muse seats read the terms. Levels are fixed. Do not raise or lower them, and the sheet `# budget` comment does not apply. A rejected or unrunnable muse target blocks that dispatch and names the target and the fix. Never use a standard seat or the generic same-family fallback. A failed reviewer gets a fresh reviewer on the same entry, or the gate stays `BLOCKED: independent review`. The handback's extra reviewer under `mode: muse` comes from `muse interrogate reviewers`, by family as usual (Opus when Muse wrote the work and Muse did the final review). Every brief to a child that can dispatch carries `mode: muse` and the domain. Muse mode moves helpers only. To keep the whole run on Muse, the user picks a Muse model for the chat in the composer.
+
+| Role | muse |
+| --- | --- |
+| how explorer | `muse/muse-wonder-1.0 reasoningEffort=xhigh` |
+| how explainer | `muse/muse-wonder-full-1.0 reasoningEffort=xhigh` |

@@ -1,6 +1,6 @@
 // The T3 sheet grammar and its check against an orchestrator_capabilities
 // catalog. The fixture is a trimmed copy of a real catalog: Claude names its
-// reasoning option `effort`, Codex and Grok name it `reasoningEffort`, and an
+// reasoning option `effort`, Codex, Grok, and Muse name it `reasoningEffort`, and an
 // unauthenticated provider lists models it cannot run.
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";

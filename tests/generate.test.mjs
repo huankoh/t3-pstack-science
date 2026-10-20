@@ -352,7 +352,7 @@ describe("deriveT3", () => {
     expect(out).toContain("When it is missing, use the defaults in the table below.");
     expect(out).not.toContain("t3-pstack-models.md");
     expect(out).toContain("It splits at its first `/`");
-    expect(out).toEndWith("| how explainer | `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |\n");
+    expect(out).toEndWith("| how explainer | `muse/muse-wonder-full-1.0 reasoningEffort=xhigh` |\n");
     expect(out).toContain("`<role>: <entry>` sets the general column, as in every sheet written before domains, and `science <role>: <entry>` sets the science column.");
     expect(out).toContain("For each task, before step 1 and before the first `delegate_task`");
     expect(out).toContain("term-free.mjs");

@@ -606,7 +606,7 @@ export function plan(root, models) {
   stamp(`${PLUGIN}/.claude-plugin/plugin.json`, (text) => stampAgentPaths(text, pluginAgentPaths(join(root, PLUGIN))));
   const claude = JSON.parse(files[`${PLUGIN}/.claude-plugin/plugin.json`]);
   files[`${CURSOR_PLUGIN}/plugin.json`] = `${JSON.stringify(cursorManifest(claude), null, 2)}\n`;
-  files[`${CURSOR_PLUGIN}/rules/session-start.mdc`] = cursorRule(read(`${PLUGIN}/hooks/session-start-context.md`), claude.name);
+  files[`${CURSOR_PLUGIN}/rules/session-start.mdc`] = cursorRule(files[`${PLUGIN}/hooks/session-start-context.md`] ?? read(`${PLUGIN}/hooks/session-start-context.md`), claude.name);
   const realRoot = realpathSync(root);
   for (const { source, target } of PORTABLE_ASSETS) {
     if (!pathIsInside(realRoot, realpathSync(join(root, source)))) {
