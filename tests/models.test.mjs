@@ -35,13 +35,13 @@ describe("committed models.json", () => {
     expect(Object.keys(models.domains.science.tiers)).toEqual(["code", "explore", "judgment", "mechanical", "final", "runners", "judges", "reviewers"]);
   });
 
-  test("science workers and research delegates promise DeepSeek defaults", () => {
+  test("science code uses Sol and research delegates use DeepSeek", () => {
     const science = sheet.seats(models).filter((s) => s.domain === "science" && !s.panel);
     expect(science.map((s) => [s.role, s.defaults[0].entry])).toEqual([
-      ["feature, refactoring", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
-      ["bug-fix", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
-      ["perf-issue", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
-      ["hillclimb", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
+      ["feature, refactoring", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
+      ["bug-fix", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
+      ["perf-issue", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
+      ["hillclimb", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
       ["judgment and prose", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
       ["hardest tasks", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
       ["mechanical code", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
@@ -52,7 +52,7 @@ describe("committed models.json", () => {
       ["why synthesizer", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
       ["reflect tooling", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
       ["reflect judgment, divergent, synthesizer", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
-      ["swarm workers", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
+      ["swarm workers", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
     ]);
     expect(models.roles.filter((r) => r.tier === "explore").map((r) => r.role)).toEqual([
       "how explorer", "why investigators", "reflect tooling",
@@ -61,7 +61,7 @@ describe("committed models.json", () => {
 
   test("mechanical code promises its column default and final review promises the same default in both columns", () => {
     expect(sheet.seats(models).filter((s) => ["mechanical code", "final review"].includes(s.role)).map((s) => [s.key, s.defaults])).toEqual([
-      ["mechanical code", [{ entry: "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", termFree: false }]],
+      ["mechanical code", [{ entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }]],
       ["final review", [{ entry: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default", termFree: false }]],
       ["science mechanical code", [{ entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }]],
       ["science final review", [{ entry: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default", termFree: false }]],
@@ -74,9 +74,9 @@ describe("committed models.json", () => {
   });
 
   test.each([
-    [["feature, refactoring"], ["deepseek"], null],
-    [["feature, refactoring", "hardest tasks"], ["deepseek", "gpt"], {
-      entry: "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", termFree: true,
+    [["feature, refactoring"], ["gpt"], { entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }],
+    [["feature, refactoring", "hardest tasks"], ["gpt"], {
+      entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false,
     }],
   ])("science handback selects an independent reviewer for authors %j", (roles, expectedFamilies, expectedExtra) => {
     const family = (entry) => sheet.family(sheet.parseEntry(entry).model);
@@ -96,7 +96,6 @@ describe("committed models.json", () => {
       "science arena runners: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
       "science arena cross-judge pool: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
       "science architect runners: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-      "science interrogate reviewers: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
     ]);
   });
 
@@ -111,16 +110,14 @@ describe("committed models.json", () => {
   });
 
   test("every DeepSeek entry is variant=max with no speed option", () => {
-    const tierEntries = [
-      ...Object.values(raw.domains.science.tiers).flatMap((v) => [v].flat()),
-    ];
+    const tierEntries = Object.values(raw.domains).flatMap((domain) => Object.values(domain.tiers).flat());
     const deepseek = tierEntries.filter((e) => sheet.family(sheet.parseEntry(e).model) === "deepseek");
     expect(deepseek).toHaveLength(6);
     for (const entry of deepseek) {
       expect(entry).toBe("opencode/opencode-go/deepseek-v4.1-flash variant=max");
       expect(sheet.parseEntry(entry).options).toEqual({ variant: "max" });
     }
-    expect(raw.domains.science.termReaders).toEqual(["gpt", "grok", "muse", "deepseek"]);
+    expect(raw.domains.science.termReaders).toEqual(["gpt", "muse", "deepseek"]);
   });
 
 });

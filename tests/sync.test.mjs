@@ -228,12 +228,12 @@ describe("applySubstitutions", () => {
     [
       "skills/arena/SKILL.md",
       "Families go by prefix: `claude-*`, and `grok-*` with `cursor-grok-*` and `composer-*`. A refused `composer-*` entry runs on `grok-4.7-xhigh-fast`.",
-      "A model's family is the first segment of its ID's last `/` part, such as `claude`, `gpt`, `grok`, or `muse`, whatever provider instance serves it.",
+      "A model's family is the first segment of its ID's last `/` part, such as `claude`, `gpt`, `muse`, or `deepseek`, whatever provider instance serves it.",
     ],
     [
       "skills/interrogate/SKILL.md",
       "Families go by prefix: `claude-*`, and `grok-*` with `cursor-grok-*` and `composer-*`. A refused `composer-*` entry runs on Reviewer B's default.",
-      "A model's family is the first segment of its ID's last `/` part, such as `claude`, `gpt`, `grok`, or `muse`, whatever provider instance serves it.",
+      "A model's family is the first segment of its ID's last `/` part, such as `claude`, `gpt`, `muse`, or `deepseek`, whatever provider instance serves it.",
     ],
     [
       "skills/poteto-mode/SKILL.md",

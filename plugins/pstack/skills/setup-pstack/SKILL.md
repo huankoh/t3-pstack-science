@@ -26,9 +26,9 @@ The default role-to-target mapping is the sheet shape in step 5 below. If the sh
 - `medium - high reasoning`
 - `small - medium reasoning`
 
-**(b) Apply it.** Build the working table from the defaults, and on a re-run keep any role you changed by provider, list, or alias (`inherit-parent`, `auto`). `unlimited`, `large`, `medium`, and `small` set the reasoning option of every entry, panel entries included, to `max`, `xhigh`, `high`, or `medium`. Use the option ID that provider lists. If the provider does not offer that value, use its highest value at or below the target, else mark the role as needing a choice. Leave an entry on the `deepseek` family at `max`, its listed level, whatever the budget. So a target whose catalog lists `xhigh` as its highest level stays at `xhigh` under `unlimited`, while Muse reaches `max` when its catalog lists that level. `inherit-parent` and `auto` do not change.
+**(b) Apply it.** Build the working table from the defaults, and on a re-run keep any role you changed by provider, list, or alias (`inherit-parent`, `auto`). `unlimited`, `large`, `medium`, and `small` set the reasoning option of every entry, panel entries included, to `max`, `xhigh`, `high`, or `medium`. Use the option ID that provider lists. If the provider does not offer that value, use its highest value at or below the target, else mark the role as needing a choice. Leave an entry on the `deepseek` family at `max`, its listed level, whatever the budget. For example, `small` sets Muse to `medium` and leaves DeepSeek at `max`. `inherit-parent` and `auto` do not change.
 
-**(c) Show the roles and confirm.** Show every role with its entry, marking any target not in the detected set as needing a choice. Also list each line step 2 dropped. Ask whether to accept as-is or change specific roles, offering the detected targets plus `inherit-parent` and `auto` (both mean: this role runs on the parent chat's model) as the options for a role line. For panel roles (`arena runners`, `architect runners`, `interrogate reviewers`) the value is a list, and one subagent runs per entry, alias entries included, so the list length sets the count. A panel needs at least two model families among its targets. A model's family is the first segment of its ID's last `/` part, such as `claude`, `gpt`, `grok`, `muse`, or `deepseek`. `arena cross-judge pool` is also a list, but Arena selects one value from it whose model ran no candidate and whose family differs from the parent's when possible. `swarm workers` is the default target for every worker unless a race or comparison assigns another per arm.
+**(c) Show the roles and confirm.** Show every role with its entry, marking any target not in the detected set as needing a choice. Also list each line step 2 dropped. Ask whether to accept as-is or change specific roles, offering the detected targets plus `inherit-parent` and `auto` (both mean: this role runs on the parent chat's model) as the options for a role line. For panel roles (`arena runners`, `architect runners`, `interrogate reviewers`) the value is a list, and one subagent runs per entry, alias entries included, so the list length sets the count. A panel needs at least two model families among its targets. A model's family is the first segment of its ID's last `/` part, such as `claude`, `gpt`, `muse`, or `deepseek`. `arena cross-judge pool` is also a list, but Arena selects one value from it whose model ran no candidate and whose family differs from the parent's when possible. `swarm workers` is the default target for every worker unless a race or comparison assigns another per arm.
 
 **(d) Ask about the session-start hook.** Ask whether t3-pstack-science's session-start hook should keep telling new chats when to enter `/poteto-mode`. Write `session hook: on` or `session hook: off`.
 
@@ -45,29 +45,29 @@ Overwrite the sheet with the candidate, creating its directory and writing throu
 # `<role>:` sets the general column, as in every sheet before domains. `science <role>:` sets the science column.
 # `inherit-parent` or `auto` as a value: the role runs on the parent chat's model (`delegate_task` omits `target`). Alias entries in a panel list still count toward its fan-out.
 # budget: large (xhigh)
-feature, refactoring: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
-bug-fix: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
-perf-issue: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
-hillclimb: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
-judgment and prose: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
-hardest tasks: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
-mechanical code: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
+feature, refactoring: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+bug-fix: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+perf-issue: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+hillclimb: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+judgment and prose: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
+hardest tasks: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
+mechanical code: opencode/opencode-go/deepseek-v4.1-flash variant=max
 final review: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
-how explorer: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
-how explainer: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
-why investigators: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
-why synthesizer: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
-reflect tooling: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
-reflect judgment, divergent, synthesizer: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
-arena runners: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
-arena cross-judge pool: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh
-swarm workers: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
-architect runners: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
-interrogate reviewers: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh, codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
-science feature, refactoring: opencode/opencode-go/deepseek-v4.1-flash variant=max
-science bug-fix: opencode/opencode-go/deepseek-v4.1-flash variant=max
-science perf-issue: opencode/opencode-go/deepseek-v4.1-flash variant=max
-science hillclimb: opencode/opencode-go/deepseek-v4.1-flash variant=max
+how explorer: opencode/opencode-go/deepseek-v4.1-flash variant=max
+how explainer: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
+why investigators: opencode/opencode-go/deepseek-v4.1-flash variant=max
+why synthesizer: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
+reflect tooling: opencode/opencode-go/deepseek-v4.1-flash variant=max
+reflect judgment, divergent, synthesizer: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
+arena runners: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh
+arena cross-judge pool: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default, muse/muse-wonder-full-1.0 reasoningEffort=xhigh, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
+swarm workers: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+architect runners: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh
+interrogate reviewers: opencode/opencode-go/deepseek-v4.1-flash variant=max, codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+science feature, refactoring: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+science bug-fix: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+science perf-issue: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+science hillclimb: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
 science judgment and prose: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
 science hardest tasks: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
 science mechanical code: opencode/opencode-go/deepseek-v4.1-flash variant=max
@@ -78,11 +78,11 @@ science why investigators: opencode/opencode-go/deepseek-v4.1-flash variant=max
 science why synthesizer: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
 science reflect tooling: opencode/opencode-go/deepseek-v4.1-flash variant=max
 science reflect judgment, divergent, synthesizer: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default
-science arena runners: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, opencode/opencode-go/deepseek-v4.1-flash variant=max
-science arena cross-judge pool: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, opencode/opencode-go/deepseek-v4.1-flash variant=max
-science swarm workers: opencode/opencode-go/deepseek-v4.1-flash variant=max
-science architect runners: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, opencode/opencode-go/deepseek-v4.1-flash variant=max
-science interrogate reviewers: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, opencode/opencode-go/deepseek-v4.1-flash variant=max, muse/muse-wonder-full-1.0 reasoningEffort=xhigh
+science arena runners: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh
+science arena cross-judge pool: codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default, muse/muse-wonder-full-1.0 reasoningEffort=xhigh, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false
+science swarm workers: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
+science architect runners: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default, claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false, muse/muse-wonder-full-1.0 reasoningEffort=xhigh
+science interrogate reviewers: opencode/opencode-go/deepseek-v4.1-flash variant=max, codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default
 session hook: on
 ```
 

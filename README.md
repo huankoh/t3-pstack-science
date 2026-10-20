@@ -50,6 +50,33 @@ The session-start hook tells each new chat when to enter `poteto-mode` on its ow
 The plugin carries 64 skill directories, 24 of them `principle-*` leaves, and 4 agents.
 A bug fix, feature, or refactoring change gets one `interrogate` review round before a PR, then one fix run and an artifact check, unless you ask for more review rounds.
 
+## Model defaults
+
+Routing has two columns, `general` and `science`.
+Use `science` for biology or other scientific work, and `general` for other tasks.
+Both columns use the defaults below.
+The science gate changes the brief for families that cannot read the domain terms.
+GPT, Muse, and DeepSeek read science terms, while Claude Opus gets a term-free brief.
+In `general`, every family can read the task's terms.
+
+| Tier | Target in general and science |
+| --- | --- |
+| `code` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |
+| `explore` | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |
+| `mechanical` | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |
+| `judgment` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |
+| `final` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |
+| `runners` | GPT Sol xhigh, Claude Opus 5.5 xhigh, Muse Wonder Full 1.0 xhigh |
+| `judges` | GPT Astra xhigh, Muse Wonder Full 1.0 xhigh, Claude Opus 5.5 xhigh |
+| `reviewers` | DeepSeek V4.1 Flash max, GPT Sol xhigh |
+
+Claude runs with `fastMode=false`, and GPT runs with `serviceTier=default`.
+Each helper's reasoning level is tuned per job, up to `xhigh` unless you ask for more or pick the `unlimited` budget.
+DeepSeek always stays at `max`.
+An unprefixed `<role>:` sheet line overrides the general column, and `science <role>:` overrides the science column.
+Existing explicit machine-sheet entries keep their targets.
+Rewrite the sheet or rerun `/setup-pstack` to adopt the new defaults.
+
 ## Staying current
 
 This repository syncs from Lauren's tree directly, synced against upstream `d457567`. `tools/upstream.json` pins each component, `tools/substitutions.json` holds the rewrite rules and a denylist of Cursor terms, and `tools/forks.json` declares every file the port keeps in its own form and why. `bun tools/sync.mjs <component> <sha>` derives each upstream file through the rules, merges it three ways with the port's copy, and fails on an undeclared fork, a denylist hit, or a rule that no longer matches upstream. [CONTRIBUTING.md](CONTRIBUTING.md#the-sync-boundary) has the details.

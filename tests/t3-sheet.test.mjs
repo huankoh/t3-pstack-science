@@ -121,8 +121,8 @@ describe("checkSheet against a catalog", () => {
     const noMuse = structuredClone(catalog);
     noMuse.providers = noMuse.providers.filter((p) => p.providerInstanceId !== "muse");
     expect(check("session hook: on", noMuse)).toEqual([
-      "arena runners", "arena cross-judge pool", "architect runners", "interrogate reviewers",
-      "science interrogate reviewers",
+      "arena runners", "arena cross-judge pool", "architect runners",
+      "science arena runners", "science arena cross-judge pool", "science architect runners",
     ].map((key) => `${key} (no line, tier default): muse/muse-wonder-full-1.0: no provider instance "muse" in this T3`));
   });
 
@@ -293,7 +293,7 @@ describe("seats", () => {
     expect(keys.at(-1)).toBe("science interrogate reviewers");
     expect(seats(models).find((s) => s.key === "science bug-fix")).toEqual({
       key: "science bug-fix", alias: null, domain: "science", role: "bug-fix", skill: "poteto-mode", panel: false,
-      defaults: [{ entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }],
+      defaults: [{ entry: "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default", termFree: false }],
     });
   });
 
@@ -305,14 +305,14 @@ describe("seats", () => {
 });
 
 describe("domain sheet keys", () => {
-  test("a catalog without claudeAgent names the general seats that now default to Opus", () => {
+  test("a catalog without claudeAgent names the panel seats that use Opus", () => {
     const noClaudeAgent = { providers: catalog.providers.filter((p) => p.providerInstanceId !== "claudeAgent") };
     const problems = check("", noClaudeAgent);
     const named = problems.map((p) => p.split(" (no line, tier default):")[0]);
     const opusSeats = seats(models).filter((s) => s.defaults.some((d) => d.entry.startsWith("claudeAgent/claude-opus-5-5"))).map((s) => s.key);
     expect(named).toEqual(opusSeats);
-    expect(named.filter((k) => !k.startsWith("science "))).toEqual(models.roles.map((r) => r.role).filter((r) => r !== "final review"));
-    expect(problems[0]).toBe('feature, refactoring (no line, tier default): claudeAgent/claude-opus-5-5: no provider instance "claudeAgent" in this T3');
+    expect(named).toEqual(["arena runners", "arena cross-judge pool", "architect runners", "science arena runners", "science arena cross-judge pool", "science architect runners"]);
+    expect(problems[0]).toBe('arena runners (no line, tier default): claudeAgent/claude-opus-5-5: no provider instance "claudeAgent" in this T3');
   });
 
   test("a literal v2 sheet passes the grammar check", () => {

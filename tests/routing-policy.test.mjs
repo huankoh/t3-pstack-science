@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { checkSheet, parseSheet } from "../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
+import { checkSheet, family, parseEntry, parseSheet, seats } from "../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
 import { applyRegions, sheetBlock } from "../tools/derive-t3.mjs";
 import { loadModels } from "../tools/generate.mjs";
 
@@ -12,6 +12,43 @@ const read = (path) => readFileSync(join(root, path), "utf8");
 const models = loadModels();
 
 describe("two-column routing", () => {
+  test.each(["general", "science"])("the %s defaults match the approved tiers and every panel spans families", (domain) => {
+    const tiers = models.domains[domain].tiers;
+    expect(tiers).toEqual({
+      code: "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
+      explore: "opencode/opencode-go/deepseek-v4.1-flash variant=max",
+      judgment: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
+      mechanical: "opencode/opencode-go/deepseek-v4.1-flash variant=max",
+      final: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
+      runners: [
+        "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
+        "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
+        "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
+      ],
+      judges: [
+        "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
+        "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
+        "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
+      ],
+      reviewers: [
+        "opencode/opencode-go/deepseek-v4.1-flash variant=max",
+        "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
+      ],
+    });
+    for (const panel of [tiers.runners, tiers.judges, tiers.reviewers]) {
+      expect(new Set(panel.map((entry) => family(parseEntry(entry).model))).size).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  test("science term readers are GPT, Muse, and DeepSeek, and only science Opus seats are term-free", () => {
+    expect(models.domains.science.termReaders).toEqual(["gpt", "muse", "deepseek"]);
+    for (const seat of seats(models)) {
+      for (const entry of seat.defaults) {
+        expect(entry.termFree).toBe(seat.domain === "science" && family(parseEntry(entry.entry).model) === "claude");
+      }
+    }
+  });
+
   test("the policy contains only domains and their shared roles", () => {
     expect(Object.keys(models)).toEqual(["domains", "roles"]);
   });
