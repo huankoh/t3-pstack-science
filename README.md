@@ -14,7 +14,7 @@ npx -y github:huankoh/t3-pstack-science update
 npx -y github:huankoh/t3-pstack-science doctor
 ```
 
-`npx -y github:huankoh/t3-pstack-science` runs the installer from the latest commit on `main`. That is the rolling channel, the same one each home's marketplace auto-updates from. To run one release's installer, name its tag, as in `npx -y github:huankoh/t3-pstack-science#v2.0.0-rc.14-science.2 doctor`.
+`npx -y github:huankoh/t3-pstack-science` runs the installer from the latest commit on `main`. That is the rolling channel, the same one each home's marketplace auto-updates from. To run one release's installer, name its tag, as in `npx -y github:huankoh/t3-pstack-science#v2.0.0-rc.14-science.3 doctor`.
 
 `install` and `update` are the same command, and a second run changes nothing. With Node 20 or later, it installs or updates the `t3-pstack-science@t3-pstack-science` plugin in every Claude Code and Codex config home T3 can run: `~/.claude` and `~/.codex`, `$CLAUDE_CONFIG_DIR` and `$CODEX_HOME`, and the home of each `claudeAgent` and `codex` instance in T3's settings, disabled ones included. Name any other home with `--claude-home <dir>` or `--codex-home <dir>`. Each home's `t3-pstack-science` marketplace must come from `huankoh/t3-pstack-science`, or from `--source <owner/repo|git URL|dir>` on the same run, and a home whose marketplace has another source is left as it is. A local directory needs a path such as `./t3-pstack-science`, since `owner/repo` always means GitHub. On Codex it also trusts t3-pstack-science's session-start hook, once its hooks file is the one this release pins. Codex runs a plugin's hook only once it is trusted, and T3's Codex sessions never ask, so without this step the hook never runs. Run `update` after each release.
 
@@ -46,6 +46,23 @@ Use poteto-mode to fix the search filter resetting when I change pages.
 The session-start hook tells each new chat when to enter `poteto-mode` on its own: work that touches more than one file, a design choice, or a bug whose cause is unknown. `poteto-mode` matches the task to a playbook and opens the other skills from there. They ship as upstream ships them, invoked by `poteto-mode` or typed by you (`/t3-pstack-science:<name>` on Claude Code, `$t3-pstack-science:<name>` on Codex).
 
 The plugin carries 64 skill directories, 24 of them `principle-*` leaves, and 4 agents.
+
+## Muse mode
+
+Say "muse mode" in a chat and every helper that chat dispatches runs on Muse seats instead of the standard routes, for that chat only. It lasts across later tasks in the chat until "normal mode", "standard mode", or "turn off muse mode". A new chat starts in standard mode, and a quoted or discussed use of the phrase switches nothing. Muse mode needs the Muse provider in T3. It moves helpers only, so the chat's own model stays your pick in the composer. To keep the whole run on Muse, pick a Muse model for the chat as well. Muse runs in contributor mode, so muse mode requests go to Meta under contributor terms.
+
+| Job | Tier | Target |
+| --- | --- | --- |
+| Implementation, swarm workers | `code` | `muse/muse-wonder-1.0 reasoningEffort=xhigh` |
+| Mechanical edits | `mechanical` | `muse/muse-spark-1.3 reasoningEffort=max` |
+| Research | `explore` | `muse/muse-wonder-1.0 reasoningEffort=xhigh` |
+| Judgment, writing, hardest tasks | `judgment` | `muse/muse-wonder-full-1.0 reasoningEffort=xhigh` |
+| Final review | `final` | `muse/muse-wonder-full-1.0 reasoningEffort=xhigh` |
+| Design candidates | `runners` | Wonder Full xhigh, Opus 5.5 xhigh |
+| Design judge | `judges` | Wonder xhigh (ran no candidate), Opus 5.5 xhigh |
+| Review panel | `reviewers` | Wonder Full xhigh, Opus 5.5 xhigh |
+
+Opus 5.5 sits on every muse mode panel, so each panel spans two families. On a science task, an Opus panel seat gets a term-free brief, exactly as in the science route. Muse seats read the science terms. Muse mode levels are fixed as listed, and a muse target this machine cannot run blocks that dispatch instead of falling back to a standard seat. `/setup-pstack` writes no muse lines by default. An optional `muse <role>:` sheet line overrides one muse seat, and `doctor` warns, without failing, when the catalog cannot run every muse target.
 
 ## Staying current
 
