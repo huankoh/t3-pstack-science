@@ -6,6 +6,8 @@ This file is the release changelog, with one `## <version> - <title>` entry per 
 
 The fork now carries chhoumann's 2.0.0-rc.12 to 2.0.0-rc.14, Lauren Tan's pstack at cursor/plugins `d457567`. Users get `maintain-formal-verification-skill`, setup-pstack step 8, and the poteto-help fixes for the install step and Codex skill names. The model sheet's roles did not change. Neither hooks file changes.
 
+The README now says to restart T3 after `install --cursor`, `update --cursor`, or `uninstall --cursor`, as a precaution. In one live test on Cursor SDK 1.0.35, a new session in the same process quoted the other rules but not a line appended to the installed rule. A restart itself was not tested.
+
 ## 2.0.0-rc.11-science.2 - Cursor install is opt-in
 
 `install --cursor`, `update --cursor`, and `doctor --cursor` copy this package into `~/.cursor/plugins/local/t3-pstack-science` and check it. `uninstall --cursor` removes only that copy. Plain `install`, `update`, and `doctor` do not read or write `~/.cursor`. The session text is a plugin rule that names skills by path, and `session hook: off` takes effect at the next `install --cursor`. Neither hooks file changes.

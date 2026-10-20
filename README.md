@@ -33,6 +33,8 @@ npx -y github:huankoh/t3-pstack-science uninstall --cursor
 
 The session text is a Cursor rule, and each skill is named by the absolute path of its `SKILL.md` under that copy. A `session hook: off` line in the machine sheet leaves the rule out at the next `install --cursor`. The Cursor app and `cursor-agent` see the copy too, and the rule applies only when a `<runtime_info>` block says the session runs in T3 Code. Lauren's `pstack` keeps loading beside it. Moving the folder to another non-dot name inside `plugins/local` does not disable it. Back out with `uninstall --cursor`.
 
+A running T3 may keep the rule its Cursor sessions read first. In one live test on Cursor SDK 1.0.35, a new session in the same process quoted the other rules but not a line appended to the installed rule. As a precaution, restart T3 after `install --cursor`, `update --cursor`, or `uninstall --cursor`.
+
 Then run `/t3-pstack-science:setup-pstack` in a T3 thread on each machine. It writes the model sheet, `~/.config/t3-pstack-science/models.md`, with one T3 target per role (`<providerInstanceId>/<modelId>` plus that provider's options), and checks it against the machine's `orchestrator_capabilities`. Without a sheet, every role runs on the defaults in its skill's Models section. This fork reads only its machine sheet and never migrates or links another plugin's sheet.
 
 ## Use
