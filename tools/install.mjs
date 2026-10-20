@@ -100,12 +100,13 @@ async function run(argv, env, home) {
   const source = parseSource(values.source ?? HOME_REPO, home);
   const homeRepo = parseSource(HOME_REPO, home);
   if ((values.cursor || values.muse) && !copiesLocalPackage(source, homeRepo)) {
-    throw new Error(`${values.cursor ? "--cursor" : "--muse"} only installs from ${HOME_REPO} or a local --source, not ${source.arg}`);
+    throw new Error(`${[values.cursor && "--cursor", values.muse && "--muse"].filter(Boolean).join(" ")} only installs from ${HOME_REPO} or a local --source, not ${source.arg}`);
   }
   const facts = pluginFacts(source.local ?? fileURLToPath(new URL("..", import.meta.url)), { cursor: values.cursor });
   const trusted = new Set([homeRepo.key, source.key]);
   const context = {
     source,
+    explicitSource: values.source !== undefined,
     trusted,
     version: facts.version,
     skills: facts.skills,
@@ -194,7 +195,7 @@ function renderUninstall({ homes }, home) {
 
 function render({ command, version, source, settings, homes, sheet, failed, warnings }, home) {
   const lines = [`t3-pstack-science ${version} from ${source}`];
-  lines.push(`T3 settings: ${settings.path}${settings.error ? ` (${settings.error})` : `, ${settings.instances} Claude Code or Codex instances`}`);
+  lines.push(`T3 settings: ${settings.path}${settings.error ? ` (${settings.error})` : `, ${settings.instances} Claude Code, Codex, or Muse instances`}`);
   for (const row of homes) section(lines, homeTitle(row), row.steps, row.checks);
   section(lines, `Model sheet  ${sheet.path}`, sheet.steps, sheet.checks);
   const changed = [...homes.flatMap((row) => row.steps), ...sheet.steps].length;

@@ -91,12 +91,26 @@ Neither frozen hooks JSON file changes.
 Muse's built-in `git` skill requires a separate request for each exact Git write, which conflicts with the shared rule used by the other runtimes.
 `--muse` disables that skill and records ownership of the change.
 The shared rule allows commits, pushes, tags, merges, and PRs when the user's request covers them.
-A task ending in a PR, a merge, or a release covers the commits and pushes it needs.
-It also forbids killing or deleting a process or lock file holding Git state, and says to wait, retry, or report.
-`uninstall --muse` removes only t3-pstack-science from Muse and re-enables the built-in skill only if this installer disabled it.
+A task ending in a PR, a green or merge-ready PR, a merge, or a release covers the commits, pushes, tags, and PR it needs.
+A task that needs an auditable decision trail covers the commit that records it.
+Amend, rebase, cherry-pick, revert, and reset must also be part of a task the user's request covers.
+The rule forbids killing a Git process or deleting a Git lock file to clear a held lock, and also forbids deleting stale Git lock files.
+For a held lock or corrupt index, wait, retry, use the holder's own stop mechanism, or report.
+The Git rule applies alongside the other session-start mandates.
+`uninstall --muse` removes only the record matching the installer's receipt and restores the Git skill only after a confirmed installer disable.
+If the plugin was removed outside the installer, uninstall clears the stale receipt and leaves Git as the user has it.
+A failed Git restore can be retried with `uninstall --muse`.
+
+The receipt pins the plugin id, version, content digest, source provenance and path, trust, and user scope.
+A managed update can come from a different npx checkout path.
+An existing record without a matching receipt requires an explicit `--source` naming its source before install can change it.
+Uninstall refuses a foreign record.
+For multiple records, list them with `muse plugins list --json`, then run `muse plugins remove t3-pstack-science` for each stale one.
 
 `doctor --muse` checks the CLI version, the installed release, whether the plugin is enabled and active, hook and agent approval, and the disabled Git skill.
-It also exports `muse schema`, builds a session-start fixture, and runs `muse plugins hook test` to verify that the output carries the shared context.
+It runs `muse schema generate-json-schema --out <dir>`, builds a session-start fixture, and runs `muse plugins hook test` to verify that the output carries the shared context.
+Doctor skips the hook test and fails the context check unless the package matches this release's version and content digest and the hook is approved.
+Unsupported CLI output asks you to update t3-pstack-science.
 A missing or broken Muse install fails doctor only when `--muse` is passed.
 An explicit `session hook: off` in the machine sheet suppresses context, as it does in the other runtimes.
 Restart T3 after `update --muse` so new sessions load the refreshed plugin.

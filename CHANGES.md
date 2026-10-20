@@ -8,10 +8,22 @@ This file is the release changelog, with one `## <version> - <title>` entry per 
 The installer finds T3's configured Muse binary, then PATH, then `~/.local/bin/muse`, and installs a user-scope cached copy.
 Repeated runs converge without changes, and updates replace the active plugin record.
 Only this plugin's session-start hook and four agent definitions are approved, with each capability id reported.
-Muse's built-in `git` skill is disabled, with ownership recorded so uninstall restores it only when this installer disabled it.
-Every runtime receives one shared Git rule that recognizes commits and pushes covered by a PR, merge, or release task, while forbidding removal of Git lock holders.
+Muse's built-in `git` skill is disabled, with ownership recorded only after disable succeeds.
+Uninstall restores Git only for a matching managed record or a pending restore, and external plugin removal clears stale ownership.
+A receipt pins plugin identity, content, provenance, trust, and user scope, allows managed updates from new npx paths, and prevents foreign record removal.
+Multiple records report the commands to list and remove stale records.
+Every runtime receives one shared Git rule that covers writes needed for a PR, green or merge-ready PR, merge, release, or auditable decision trail task.
+Amend, rebase, cherry-pick, revert, and reset also require a covered task.
+The rule forbids killing a Git process or deleting a Git lock file to clear a held lock, and also forbids deleting stale Git lock files.
+For a held lock or corrupt index, use the holder's own stop mechanism, wait, retry, or report.
+The Git rule applies alongside the other session-start mandates.
 Muse uses the existing Claude-compatible hook and stdout context, so neither frozen hooks JSON file changes.
-Doctor verifies the CLI, release, active state, approvals, Git skill, and session context with a schema-derived hook fixture.
+Doctor verifies the CLI, release, active state, approvals, Git skill, and session context with a fixture derived from `muse schema generate-json-schema --out <dir>`.
+It skips hook execution unless the release's version and content digest match and the hook is approved.
+CLI output is validated, including approved statuses, normalized event names, and schema-provided source and matcher values.
+The package manifest supplies the agent list.
+Fake-CLI regressions cover ownership, retries, and unsupported output, and real-binary regressions prove modified or unapproved hooks cannot write a marker.
+Real-binary tests probe for Muse Code and assert that the real Muse directories stay unchanged.
 Fake-CLI tests and a throwaway-home E2E test cover installation, updates, approvals, context delivery, and uninstall.
 Restart T3 after `update --muse`.
 

@@ -8,7 +8,7 @@ export const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 export const pluginRoot = join(repoRoot, "plugins/pstack");
 export const version = JSON.parse(readFileSync(join(pluginRoot, ".claude-plugin/plugin.json"), "utf8")).version;
 export const hookId = "plugin:t3-pstack-science:hook:hook-f4f474dee530aff8";
-export const agents = ["comment-sicko", "poteto-agent", "thermo-nuclear-code-quality-review-subagent", "thermo-nuclear-review-subagent"];
+export const agents = JSON.parse(readFileSync(join(pluginRoot, ".claude-plugin/plugin.json"), "utf8")).agents.map((path) => path.split("/").at(-1).replace(/\.md$/, ""));
 export const writeJson = (path, value) => {
   mkdirSync(join(path, ".."), { recursive: true });
   writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
@@ -29,6 +29,7 @@ export function isolatedHome(muse) {
     if (git) symlinkSync(git, join(bin, "git"));
     if (muse) symlinkSync(muse, join(bin, "muse"));
   }
+  if (windows) writeFileSync(join(home, "gitconfig"), "");
   const env = {
     ...process.env,
     HOME: home,
@@ -40,7 +41,7 @@ export function isolatedHome(muse) {
     CLAUDE_CONFIG_DIR: join(home, ".claude"),
     CODEX_HOME: join(home, ".codex"),
     T3CODE_HOME: join(home, ".t3"),
-    GIT_CONFIG_GLOBAL: "/dev/null",
+    GIT_CONFIG_GLOBAL: windows ? join(home, "gitconfig") : "/dev/null",
     MUSE_NO_AUTO_UPDATE: "1",
     PATH: [bin, ...(windows ? [process.env.SystemRoot, join(process.env.SystemRoot, "System32")] : ["/usr/bin", "/bin"])].join(delimiter),
   };
@@ -63,7 +64,11 @@ export function muse(sandbox, args) {
 }
 
 export const readState = (sandbox) => JSON.parse(readFileSync(join(sandbox.home, ".config/muse/fake-state.json"), "utf8"));
-export const setState = (sandbox, patch) => writeJson(join(sandbox.home, ".config/muse/fake-state.json"), { ...readState(sandbox), ...patch });
+export const setState = (sandbox, patch) => {
+  const state = { ...readState(sandbox), ...patch };
+  writeJson(join(sandbox.home, ".config/muse/fake-state.json"), state);
+  writeJson(join(sandbox.home, ".local/share/muse/plugins/installed.json"), { plugins: Object.fromEntries(state.plugins.map((record) => [record.id, record])) });
+};
 export const calls = (sandbox) => {
   const path = join(sandbox.home, "calls.jsonl");
   return existsSync(path) ? readFileSync(path, "utf8").trim().split("\n").map(JSON.parse) : [];

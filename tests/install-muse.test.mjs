@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { cpSync, existsSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { calls, hookId, agents, installer, isolatedHome, pluginRoot, readState, repoRoot, setState, version, writeJson } from "./install-muse-shared.mjs";
 
@@ -22,13 +22,13 @@ function run(s, command, ...args) {
 const mutations = (s) => calls(s).filter((a) => ["install", "approve", "disable", "enable", "remove"].includes(a[1]));
 
 describe("the opt-in Muse installer", () => {
-  test("installs at user scope, approves only our hook and four agents, and disables built-in git once", () => {
+  test("installs at user scope, approves only our hook and manifest agents, and disables built-in git once", () => {
     const s = sandbox();
     const row = run(s, "install");
     expect(calls(s)).toContainEqual(["plugins", "install", pluginRoot, "--scope", "user", "--json"]);
     const approvals = calls(s).filter((a) => a[1] === "approve").map((a) => a[2]);
     expect(approvals.sort()).toEqual([hookId, ...agents.map((name) => `t3-pstack-science:agent_definition:t3-pstack-science/${name}`)].sort());
-    expect(row.steps.filter((step) => step.startsWith("approved ")).length).toBe(5);
+    expect(row.steps.filter((step) => step.startsWith("approved ")).length).toBe(1 + agents.length);
     expect(calls(s)).toContainEqual(["skills", "disable", "git", "--scope", "built-in"]);
     expect(readState(s).git).toBe("off");
     expect(row.checks.every((c) => c.ok)).toBe(true);
@@ -45,9 +45,11 @@ describe("the opt-in Muse installer", () => {
     run(s, "install");
     const state = readState(s);
     const cache = state.plugins[0].cache_path;
-    writeJson(join(cache, ".claude-plugin/plugin.json"), { name: "t3-pstack-science", version: "0.0.1" });
-    state.plugins[0].version = "0.0.1";
-    setState(s, state);
+    const source = join(s.home, "new-source");
+    for (const path of [".claude-plugin", ".agents", "plugins/pstack", "tools/frozen-hooks.json"]) cpSync(join(repoRoot, path), join(source, path), { recursive: true, filter: (p) => !p.includes("node_modules") });
+    const manifest = join(source, "plugins/pstack/.claude-plugin/plugin.json");
+    writeJson(manifest, { ...JSON.parse(readFileSync(manifest, "utf8")), version: "0.0.1" });
+    expect(run(s, "update", "--source", source).steps).toContain(`updated Muse ${version} to 0.0.1`);
     expect(run(s, "update").steps).toContain(`updated Muse 0.0.1 to ${version}`);
     expect(readState(s).plugins.filter((p) => p.id === "t3-pstack-science")).toHaveLength(1);
     writeFileSync(join(cache, "hooks/session-start-context.md"), "broken");
@@ -83,14 +85,14 @@ describe("the opt-in Muse installer", () => {
     expect(calls(s).filter((a) => a[0] === "skills" && a[1] === "enable")).toHaveLength(1);
   });
 
-  test("an interrupted git disable retains ownership for retry and uninstall", () => {
+  test("a failed git disable can be retried before uninstall", () => {
     const s = sandbox();
     run(s, "install");
     run(s, "uninstall");
     setState(s, { fail: "skills disable" });
     const failed = installer(s, ["install", "--muse", "--json"]);
     expect(failed.status).toBe(1);
-    setState(s, { fail: null, git: "off" });
+    setState(s, { fail: null });
     run(s, "install");
     run(s, "uninstall");
     expect(readState(s).git).toBe("on");

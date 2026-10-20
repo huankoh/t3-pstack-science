@@ -74,9 +74,10 @@ describe("SessionStart hook", () => {
   test("pins the shared Git rule in the session context and generated Cursor rule", () => {
     const rule = [
       "Commit, push, tag, merge, or open a PR only when the user's request covers it.",
-      "A request for a task that ends in a PR, a merge, or a release covers the commits and pushes that task needs.",
-      "Never kill or delete a process or lock file holding Git state.",
-      "Wait, retry, or report.",
+      "A request for a task that ends in a PR, a green or merge-ready PR, a merge, or a release covers the commits, pushes, tags, and PR that task needs, and a task that needs an auditable decision trail covers the commit that records it.",
+      "Amend, rebase, cherry-pick, revert, or reset only as part of a task the user's request covers.",
+      "Never kill a process that holds a Git lock, and never delete a Git lock file.",
+      "For a held lock or a corrupt index, wait, retry, use the holder's own stop mechanism, or report.",
     ].join("\n");
     expect(mandate.split(rule)).toHaveLength(2);
     expect(readFileSync(join(pluginRoot, ".cursor-plugin/rules/session-start.mdc"), "utf8")).toContain(rule);

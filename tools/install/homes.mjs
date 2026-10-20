@@ -73,7 +73,7 @@ export function discoverHomes({ env, home, claudeHomes = [], codexHomes = [] }) 
   for (const dir of claudeHomes) add("claude", resolve(expand(dir, home)), "--claude-home");
   for (const dir of codexHomes) add("codex", resolve(expand(dir, home)), "--codex-home");
 
-  const counted = Object.values(instances).filter((instance) => DRIVERS[instance.driver]).length;
+  const counted = Object.values(instances).filter((instance) => (DRIVERS[instance.driver] || instance.driver === "muse")).length;
   return { homes: [...homes.values()], settings: { path: settingsPath, instances: counted, error } };
 }
 
@@ -96,7 +96,8 @@ export function museHome({ env, home }) {
   const fallback = join(home, ".local/bin", process.platform === "win32" ? "muse.cmd" : "muse");
   const bin = configured ? expand(configured, home) : resolveCli("muse") ?? fallback;
   return {
-    harness: "muse", dir: join(env.XDG_CONFIG_HOME || join(home, ".config"), "muse"),
+    harness: "muse", dir: join(env.XDG_CONFIG_HOME?.trim() ? resolve(env.XDG_CONFIG_HOME.trim()) : join(home, ".config"), "muse"),
+    pluginsDir: join(env.XDG_DATA_HOME?.trim() ? resolve(env.XDG_DATA_HOME.trim()) : join(home, ".local/share"), "muse/plugins"),
     from: [configured ? "T3 instance muse" : "default"], bin,
   };
 }
