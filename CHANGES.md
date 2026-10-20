@@ -11,6 +11,7 @@ Muse mode seats start at their listed level and are raised or lowered per job li
 A bug fix, feature, or refactoring change now gets one `interrogate` review round by default, with every reviewer on the panel.
 One fix run addresses that round, then an artifact check runs the real artifact, and the fix is not re-reviewed unless you ask for more rounds.
 When you ask for more rounds, each later round reviews only the fix diff.
+`/setup-pstack` keeps DeepSeek at `max` under every budget.
 Model sheets and seats are unchanged.
 Neither hooks JSON file changes.
 

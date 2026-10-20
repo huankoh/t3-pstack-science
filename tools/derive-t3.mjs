@@ -107,7 +107,7 @@ function routerProse(models) {
     `When the task changes, pick the domain again. When unsure, pick \`${SCIENCE}\`. If the skill opens no todolist, record the domain in the first reply. ` +
     "The chat picks the column, writes each brief, and dispatches each step a skill delegates. " +
     `Every role resolves from that column, so wherever a skill names a role's line, read \`<role>:\` under \`domain: ${GENERAL}\` and \`${SCIENCE} <role>:\` under \`domain: ${SCIENCE}\`. ` +
-    "The column picks only the target. The reasoning level follows the **poteto-mode** skill's Subagents section in every column, up to `max` and never a level above it.";
+    "The column picks only the target. The reasoning level follows the **poteto-mode** skill's Subagents section in every column, never above `xhigh` unless the user asks for more in the chat or picked the `unlimited` budget in `/setup-pstack`, and an entry on the `deepseek` family always runs at `max`, its listed level.";
   const terms =
     `In \`${SCIENCE}\`, only ${families} models read the domain's terms. A \`${SCIENCE}\` dispatch to any other family carries a term-free brief. A default marked (term-free brief) gets one. ` +
     "Resolve an `inherit-parent` or `auto` seat's family from `orchestrator_capabilities`' `inheritedModel` before choosing its brief; an unknown family gets a term-free brief. " +
@@ -137,7 +137,7 @@ export function museModeProse(models) {
     "A `muse <role>:` line must name a target. `inherit-parent` and `auto` are rejected on a muse line. " +
     "The domain does not change muse targets. Muse-mode seats whose family is a science term reader (by default Muse and DeepSeek) read the terms. A muse-mode seat whose family is not a science term reader (by default Opus) gets a term-free brief on a science task. " +
     "Panels in `mode: muse` follow the normal two-family rule. " +
-    "Muse seats start at their listed level and are tuned per job per the **poteto-mode** skill's Subagents section, never above `xhigh`, and a DeepSeek seat always runs at `max`. The sheet `# budget` comment does not set muse levels. " +
+    "Muse seats start at their listed level and are tuned per job per the **poteto-mode** skill's Subagents section, never above `xhigh` unless the user asks for more or picked the `unlimited` budget, and a DeepSeek seat always runs at `max`. The sheet `# budget` comment does not set muse levels. " +
     "A rejected or unrunnable muse target blocks that dispatch and names the target and the fix. Never use a standard seat or the generic same-family fallback. " +
     "A failed reviewer gets a fresh reviewer on the same entry, or the gate stays `BLOCKED: independent review`. " +
     "The handback's extra reviewer under `mode: muse` is the first `muse interrogate reviewers` entry outside the work's families, by family as usual. " +

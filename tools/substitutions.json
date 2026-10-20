@@ -249,7 +249,7 @@
     {
       "files": "^skills/poteto-mode/SKILL\\.md$",
       "pattern": "Lower it one step for judgment and two or more steps for routine work.",
-      "replacement": "Lower it one step for judgment and two or more steps for routine work. No child runs above `xhigh` unless the user asks for more in the chat, or picked the `unlimited` budget in `/setup-pstack`. An entry on the `deepseek` family always runs at `max`, its listed level, in every mode, and is never raised or lowered. In `mode: muse`, start from the level on the `muse <role>:` line or the muse default and raise or lower it per job by this same rule, never above `xhigh`. The sheet `# budget` comment does not set muse levels.",
+      "replacement": "Lower it one step for judgment and two or more steps for routine work. No child runs above `xhigh` unless the user asks for more in the chat, or picked the `unlimited` budget in `/setup-pstack`. An entry on the `deepseek` family always runs at `max`, its listed level, in every mode, and is never raised or lowered. In `mode: muse`, start from the level on the `muse <role>:` line or the muse default and raise or lower it per job by this same rule, never above `xhigh` unless the user asks for more or picked the `unlimited` budget. The sheet `# budget` comment does not set muse levels.",
       "rationale": "per-job levels: xhigh cap with chat or unlimited exceptions, deepseek always at max, muse seats tuned from their listed level like any seat"
     },
     {

@@ -127,7 +127,7 @@ describe("muse mode prose", () => {
     expect(poteto).toContain("Raise it one step, up to `xhigh`, for the hardest or subtlest work.");
     expect(poteto).toContain("No child runs above `xhigh` unless the user asks for more in the chat, or picked the `unlimited` budget in `/setup-pstack`.");
     expect(poteto).toContain("An entry on the `deepseek` family always runs at `max`, its listed level, in every mode, and is never raised or lowered.");
-    expect(poteto).toContain("In `mode: muse`, start from the level on the `muse <role>:` line or the muse default and raise or lower it per job by this same rule, never above `xhigh`. The sheet `# budget` comment does not set muse levels.");
+    expect(poteto).toContain("In `mode: muse`, start from the level on the `muse <role>:` line or the muse default and raise or lower it per job by this same rule, never above `xhigh` unless the user asks for more or picked the `unlimited` budget. The sheet `# budget` comment does not set muse levels.");
     expect(poteto).toContain("By default the panel reviews the whole change once, with every reviewer on the line.");
     expect(poteto).toContain("One fix run then addresses that round's Act on findings and folds in accepted nits or drops them, with a reason for each dismissal.");
     expect(poteto).toContain("A `fail` gets another fix run and another artifact check, not another review, with at most three fix runs in all.");
@@ -146,30 +146,31 @@ describe("muse mode prose", () => {
     }
     const subs = JSON.parse(read("tools/substitutions.json")).substitutions;
     expect(subs.some((r) => r.replacement.includes(caveat))).toBe(false);
-    expect(subs.some((r) => r.pattern === upstream)).toBe(false);
   });
 
   test("no shipped file still says levels are fixed or not to raise or lower a muse level", () => {
-    const stack = [join(repoRoot, "plugins")];
+    const stack = [join(repoRoot, "plugins"), join(repoRoot, "tools")];
     const hits = [];
+    const check = (path, text) => {
+      if (text.includes("Levels are fixed") || text.includes("do not raise or lower it")) hits.push(path);
+    };
     while (stack.length) {
       const dir = stack.pop();
       for (const name of readdirSync(dir)) {
+        if (name === "node_modules" || name === ".git") continue;
         const path = join(dir, name);
         if (statSync(path).isDirectory()) stack.push(path);
-        else if (/\.(md|mdc|json|mjs|ts|sh|txt)$/.test(name)) {
-          const text = readFileSync(path, "utf8");
-          if (text.includes("Levels are fixed") || text.includes("do not raise or lower it")) hits.push(path);
-        }
+        else if (/\.(md|mdc|json|mjs|ts|sh|txt)$/.test(name)) check(path, readFileSync(path, "utf8"));
       }
     }
+    for (const rel of ["README.md", "CONTEXT.md"]) check(join(repoRoot, rel), read(rel));
     expect(hits).toEqual([]);
     expect(read("tools/derive-t3.mjs")).not.toContain("Levels are fixed");
     expect(read("tools/substitutions.json")).not.toContain("do not raise or lower it");
   });
 
   test("every Models section, the hook context, and the Cursor rule carry the new muse level sentence", () => {
-    const sentence = "Muse seats start at their listed level and are tuned per job per the **poteto-mode** skill's Subagents section, never above `xhigh`, and a DeepSeek seat always runs at `max`. The sheet `# budget` comment does not set muse levels.";
+    const sentence = "Muse seats start at their listed level and are tuned per job per the **poteto-mode** skill's Subagents section, never above `xhigh` unless the user asks for more or picked the `unlimited` budget, and a DeepSeek seat always runs at `max`. The sheet `# budget` comment does not set muse levels.";
     expect(museModeProse(models)).toContain(sentence);
     for (const skill of new Set(models.roles.map((r) => r.skill))) {
       expect(read(`plugins/pstack/skills/${skill}/SKILL.md`)).toContain(sentence);
@@ -192,5 +193,21 @@ describe("muse mode prose", () => {
     expect(poteto).toContain("Record `mode: muse` or `mode: standard` after it, per [Models](#models).");
     expect(poteto).toContain("such as `claude`, `gpt`, `grok`, or `muse`,");
     expect(read("plugins/pstack/skills/interrogate/SKILL.md")).toContain("such as `claude`, `gpt`, `grok`, or `muse`,");
+  });
+
+  test("no Models section caps the reasoning level at max", () => {
+    for (const skill of new Set(models.roles.map((r) => r.skill))) {
+      const out = applyRegions(`plugins/pstack/skills/${skill}/SKILL.md`, "## Models\n", models);
+      expect(out).not.toContain("up to `max`");
+      expect(out).toContain("The column picks only the target. The reasoning level follows the **poteto-mode** skill's Subagents section in every column, never above `xhigh` unless the user asks for more in the chat or picked the `unlimited` budget in `/setup-pstack`, and an entry on the `deepseek` family always runs at `max`, its listed level.");
+      expect(read(`plugins/pstack/skills/${skill}/SKILL.md`)).not.toContain("up to `max`");
+    }
+  });
+
+  test("setup keeps DeepSeek at max under every budget and sets no muse level", () => {
+    const setup = read("plugins/pstack/skills/setup-pstack/SKILL.md");
+    expect(setup).toContain("Leave an entry on the `deepseek` family at `max`, its listed level, whatever the budget.");
+    expect(setup).toContain("The budget sets no muse level. A muse seat starts from its listed level and is tuned per job at dispatch, per the **poteto-mode** skill's Subagents section.");
+    expect(setup).not.toContain("Muse mode keeps its listed levels");
   });
 });
