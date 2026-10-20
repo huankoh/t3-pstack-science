@@ -9,7 +9,7 @@
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { expandHome as expand } from "./common.mjs";
+import { expandHome as expand, resolveCli } from "./common.mjs";
 
 const DRIVERS = { claudeAgent: "claude", codex: "codex" };
 const ENV_VAR = { claude: "CLAUDE_CONFIG_DIR", codex: "CODEX_HOME" };
@@ -73,7 +73,7 @@ export function discoverHomes({ env, home, claudeHomes = [], codexHomes = [] }) 
   for (const dir of claudeHomes) add("claude", resolve(expand(dir, home)), "--claude-home");
   for (const dir of codexHomes) add("codex", resolve(expand(dir, home)), "--codex-home");
 
-  const counted = Object.values(instances).filter((instance) => DRIVERS[instance.driver]).length;
+  const counted = Object.values(instances).filter((instance) => (DRIVERS[instance.driver] || instance.driver === "muse")).length;
   return { homes: [...homes.values()], settings: { path: settingsPath, instances: counted, error } };
 }
 
@@ -88,4 +88,16 @@ export function cursorHome({ env, home }) {
     from.push(`T3 instance ${id}${disabled ? " (disabled)" : ""}`);
   }
   return { harness: "cursor", dir: join(home, ".cursor"), from, bin: null };
+}
+
+export function museHome({ env, home }) {
+  const { instances } = readT3Settings(t3SettingsPath(env, home));
+  const configured = instances.muse?.config?.binaryPath?.trim();
+  const fallback = join(home, ".local/bin", process.platform === "win32" ? "muse.cmd" : "muse");
+  const bin = configured ? expand(configured, home) : resolveCli("muse") ?? fallback;
+  return {
+    harness: "muse", dir: join(env.XDG_CONFIG_HOME?.trim() ? resolve(env.XDG_CONFIG_HOME.trim()) : join(home, ".config"), "muse"),
+    pluginsDir: join(env.XDG_DATA_HOME?.trim() ? resolve(env.XDG_DATA_HOME.trim()) : join(home, ".local/share"), "muse/plugins"),
+    from: [configured ? "T3 instance muse" : "default"], bin,
+  };
 }
