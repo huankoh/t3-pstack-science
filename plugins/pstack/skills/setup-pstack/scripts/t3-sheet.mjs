@@ -165,7 +165,10 @@ export function checkSheet(sheet, { models, catalog, mode = STANDARD }) {
   const seen = new Set();
   for (const { line, text, key, value } of sheet) {
     if (mode === MUSE) {
-      const museLine = key ? key.startsWith(`${MUSE} `) : (text ?? "").trim().startsWith(MUSE);
+      const trimmed = (text ?? "").trim();
+      const museLine = key
+        ? key === MUSE || key.startsWith(`${MUSE} `) || key === `${SCIENCE} ${MUSE}` || key.startsWith(`${SCIENCE} ${MUSE} `)
+        : trimmed.startsWith(MUSE) || trimmed.startsWith(`${SCIENCE} ${MUSE}`);
       if (!museLine) continue;
     }
     if (!key) {
@@ -319,5 +322,5 @@ if (invoked === fileURLToPath(import.meta.url)) {
   });
   for (const problem of problems) console.log(problem);
   if (problems.length) process.exit(1);
-  console.log("ok: every role line parses and dispatches on this T3");
+  console.log(mode === MUSE ? "ok: every muse line and muse default parses and dispatches on this T3" : "ok: every role line parses and dispatches on this T3");
 }
