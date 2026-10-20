@@ -71,6 +71,17 @@ describe("SessionStart hook", () => {
     expect(sessionStart.codex.matcher).toBe("startup|resume|clear|compact");
   });
 
+  test("pins the shared Git rule in the session context and generated Cursor rule", () => {
+    const rule = [
+      "Commit, push, tag, merge, or open a PR only when the user's request covers it.",
+      "A request for a task that ends in a PR, a merge, or a release covers the commits and pushes that task needs.",
+      "Never kill or delete a process or lock file holding Git state.",
+      "Wait, retry, or report.",
+    ].join("\n");
+    expect(mandate.split(rule)).toHaveLength(2);
+    expect(readFileSync(join(pluginRoot, ".cursor-plugin/rules/session-start.mdc"), "utf8")).toContain(rule);
+  });
+
   test("names only skills that exist", () => {
     const named = [...mandate.matchAll(/(?:t3-pstack-science:|`\/)([a-z0-9-]+)/g)].map((m) => m[1]);
     const skills = new Set(agentSkills(join(pluginRoot, "skills")).map(({ name }) => name));
