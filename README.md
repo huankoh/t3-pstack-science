@@ -49,6 +49,7 @@ The session-start hook tells each new chat when to enter `poteto-mode` on its ow
 
 The plugin carries 64 skill directories, 24 of them `principle-*` leaves, and 4 agents.
 A bug fix, feature, or refactoring change gets one `interrogate` review round before a PR, then one fix run and an artifact check, unless you ask for more review rounds.
+A failing artifact check gets another fix run and another check, with at most three fix runs and no re-review.
 
 ## Model defaults
 
@@ -74,8 +75,9 @@ Claude runs with `fastMode=false`, and GPT runs with `serviceTier=default`.
 Each helper's reasoning level is tuned per job, up to `xhigh` unless you ask for more or pick the `unlimited` budget.
 DeepSeek always stays at `max`.
 An unprefixed `<role>:` sheet line overrides the general column, and `science <role>:` overrides the science column.
-Existing explicit machine-sheet entries keep their targets.
-Rewrite the sheet or rerun `/setup-pstack` to adopt the new defaults.
+Existing explicit machine-sheet entries keep their targets until you change them.
+On a `/setup-pstack` re-run, choose `keep the current targets` or `adopt the current defaults`.
+Adopting starts from the current default table and reapplies only the overrides you name.
 
 ## Staying current
 

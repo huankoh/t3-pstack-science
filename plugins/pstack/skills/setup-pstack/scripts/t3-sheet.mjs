@@ -65,7 +65,7 @@ export function parseEntry(text) {
   return { providerInstanceId: match[1], model: match[2], options };
 }
 
-// The family is the first segment (`claude`, `gpt`, `grok`, `muse`) of the model ID's
+// The family is the first segment (`claude`, `gpt`, `muse`, `deepseek`) of the model ID's
 // last `/` part, so a Claude model served by a Codex-driver pool still counts as
 // Claude, and an OpenCode route prefix such as `openrouter/` decides nothing.
 export const family = (model) => model.split("/").pop().split("-")[0];

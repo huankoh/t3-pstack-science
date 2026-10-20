@@ -64,7 +64,18 @@ Correct the log, not the story. The audit never edits or removes a row, even an 
 
 ## Cross-model review of the trail
 
-Before handing back, spawn a subagent on a different model family from the one that did the work. "The work" is the change being handed back. Count the chat's family when it edited the change itself and every delegate's family whose output is in the change. The `final review` line always reviews (default in poteto-mode's [Models](../poteto-mode/SKILL.md#models)). When that line's family is among those families, the first entry of the same column's `interrogate reviewers` whose family is outside them also reviews. Both verdicts must pass. When that reviewer's family does not read the column's terms, give it a term-free brief, stage term-free copies of the diff, the trail, and the transcript excerpts it needs, and have it read only those copies in place of the trail and the run's transcript, per [Models](../poteto-mode/SKILL.md#models). In `general`, every family reads the terms. Only when no such reviewer exists, record `BLOCKED: independent review` and keep the handback closed. Self-review is not a substitute. The subagent reads the audit trail and the run's transcript, then flags what the user should pay attention to. Not a redo of the work, a scan for what's suboptimal or risky. Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.
+Before handing back, spawn a subagent on a different model family from the one that did the work.
+"The work" is the change being handed back.
+Count the chat's family when it edited the change itself and every delegate's family whose output is in the change.
+The `final review` line always reviews (default in poteto-mode's [Models](../poteto-mode/SKILL.md#models)).
+When that line's family is among the work's families, also run an extra reviewer from outside them.
+For that extra review, select the first qualifying entry of the same column's `interrogate reviewers`.
+When no entry of the same column's `interrogate reviewers` has a family outside the work's families, use the first entry of that column's `arena cross-judge pool` whose family is outside them.
+Both verdicts must pass.
+When that reviewer's family does not read the column's terms, give it a term-free brief, stage term-free copies of the diff, the trail, and the transcript excerpts it needs, and have it read only those copies in place of the trail and the run's transcript, per [Models](../poteto-mode/SKILL.md#models).
+In `general`, every family reads the terms.
+If an extra reviewer is required and neither pool has a qualifying entry, record `BLOCKED: independent review` and keep the handback closed.
+ Self-review is not a substitute. The subagent reads the audit trail and the run's transcript, then flags what the user should pay attention to. Not a redo of the work, a scan for what's suboptimal or risky. Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.
 
 - Decisions logged with weak or absent evidence.
 - Verification steps skipped or claimed without proof in the transcript.

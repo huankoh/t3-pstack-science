@@ -81,6 +81,54 @@ describe("two-column routing", () => {
     expect(hits).toEqual([]);
   });
 
+  test("shipped files contain no fixed-level instructions and Models sections never raise the cap to max", () => {
+    const files = ["README.md", "CONTEXT.md"];
+    const walk = (dir) => {
+      for (const entry of readdirSync(join(root, dir), { withFileTypes: true })) {
+        if (["node_modules", ".git"].includes(entry.name)) continue;
+        const path = join(dir, entry.name);
+        if (entry.isDirectory()) walk(path);
+        else files.push(path);
+      }
+    };
+    walk("plugins");
+    walk("tools");
+    expect(files.filter((path) => /Levels are fixed|do not raise or lower it/i.test(read(path)))).toEqual([]);
+    const modelsSections = files.filter((path) => /\.(md|mdc)$/.test(path)).map((path) => [
+      path, read(path).split(/^## Models\s*$/m)[1]?.split(/^## /m)[0] ?? "",
+    ]);
+    expect(modelsSections.filter(([, section]) => section.includes("up to `max`")).map(([path]) => path)).toEqual([]);
+  });
+
+  test("both review gates and the required interrogate panel exhaust independent pools before blocking", () => {
+    const fallback = "When no entry of the same column's `interrogate reviewers` has a family outside the work's families, use the first entry of that column's `arena cross-judge pool` whose family is outside them.";
+    const substitutions = JSON.parse(read("tools/substitutions.json")).substitutions;
+    for (const skill of ["show-me-your-work", "poteto-mode", "interrogate"]) {
+      const text = read(`plugins/pstack/skills/${skill}/SKILL.md`);
+      expect(text).toContain(fallback);
+      expect(text).toContain("BLOCKED: independent review");
+      expect(text).toContain("term-free brief");
+      expect(substitutions.some((rule) => rule.replacement.includes(fallback) && new RegExp(rule.files).test(`skills/${skill}/SKILL.md`))).toBe(true);
+    }
+  });
+
+  test("setup reruns offer an explicit choice before applying the budget", () => {
+    const setup = read("plugins/pstack/skills/setup-pstack/SKILL.md");
+    expect(setup).toContain("- `keep the current targets`.");
+    expect(setup).toContain("- `adopt the current defaults`.");
+    expect(setup).toContain("For `keep the current targets`, build the working table from the current default fence in step 5 and overlay every valid current role value.");
+    expect(setup).toContain("For `adopt the current defaults`, rebuild the working table from the current default fence in step 5, then reapply only the overrides the user names.");
+    expect(setup).toContain("Apply the chosen budget to the working table from step 2.");
+    expect(setup).not.toContain("on a re-run keep any role you changed");
+    expect(setup).toContain("`variant` on DeepSeek");
+    expect(setup.indexOf("- `adopt the current defaults`.")).toBeLessThan(setup.indexOf("**(a) Ask for a budget.**"));
+    for (const text of [read("README.md"), read("CHANGES.md").split(/^## /m)[1]]) {
+      expect(text).toContain("`keep the current targets`");
+      expect(text).toContain("`adopt the current defaults`");
+      expect(text).toContain("A failing artifact check gets another fix run and another check, with at most three fix runs and no re-review.");
+    }
+  });
+
   test("the hook context and Cursor rule have no retired region", () => {
     for (const path of ["plugins/pstack/hooks/session-start-context.md", "plugins/pstack/.cursor-plugin/rules/session-start.mdc"]) {
       expect(read(path)).not.toMatch(/muse-mode:(?:start|end)|mode: muse|muse mode/i);

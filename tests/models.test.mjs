@@ -73,22 +73,38 @@ describe("committed models.json", () => {
     expect(models.roles.map((r) => r.role)).not.toContain("term-free code");
   });
 
+  const family = (entry) => sheet.family(sheet.parseEntry(entry).model);
+  const independentReviewer = (column, authors) => ["interrogate reviewers", "arena cross-judge pool"]
+    .flatMap((role) => column.find((seat) => seat.role === role).defaults)
+    .find((entry) => !authors.has(family(entry.entry))) ?? "BLOCKED: independent review";
+
   test.each([
     [["feature, refactoring"], ["gpt"], { entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }],
-    [["feature, refactoring", "hardest tasks"], ["gpt"], {
-      entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false,
-    }],
-  ])("science handback selects an independent reviewer for authors %j", (roles, expectedFamilies, expectedExtra) => {
-    const family = (entry) => sheet.family(sheet.parseEntry(entry).model);
-    const science = sheet.seats(models).filter((s) => s.domain === "science");
-    const authors = new Set(roles.map((role) => family(science.find((s) => s.role === role).defaults[0].entry)));
-    expect([...authors].sort()).toEqual(expectedFamilies);
-    const final = science.find((s) => s.role === "final review").defaults[0];
-    expect(final).toEqual({ entry: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default", termFree: false });
-    const extra = authors.has(family(final.entry))
-      ? science.find((s) => s.role === "interrogate reviewers").defaults.find((d) => !authors.has(family(d.entry)))
-      : null;
-    expect(extra).toEqual(expectedExtra);
+    [["feature, refactoring", "hardest tasks"], ["gpt"], { entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }],
+    [["mechanical code"], ["deepseek"], null],
+    [["feature, refactoring", "mechanical code"], ["deepseek", "gpt"], { entry: "muse/muse-wonder-full-1.0 reasoningEffort=xhigh", termFree: false }],
+  ])("both columns select the handback reviewer for authors %j", (roles, expectedFamilies, expectedExtra) => {
+    for (const domain of sheet.DOMAINS) {
+      const column = sheet.seats(models).filter((seat) => seat.domain === domain);
+      const authors = new Set(roles.map((role) => family(column.find((seat) => seat.role === role).defaults[0].entry)));
+      expect([...authors].sort()).toEqual(expectedFamilies);
+      const final = column.find((seat) => seat.role === "final review").defaults[0];
+      expect(final).toEqual({ entry: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default", termFree: false });
+      const extra = authors.has(family(final.entry)) ? independentReviewer(column, authors) : null;
+      expect(extra).toEqual(expectedExtra);
+      expect(independentReviewer(column, authors)).toEqual(expectedExtra ?? {
+        entry: "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default", termFree: false,
+      });
+    }
+  });
+
+  test.each(sheet.DOMAINS)("the %s judges pool preserves family exclusion and term-free briefs before blocking", (domain) => {
+    const column = sheet.seats(models).filter((seat) => seat.domain === domain);
+    expect(independentReviewer(column, new Set(["gpt", "deepseek", "muse"]))).toEqual({
+      entry: "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", termFree: domain === "science",
+    });
+    const authors = new Set(column.flatMap((seat) => seat.defaults.map((entry) => family(entry.entry))));
+    expect(independentReviewer(column, authors)).toBe("BLOCKED: independent review");
   });
 
   test("only science panel defaults outside its term readers need term-free briefs", () => {
@@ -203,6 +219,8 @@ describe("parseModels", () => {
     expect(parse((p) => p.roles.push({ ...p.roles[0] }))).toThrow('models.json: role "bug-fix" appears twice');
     expect(parse((p) => p.roles[0].alias = "strongest judgment")).toThrow('models.json: role "strongest judgment" appears twice');
     expect(parse((p) => p.roles[0].role = "session hook")).toThrow('models.json: role "session hook" is a reserved sheet key');
+    expect(parse((p) => p.roles[0].role = "muse bug-fix")).toThrow('models.json: role "muse bug-fix" starts with the reserved prefix "muse "');
+    expect(parse((p) => p.roles[0].alias = "muse notes")).toThrow('models.json: role "muse notes" starts with the reserved prefix "muse "');
     expect(parse((p) => p.roles[0].alias = "science notes")).toThrow('models.json: role "science notes" starts with the domain name "science", so its sheet line would be ambiguous');
   });
 

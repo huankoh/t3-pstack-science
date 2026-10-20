@@ -162,10 +162,10 @@ describe("applySubstitutions", () => {
     expect(handback).toContain('"The work" is the change being handed back.');
     expect(handback).toContain("Count the chat's family when it edited the change itself and every delegate's family whose output is in the change.");
     expect(handback).toContain("The `final review` line always reviews");
-    expect(handback).toContain("When that line's family is among those families, the first entry of the same column's `interrogate reviewers` whose family is outside them also reviews.");
+    expect(handback).toContain("When that line's family is among the work's families, also run an extra reviewer from outside them.");
     expect(handback).toContain("Both verdicts must pass.");
     expect(handback).toContain("In `general`, every family reads the terms.");
-    expect(handback).toContain("Only when no such reviewer exists, record `BLOCKED: independent review` and keep the handback closed.");
+    expect(handback).toContain("If an extra reviewer is required and neither pool has a qualifying entry, record `BLOCKED: independent review` and keep the handback closed.");
     expect(handback).not.toContain("Do not substitute another reviewer.");
     expect(poteto).toContain("picked per [Models](#models) before step 1 and before the first `delegate_task`.");
     expect(poteto).toContain("except the independent verdict and the handback review, which run on `final review`.");

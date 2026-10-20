@@ -33,6 +33,13 @@ Launch all reviewers in a single response with `delegate_task`, one per entry on
 
 Each reviewer gets `role: "review"`, a brief that says to inspect only and change no file, and `target` set from its configured entry, or from its table default when there is no configured line. Omit `target` for an `auto` or `inherit-parent` entry, so that reviewer runs on the parent model.
 
+For a required review, the work's families include the chat's family when it edited the change and every delegate's family whose output is in the change.
+Use the first entry of the same column's `interrogate reviewers` outside those families for the independent verdict.
+When no entry of the same column's `interrogate reviewers` has a family outside the work's families, use the first entry of that column's `arena cross-judge pool` whose family is outside them.
+Add the independent reviewer to the panel if it comes from the judges pool.
+Give a reviewer whose family does not read the column's terms a term-free brief per [Models](#models).
+If neither pool has a qualifying reviewer, record `BLOCKED: independent review` and keep the gate closed.
+
 If `delegate_task` rejects a configured entry, run that reviewer on another target of the same family from `orchestrator_capabilities` and say so. A model's family is the first segment of its ID's last `/` part, such as `claude`, `gpt`, `muse`, or `deepseek`, whatever provider instance serves it. With no family match, use Reviewer A's default. If it rejects a table default, spawn on the closest target of the same family from `orchestrator_capabilities` (prefer the same reasoning tier), and open a separate PR to update the default table. Do not block the review on the slug issue. Never treat an alias entry as a rejected slug or apply either fallback to it.
 
 Read `references/reviewer-prompt.md` and fill in the same template for every reviewer with the stated intent, the diff or file contents, the rubric from `references/rubric.md`, and the code-quality lens from `references/code-quality-review.md`. Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.

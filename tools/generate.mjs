@@ -298,6 +298,7 @@ function parseRoles(roles, tierNames, skillExists) {
       if (labels.has(label)) failModels(`role "${label}" appears twice`);
       labels.add(label);
       if (RESERVED_KEYS.includes(label)) failModels(`role "${label}" is a reserved sheet key`);
+      if (label.startsWith("muse ")) failModels(`role "${label}" starts with the reserved prefix "muse "`);
       if (label.startsWith(`${SCIENCE} `)) {
         failModels(`role "${label}" starts with the domain name "${SCIENCE}", so its sheet line would be ambiguous`);
       }

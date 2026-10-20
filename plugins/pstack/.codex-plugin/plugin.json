@@ -30,7 +30,7 @@
   "interface": {
     "displayName": "t3-pstack-science",
     "shortDescription": "Rigorous, parallelizable agent workflows: go deep first, write less, verify everything",
-    "longDescription": "pstack for T3 Code: poteto-mode's principles, parallel design exploration (architect/arena), adversarial multi-model review (interrogate), and verified delivery, with every panel and fan-out dispatched through T3 so it mixes Claude, GPT, and Muse.",
+    "longDescription": "pstack for T3 Code: poteto-mode's principles, parallel design exploration (architect/arena), adversarial multi-model review (interrogate), and verified delivery, with every panel and fan-out dispatched through T3 so it mixes Claude, GPT, Muse, and DeepSeek.",
     "developerName": "Christian Bager Bach Houmann (a port of Lauren Tan's pstack)",
     "category": "Developer Tools",
     "capabilities": [
