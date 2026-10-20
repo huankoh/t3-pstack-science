@@ -9,12 +9,11 @@ Names for the concepts this repo's design discussions keep reaching for. Archite
 - **Installer** - `tools/install.mjs`, the package's `t3-pstack-science` bin, run as `npx -y github:huankoh/t3-pstack-science <install|update|doctor>`, the same commands with `--cursor`, or `uninstall --cursor`. Without `--cursor` it installs the plugin in every Claude Code and Codex home T3 can run and never reads `~/.cursor`. With `--cursor` it also converges the Cursor copy. It trusts the Codex session-start hook, reads only this fork's machine sheet, and checks the result.
 - **Frozen hooks file** - `hooks/hooks.json` or `hooks/codex-hooks.json`, pinned in `tools/frozen-hooks.json`. Codex trusts a hook by a hash of its entry, so a change stops the hook in every Codex home until the installer reruns. What the hook says lives in `session-start.sh` and the routing text, which change freely.
 - **Model policy** - the role defaults in `plugins/pstack/models.json`, as tiers of T3 entries. The generator stamps them into each skill's Models section, interrogate's reviewer table, and setup-pstack's sheet block.
+- **Domain** - the task's routing column, `general` or `science`.
+  Both columns use the same default targets.
+  The science gate requires a term-free brief for families outside `termReaders`, which lists GPT, Muse, and DeepSeek.
+  Claude Opus is the only default family outside that list.
 - **Role** - a named unit of delegated work with its own model choice (`arena runners`, `how explorer`, `swarm workers`). The role vocabulary lives in `models.json`.
-- **Muse mode** - a chat-local switch that routes every dispatched helper to the `muse` block in `models.json` (the science column with Muse Wonder Full in every GPT seat, so DeepSeek writes code and Wonder Full, Opus 5.5, and DeepSeek sit on panels) instead of the standard domain columns.
-  Saying "muse mode" turns it on for that chat.
-  Saying "normal mode", "standard mode", or "turn off muse mode" turns it off.
-  A sheet line `muse <role>:` optionally overrides one muse seat.
-- **mode:** - the todolist label a chat records beside `domain:` before its first dispatch, `mode: muse` or `mode: standard`. Every brief to a child that can dispatch carries it, so the switch survives delegation. A new top-level chat starts at `mode: standard`.
 - **Panel** - a role whose value is a list (`arena runners`, `architect runners`, `interrogate reviewers`, `arena cross-judge pool`). A panel spans at least two model families; a family is the first segment of a model ID's last `/` part.
 - **Substitution** - a rule in `tools/substitutions.json` that rewrites one upstream sentence or token into its T3 form. An anchored insert is a substitution that keeps the upstream sentence and appends T3 text.
 - **Fork** - a file the port keeps in its own form, declared in `tools/forks.json` with its reason. Every upstream change to it needs a person.

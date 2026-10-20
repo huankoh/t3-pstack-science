@@ -8,7 +8,7 @@
 //   VERSION  -> the "version" field in the Claude Code and Codex manifests,
 //               the Claude Code marketplace entry, and package.json
 //   CHANGES.md must carry a heading for the current VERSION (release completeness)
-//   plugins/pstack/models.json (the T3 model policy: tier defaults, roles, and muse mode)
+//   plugins/pstack/models.json (the T3 model policy: tier defaults and roles)
 //     -> each model-consuming skill's "## Models" section, interrogate's
 //        reviewer table, and setup-pstack's sheet block (tools/derive-t3.mjs)
 //   plugins/pstack/agents/*.md -> the "agents" list in
@@ -43,7 +43,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { Type } from "typebox";
 import { Value } from "typebox/value";
 
-import { DOMAINS, GENERAL, MUSE, SCIENCE, panelFamilies, parseEntry, speedProblems } from "../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
+import { DOMAINS, GENERAL, SCIENCE, panelFamilies, parseEntry, speedProblems } from "../plugins/pstack/skills/setup-pstack/scripts/t3-sheet.mjs";
 import { applyRegions, parseFrontmatter, ROUTED_SKILL, t3Regions } from "./derive-t3.mjs";
 import { FROZEN_HOOKS, hookDigest, PLUGIN, SKILLS } from "./plugin.mjs";
 import { pathIsInside, validateSkillsTree, walk } from "./validate-skills.mjs";
@@ -290,44 +290,6 @@ function parseTiers(domains) {
   return tierNames;
 }
 
-function parseMuse(raw, tierNames, domains) {
-  const muse = raw.muse;
-  if (!isObject(muse)) failModels('"muse" must be an object');
-  for (const field of Object.keys(muse)) {
-    if (!["on", "off", "tiers"].includes(field)) failModels(`"muse" has unknown field "${field}"`);
-  }
-  for (const key of ["on", "off"]) {
-    const list = muse[key];
-    if (
-      !Array.isArray(list) || !list.length || new Set(list).size !== list.length ||
-      list.some((phrase) => typeof phrase !== "string" || !phrase.trim() || phrase !== phrase.trim() || phrase !== phrase.toLowerCase())
-    ) {
-      failModels(`"muse" "${key}" must be a non-empty list of distinct non-empty lowercase phrases with no surrounding spaces`);
-    }
-  }
-  const overlap = muse.on.filter((phrase) => muse.off.includes(phrase));
-  if (overlap.length) failModels(`"muse" lists ${overlap.map((phrase) => JSON.stringify(phrase)).join(", ")} in both "on" and "off"`);
-  const { tiers } = muse;
-  if (!isObject(tiers)) failModels('"muse" needs a "tiers" object');
-  for (const tier of tierNames) {
-    if (!Object.hasOwn(tiers, tier)) failModels(`"muse" has no tier "${tier}"`);
-  }
-  for (const tier of Object.keys(tiers)) {
-    if (!tierNames.includes(tier)) failModels(`"muse" names tier "${tier}", which no domain defines`);
-  }
-  for (const tier of tierNames) {
-    const value = tiers[tier];
-    if (typeof value !== "string" && !Array.isArray(value)) failModels(`muse tier "${tier}" must be one entry or a list`);
-    const standard = DOMAINS.map((domain) => domains[domain].tiers[tier]).find((seat) => seat !== null);
-    if (Array.isArray(standard) !== Array.isArray(value)) {
-      failModels(Array.isArray(standard)
-        ? `muse tier "${tier}" must be a list, like the standard "${tier}" panel`
-        : `muse tier "${tier}" must be one entry, like the standard "${tier}" seat`);
-    }
-    parseTier(value, `muse tier "${tier}"`);
-  }
-}
-
 function parseRoles(roles, tierNames, skillExists) {
   if (!Array.isArray(roles)) failModels('"roles" must be a list');
   const labels = new Set();
@@ -336,11 +298,9 @@ function parseRoles(roles, tierNames, skillExists) {
       if (labels.has(label)) failModels(`role "${label}" appears twice`);
       labels.add(label);
       if (RESERVED_KEYS.includes(label)) failModels(`role "${label}" is a reserved sheet key`);
+      if (label.startsWith("muse ")) failModels(`role "${label}" starts with the reserved prefix "muse "`);
       if (label.startsWith(`${SCIENCE} `)) {
         failModels(`role "${label}" starts with the domain name "${SCIENCE}", so its sheet line would be ambiguous`);
-      }
-      if (label.startsWith(`${MUSE} `)) {
-        failModels(`role "${label}" starts with "${MUSE} ", so its sheet line would be ambiguous`);
       }
     }
     if (!tierNames.includes(role.tier)) failModels(`role "${role.role}" names tier "${role.tier}", which no domain defines`);
@@ -351,7 +311,6 @@ function parseRoles(roles, tierNames, skillExists) {
 export function parseModels(raw, skillExists) {
   const domains = parseDomains(raw);
   const tierNames = parseTiers(domains);
-  parseMuse(raw, tierNames, domains);
   parseRoles(raw.roles, tierNames, skillExists);
   return raw;
 }

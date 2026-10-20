@@ -1,8 +1,8 @@
 {
   "name": "t3-pstack-science",
   "displayName": "t3-pstack-science",
-  "version": "2.0.0-rc.14-science.3",
-  "description": "pstack for T3 Code: Lauren Tan's pstack with its Cursor mechanics rewritten in place for T3, so subagents, panels, schedules, and PR watches dispatch through T3's orchestration and panels mix Claude, GPT, and Muse.",
+  "version": "2.0.0-rc.14-science.4",
+  "description": "pstack for T3 Code: Lauren Tan's pstack with its Cursor mechanics rewritten in place for T3, so subagents, panels, schedules, and PR watches dispatch through T3's orchestration and panels mix Claude, GPT, Muse, and DeepSeek.",
   "author": {
     "name": "Christian Bager Bach Houmann",
     "url": "https://github.com/chhoumann"

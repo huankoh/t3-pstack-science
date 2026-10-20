@@ -35,13 +35,13 @@ describe("committed models.json", () => {
     expect(Object.keys(models.domains.science.tiers)).toEqual(["code", "explore", "judgment", "mechanical", "final", "runners", "judges", "reviewers"]);
   });
 
-  test("science workers and research delegates promise DeepSeek defaults", () => {
+  test("science code uses Sol and research delegates use DeepSeek", () => {
     const science = sheet.seats(models).filter((s) => s.domain === "science" && !s.panel);
     expect(science.map((s) => [s.role, s.defaults[0].entry])).toEqual([
-      ["feature, refactoring", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
-      ["bug-fix", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
-      ["perf-issue", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
-      ["hillclimb", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
+      ["feature, refactoring", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
+      ["bug-fix", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
+      ["perf-issue", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
+      ["hillclimb", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
       ["judgment and prose", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
       ["hardest tasks", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
       ["mechanical code", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
@@ -52,7 +52,7 @@ describe("committed models.json", () => {
       ["why synthesizer", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
       ["reflect tooling", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
       ["reflect judgment, divergent, synthesizer", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
-      ["swarm workers", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
+      ["swarm workers", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
     ]);
     expect(models.roles.filter((r) => r.tier === "explore").map((r) => r.role)).toEqual([
       "how explorer", "why investigators", "reflect tooling",
@@ -61,7 +61,7 @@ describe("committed models.json", () => {
 
   test("mechanical code promises its column default and final review promises the same default in both columns", () => {
     expect(sheet.seats(models).filter((s) => ["mechanical code", "final review"].includes(s.role)).map((s) => [s.key, s.defaults])).toEqual([
-      ["mechanical code", [{ entry: "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", termFree: false }]],
+      ["mechanical code", [{ entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }]],
       ["final review", [{ entry: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default", termFree: false }]],
       ["science mechanical code", [{ entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }]],
       ["science final review", [{ entry: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default", termFree: false }]],
@@ -73,22 +73,38 @@ describe("committed models.json", () => {
     expect(models.roles.map((r) => r.role)).not.toContain("term-free code");
   });
 
+  const family = (entry) => sheet.family(sheet.parseEntry(entry).model);
+  const independentReviewer = (column, authors) => ["interrogate reviewers", "arena cross-judge pool"]
+    .flatMap((role) => column.find((seat) => seat.role === role).defaults)
+    .find((entry) => !authors.has(family(entry.entry))) ?? "BLOCKED: independent review";
+
   test.each([
-    [["feature, refactoring"], ["deepseek"], null],
-    [["feature, refactoring", "hardest tasks"], ["deepseek", "gpt"], {
-      entry: "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", termFree: true,
-    }],
-  ])("science handback selects an independent reviewer for authors %j", (roles, expectedFamilies, expectedExtra) => {
-    const family = (entry) => sheet.family(sheet.parseEntry(entry).model);
-    const science = sheet.seats(models).filter((s) => s.domain === "science");
-    const authors = new Set(roles.map((role) => family(science.find((s) => s.role === role).defaults[0].entry)));
-    expect([...authors].sort()).toEqual(expectedFamilies);
-    const final = science.find((s) => s.role === "final review").defaults[0];
-    expect(final).toEqual({ entry: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default", termFree: false });
-    const extra = authors.has(family(final.entry))
-      ? science.find((s) => s.role === "interrogate reviewers").defaults.find((d) => !authors.has(family(d.entry)))
-      : null;
-    expect(extra).toEqual(expectedExtra);
+    [["feature, refactoring"], ["gpt"], { entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }],
+    [["feature, refactoring", "hardest tasks"], ["gpt"], { entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }],
+    [["mechanical code"], ["deepseek"], null],
+    [["feature, refactoring", "mechanical code"], ["deepseek", "gpt"], { entry: "muse/muse-wonder-full-1.0 reasoningEffort=xhigh", termFree: false }],
+  ])("both columns select the handback reviewer for authors %j", (roles, expectedFamilies, expectedExtra) => {
+    for (const domain of sheet.DOMAINS) {
+      const column = sheet.seats(models).filter((seat) => seat.domain === domain);
+      const authors = new Set(roles.map((role) => family(column.find((seat) => seat.role === role).defaults[0].entry)));
+      expect([...authors].sort()).toEqual(expectedFamilies);
+      const final = column.find((seat) => seat.role === "final review").defaults[0];
+      expect(final).toEqual({ entry: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default", termFree: false });
+      const extra = authors.has(family(final.entry)) ? independentReviewer(column, authors) : null;
+      expect(extra).toEqual(expectedExtra);
+      expect(independentReviewer(column, authors)).toEqual(expectedExtra ?? {
+        entry: "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default", termFree: false,
+      });
+    }
+  });
+
+  test.each(sheet.DOMAINS)("the %s judges pool preserves family exclusion and term-free briefs before blocking", (domain) => {
+    const column = sheet.seats(models).filter((seat) => seat.domain === domain);
+    expect(independentReviewer(column, new Set(["gpt", "deepseek", "muse"]))).toEqual({
+      entry: "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", termFree: domain === "science",
+    });
+    const authors = new Set(column.flatMap((seat) => seat.defaults.map((entry) => family(entry.entry))));
+    expect(independentReviewer(column, authors)).toBe("BLOCKED: independent review");
   });
 
   test("only science panel defaults outside its term readers need term-free briefs", () => {
@@ -96,7 +112,6 @@ describe("committed models.json", () => {
       "science arena runners: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
       "science arena cross-judge pool: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
       "science architect runners: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-      "science interrogate reviewers: claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
     ]);
   });
 
@@ -111,17 +126,14 @@ describe("committed models.json", () => {
   });
 
   test("every DeepSeek entry is variant=max with no speed option", () => {
-    const tierEntries = [
-      ...Object.values(raw.domains.science.tiers).flatMap((v) => [v].flat()),
-      ...Object.values(raw.muse.tiers).flatMap((v) => [v].flat()),
-    ];
+    const tierEntries = Object.values(raw.domains).flatMap((domain) => Object.values(domain.tiers).flat());
     const deepseek = tierEntries.filter((e) => sheet.family(sheet.parseEntry(e).model) === "deepseek");
-    expect(deepseek).toHaveLength(12);
+    expect(deepseek).toHaveLength(6);
     for (const entry of deepseek) {
       expect(entry).toBe("opencode/opencode-go/deepseek-v4.1-flash variant=max");
       expect(sheet.parseEntry(entry).options).toEqual({ variant: "max" });
     }
-    expect(raw.domains.science.termReaders).toEqual(["gpt", "grok", "muse", "deepseek"]);
+    expect(raw.domains.science.termReaders).toEqual(["gpt", "muse", "deepseek"]);
   });
 
 });
@@ -133,15 +145,6 @@ describe("parseModels", () => {
       science: { covers: "scientific work", termReaders: ["gpt", "grok"], tiers: { code: "codex/gpt-6.1-sol serviceTier=default", judgment: "codex/gpt-6-astra serviceTier=default", runners: ["a/claude-a", "b/gpt-b"] } },
     },
     roles: [{ role: "bug-fix", tier: "code", skill: "poteto-mode" }, { role: "hardest tasks", alias: "strongest judgment", tier: "judgment", skill: "poteto-mode" }, { role: "why investigators", tier: "code", skill: "why" }],
-    muse: {
-      on: ["muse mode"],
-      off: ["normal mode", "standard mode"],
-      tiers: {
-        code: "muse/muse-wonder-1.0 reasoningEffort=xhigh",
-        judgment: "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
-        runners: ["muse/muse-wonder-full-1.0 reasoningEffort=xhigh", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false"],
-      },
-    },
   };
   const parse = (mutate, skillExists = () => true) => {
     const policy = structuredClone(fixture);
@@ -216,6 +219,8 @@ describe("parseModels", () => {
     expect(parse((p) => p.roles.push({ ...p.roles[0] }))).toThrow('models.json: role "bug-fix" appears twice');
     expect(parse((p) => p.roles[0].alias = "strongest judgment")).toThrow('models.json: role "strongest judgment" appears twice');
     expect(parse((p) => p.roles[0].role = "session hook")).toThrow('models.json: role "session hook" is a reserved sheet key');
+    expect(parse((p) => p.roles[0].role = "muse bug-fix")).toThrow('models.json: role "muse bug-fix" starts with the reserved prefix "muse "');
+    expect(parse((p) => p.roles[0].alias = "muse notes")).toThrow('models.json: role "muse notes" starts with the reserved prefix "muse "');
     expect(parse((p) => p.roles[0].alias = "science notes")).toThrow('models.json: role "science notes" starts with the domain name "science", so its sheet line would be ambiguous');
   });
 
@@ -224,122 +229,6 @@ describe("parseModels", () => {
     expect(parse(() => {}, (skill) => skill !== "why")).toThrow('models.json: role "why investigators" names skill "why", which has no SKILL.md');
   });
 
-  test("muse is required and holds only on, off, and tiers", () => {
-    expect(parse((p) => delete p.muse)).toThrow('models.json: "muse" must be an object');
-    expect(parse((p) => p.muse = null)).toThrow('models.json: "muse" must be an object');
-    expect(parse((p) => p.muse.covers = "cheap work")).toThrow('models.json: "muse" has unknown field "covers"');
-    expect(parse((p) => p.muse.termReaders = ["muse"])).toThrow('models.json: "muse" has unknown field "termReaders"');
-  });
-
-  test.each([
-    ["missing", "on", undefined],
-    ["empty", "on", []],
-    ["repeated", "on", ["muse mode", "muse mode"]],
-    ["blank", "on", [""]],
-    ["whitespace-only", "on", ["  "]],
-    ["uppercase", "on", ["Muse mode"]],
-    ["non-string", "on", ["muse mode", 7]],
-    ["untrimmed", "on", [" muse mode"]],
-    ["missing", "off", undefined],
-    ["empty", "off", []],
-    ["uppercase", "off", ["Normal mode"]],
-    ["untrimmed", "off", ["normal mode "]],
-  ])("muse switch phrases reject %s %s", (_, key, value) => {
-    expect(parse((p) => p.muse[key] = value)).toThrow(`models.json: "muse" "${key}" must be a non-empty list of distinct non-empty lowercase phrases with no surrounding spaces`);
-  });
-
-  test("muse on and off share no phrase", () => {
-    expect(parse((p) => p.muse.off = ["normal mode", "muse mode"])).toThrow('models.json: "muse" lists "muse mode" in both "on" and "off"');
-  });
-
-  test("muse tiers name exactly the standard tiers, with the same shapes and no null", () => {
-    expect(parse((p) => delete p.muse.tiers)).toThrow('models.json: "muse" needs a "tiers" object');
-    expect(parse((p) => p.muse.tiers = null)).toThrow('models.json: "muse" needs a "tiers" object');
-    expect(parse((p) => delete p.muse.tiers.code)).toThrow('models.json: "muse" has no tier "code"');
-    expect(parse((p) => p.muse.tiers.extra = "b/gpt-b")).toThrow('models.json: "muse" names tier "extra", which no domain defines');
-    expect(parse((p) => p.muse.tiers.code = null)).toThrow('models.json: muse tier "code" must be one entry or a list');
-    expect(parse((p) => p.muse.tiers.code = ["a/claude-a", "b/gpt-b"])).toThrow('models.json: muse tier "code" must be one entry, like the standard "code" seat');
-    expect(parse((p) => p.muse.tiers.runners = "b/gpt-b")).toThrow('models.json: muse tier "runners" must be a list, like the standard "runners" panel');
-  });
-
-  test("muse entries name concrete standard-speed targets", () => {
-    expect(parse((p) => p.muse.tiers.code = "opus")).toThrow('models.json: muse tier "code": "opus" does not start with <providerInstanceId>/<modelId>');
-    expect(parse((p) => p.muse.tiers.code = "inherit-parent")).toThrow('models.json: muse tier "code" must name a target, not inherit the parent');
-    expect(parse((p) => p.muse.tiers.code = "auto")).toThrow('models.json: muse tier "code" must name a target, not inherit the parent');
-    expect(parse((p) => p.muse.tiers.code = "muse/muse-wonder-1.0 reasoningEffort=xhigh fastMode=true")).toThrow('models.json: muse tier "code": fastMode=true is not standard speed, and this router never runs fast; write fastMode=false');
-  });
-
-  test("a muse panel needs two families, like a standard panel", () => {
-    expect(parse((p) => p.muse.tiers.runners = ["muse/muse-wonder-full-1.0 reasoningEffort=xhigh", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false"])).not.toThrow();
-    expect(parse((p) => p.muse.tiers.runners = ["a/claude-a", "b/gpt-b"])).not.toThrow();
-    expect(parse((p) => p.muse.tiers.runners = ["muse/muse-wonder-full-1.0 reasoningEffort=xhigh", "muse/muse-wonder-1.0 reasoningEffort=xhigh"])).toThrow('models.json: muse tier "runners": the panel needs at least two model families');
-    expect(parse((p) => p.muse.tiers.runners = ["a/gpt-a", "b/gpt-b"])).toThrow('models.json: muse tier "runners": the panel needs at least two model families');
-    expect(parse((p) => p.muse.tiers.runners = ["muse/muse-wonder-1.0 reasoningEffort=xhigh"])).toThrow('models.json: muse tier "runners": the panel needs at least two model families');
-    expect(parse((p) => p.muse.tiers.runners = ["a/gpt-a", "a/gpt-a"])).toThrow('models.json: muse tier "runners" lists an entry twice');
-  });
-
-  test("a role label starting with the muse prefix is ambiguous", () => {
-    expect(parse((p) => p.roles[0].role = "muse bug-fix")).toThrow('models.json: role "muse bug-fix" starts with "muse ", so its sheet line would be ambiguous');
-    expect(parse((p) => p.roles[0].alias = "muse old name")).toThrow('models.json: role "muse old name" starts with "muse ", so its sheet line would be ambiguous');
-  });
-
-});
-
-describe("muse mode policy", () => {
-  test("the shipped muse block validates and matches the plan", () => {
-    expect(parseModels(structuredClone(raw), () => true).muse).toEqual({
-      on: ["muse mode"],
-      off: ["normal mode", "standard mode", "turn off muse mode"],
-      tiers: {
-        code: "opencode/opencode-go/deepseek-v4.1-flash variant=max",
-        explore: "opencode/opencode-go/deepseek-v4.1-flash variant=max",
-        judgment: "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
-        mechanical: "opencode/opencode-go/deepseek-v4.1-flash variant=max",
-        final: "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
-        runners: ["muse/muse-wonder-full-1.0 reasoningEffort=xhigh", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
-        judges: ["muse/muse-wonder-full-1.0 reasoningEffort=xhigh", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
-        reviewers: ["muse/muse-wonder-full-1.0 reasoningEffort=xhigh", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
-      },
-    });
-  });
-
-  test("muse mode has no codex target", () => {
-    expect(JSON.stringify(models.muse.tiers)).not.toContain("codex/");
-    const entries = Object.values(models.muse.tiers).flatMap((v) => [v].flat());
-    expect(entries.some((e) => sheet.parseEntry(e).providerInstanceId === "codex")).toBe(false);
-    expect([...new Set(entries.map((e) => sheet.parseEntry(e).providerInstanceId))].sort()).toEqual(["claudeAgent", "muse", "opencode"]);
-  });
-
-  test("muse tiers run Wonder Full and DeepSeek at fixed levels and Opus and DeepSeek on every panel", () => {
-    for (const [tier, value] of Object.entries(models.muse.tiers)) {
-      const entries = [value].flat().map((entry) => sheet.parseEntry(entry));
-      for (const entry of entries) {
-        if (entry.model === "claude-opus-5-5") {
-          expect(entry.providerInstanceId).toBe("claudeAgent");
-          expect(entry.options).toEqual({ effort: "xhigh", fastMode: "false" });
-        } else if (entry.providerInstanceId === "opencode") {
-          expect(entry.model).toBe("opencode-go/deepseek-v4.1-flash");
-          expect(sheet.family(entry.model)).toBe("deepseek");
-          expect(entry.options).toEqual({ variant: "max" });
-        } else {
-          expect(entry.providerInstanceId).toBe("muse");
-          expect(sheet.family(entry.model)).toBe("muse");
-          expect(entry.model).toBe("muse-wonder-full-1.0");
-          expect(entry.options).toEqual({ reasoningEffort: "xhigh" });
-        }
-      }
-      if (Array.isArray(value)) {
-        expect([...sheet.panelFamilies(entries)].sort()).toEqual(["claude", "deepseek", "muse"]);
-      } else {
-        expect(entries[0].providerInstanceId).toBe(["judgment", "final"].includes(tier) ? "muse" : "opencode");
-      }
-    }
-    expect(sheet.parseEntry(models.muse.tiers.mechanical)).toEqual({
-      providerInstanceId: "opencode",
-      model: "opencode-go/deepseek-v4.1-flash",
-      options: { variant: "max" },
-    });
-  });
 });
 
 describe("role labels reach the prose", () => {

@@ -1,6 +1,6 @@
 {
   "name": "t3-pstack-science",
-  "version": "2.0.0-rc.14-science.3",
+  "version": "2.0.0-rc.14-science.4",
   "description": "pstack for T3 Code on a Codex host: Lauren Tan's pstack with its Cursor mechanics rewritten in place for T3, so subagents, panels, schedules, and PR watches dispatch through T3's orchestration.",
   "author": {
     "name": "Christian Bager Bach Houmann",
@@ -30,7 +30,7 @@
   "interface": {
     "displayName": "t3-pstack-science",
     "shortDescription": "Rigorous, parallelizable agent workflows: go deep first, write less, verify everything",
-    "longDescription": "pstack for T3 Code: poteto-mode's principles, parallel design exploration (architect/arena), adversarial multi-model review (interrogate), and verified delivery, with every panel and fan-out dispatched through T3 so it mixes Claude, GPT, and Muse.",
+    "longDescription": "pstack for T3 Code: poteto-mode's principles, parallel design exploration (architect/arena), adversarial multi-model review (interrogate), and verified delivery, with every panel and fan-out dispatched through T3 so it mixes Claude, GPT, Muse, and DeepSeek.",
     "developerName": "Christian Bager Bach Houmann (a port of Lauren Tan's pstack)",
     "category": "Developer Tools",
     "capabilities": [

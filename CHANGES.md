@@ -2,6 +2,34 @@
 
 This file is the release changelog, with one `## <version> - <title>` entry per release, newest first. The Cursor-to-T3 rewrite rules live in [`tools/substitutions.json`](tools/substitutions.json), and the [sync boundary](CONTRIBUTING.md#the-sync-boundary) in `CONTRIBUTING.md` defines how a change to upstream's skill content is declared.
 
+## 2.0.0-rc.14-science.4 - Two routing columns, new defaults, one review round
+
+Routing now has only the `general` and `science` columns, with the same defaults in both.
+GPT Sol holds `code`, DeepSeek V4.1 Flash holds `explore` and `mechanical`, and GPT Astra holds `judgment` and `final`.
+The `runners` panel seats Sol, Claude Opus 5.5, and Muse Wonder Full 1.0.
+The `judges` pool seats Astra, Wonder Full, and Opus.
+The `reviewers` panel seats DeepSeek and Sol.
+Required reviews and handback reviews use the first independent entry from the same column's `arena cross-judge pool` when every `interrogate reviewers` family helped author the change.
+If neither pool has an independent family, the review stays blocked.
+Every default uses `xhigh` reasoning except DeepSeek, which uses `variant=max`.
+GPT uses `serviceTier=default`, and Claude uses `fastMode=false`.
+Science term readers are now `gpt`, `muse`, and `deepseek`.
+The science gate gives Opus a term-free brief, while the other default families read the domain terms.
+Muse mode is removed, including its trigger phrases, override seats, checker flag, and doctor row.
+The checker tells users to delete any remaining `muse <role>:` sheet line.
+Every helper's reasoning level is tuned per job.
+No child runs above `xhigh` unless you ask for more in the chat, or you picked the `unlimited` budget in `/setup-pstack`.
+A DeepSeek seat always runs at `max`, its listed level.
+A bug fix, feature, or refactoring change now gets one `interrogate` review round by default, with every reviewer on the panel.
+One fix run addresses that round, then an artifact check runs the real artifact, and the fix is not re-reviewed unless you ask for more rounds.
+A failing artifact check gets another fix run and another check, with at most three fix runs and no re-review.
+When you ask for more rounds, each later round reviews only the fix diff.
+`/setup-pstack` keeps DeepSeek at `max` under every budget.
+Existing explicit machine-sheet entries keep their targets until you change them.
+On a `/setup-pstack` re-run, choose `keep the current targets` or `adopt the current defaults`.
+Adopting starts from the current default table and reapplies only the overrides you name.
+Neither hooks JSON file changes.
+
 ## 2.0.0-rc.14-science.3 - Muse mode
 
 Saying "muse mode" in a chat routes every helper that chat dispatches to the muse seats.

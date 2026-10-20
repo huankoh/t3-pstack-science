@@ -2,33 +2,7 @@
   "domains": {
     "general": {
       "tiers": {
-        "code": "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-        "explore": "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-        "judgment": "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-        "mechanical": "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-        "final": "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
-        "runners": [
-          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-          "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
-          "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"
-        ],
-        "judges": [
-          "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
-          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-          "muse/muse-wonder-full-1.0 reasoningEffort=xhigh"
-        ],
-        "reviewers": [
-          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-          "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
-          "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"
-        ]
-      }
-    },
-    "science": {
-      "covers": "biology or other scientific work",
-      "termReaders": ["gpt", "grok", "muse", "deepseek"],
-      "tiers": {
-        "code": "opencode/opencode-go/deepseek-v4.1-flash variant=max",
+        "code": "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
         "explore": "opencode/opencode-go/deepseek-v4.1-flash variant=max",
         "judgment": "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
         "mechanical": "opencode/opencode-go/deepseek-v4.1-flash variant=max",
@@ -36,34 +10,43 @@
         "runners": [
           "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
           "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-          "opencode/opencode-go/deepseek-v4.1-flash variant=max"
+          "muse/muse-wonder-full-1.0 reasoningEffort=xhigh"
         ],
         "judges": [
           "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
-          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-          "opencode/opencode-go/deepseek-v4.1-flash variant=max"
+          "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
+          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false"
         ],
         "reviewers": [
-          "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
-          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
           "opencode/opencode-go/deepseek-v4.1-flash variant=max",
-          "muse/muse-wonder-full-1.0 reasoningEffort=xhigh"
+          "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"
         ]
       }
-    }
-  },
-  "muse": {
-    "on": ["muse mode"],
-    "off": ["normal mode", "standard mode", "turn off muse mode"],
-    "tiers": {
-      "code": "opencode/opencode-go/deepseek-v4.1-flash variant=max",
-      "explore": "opencode/opencode-go/deepseek-v4.1-flash variant=max",
-      "judgment": "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
-      "mechanical": "opencode/opencode-go/deepseek-v4.1-flash variant=max",
-      "final": "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
-      "runners": ["muse/muse-wonder-full-1.0 reasoningEffort=xhigh", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
-      "judges": ["muse/muse-wonder-full-1.0 reasoningEffort=xhigh", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
-      "reviewers": ["muse/muse-wonder-full-1.0 reasoningEffort=xhigh", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", "opencode/opencode-go/deepseek-v4.1-flash variant=max"]
+    },
+    "science": {
+      "covers": "biology or other scientific work",
+      "termReaders": ["gpt", "muse", "deepseek"],
+      "tiers": {
+        "code": "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
+        "explore": "opencode/opencode-go/deepseek-v4.1-flash variant=max",
+        "judgment": "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
+        "mechanical": "opencode/opencode-go/deepseek-v4.1-flash variant=max",
+        "final": "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
+        "runners": [
+          "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
+          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
+          "muse/muse-wonder-full-1.0 reasoningEffort=xhigh"
+        ],
+        "judges": [
+          "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
+          "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
+          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false"
+        ],
+        "reviewers": [
+          "opencode/opencode-go/deepseek-v4.1-flash variant=max",
+          "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"
+        ]
+      }
     }
   },
   "roles": [

@@ -16,7 +16,7 @@ npx -y github:huankoh/t3-pstack-science update
 npx -y github:huankoh/t3-pstack-science doctor
 ```
 
-`npx -y github:huankoh/t3-pstack-science` runs the installer from the latest commit on `main`. That is the rolling channel, the same one each home's marketplace auto-updates from. To run one release's installer, name its tag, as in `npx -y github:huankoh/t3-pstack-science#v2.0.0-rc.14-science.3 doctor`.
+`npx -y github:huankoh/t3-pstack-science` runs the installer from the latest commit on `main`. That is the rolling channel, the same one each home's marketplace auto-updates from. To run one release's installer, name its tag, as in `npx -y github:huankoh/t3-pstack-science#v2.0.0-rc.14-science.4 doctor`.
 
 `install` and `update` are the same command, and a second run changes nothing. With Node 20 or later, it installs or updates the `t3-pstack-science@t3-pstack-science` plugin in every Claude Code and Codex config home T3 can run: `~/.claude` and `~/.codex`, `$CLAUDE_CONFIG_DIR` and `$CODEX_HOME`, and the home of each `claudeAgent` and `codex` instance in T3's settings, disabled ones included. Name any other home with `--claude-home <dir>` or `--codex-home <dir>`. Each home's `t3-pstack-science` marketplace must come from `huankoh/t3-pstack-science`, or from `--source <owner/repo|git URL|dir>` on the same run, and a home whose marketplace has another source is left as it is. A local directory needs a path such as `./t3-pstack-science`, since `owner/repo` always means GitHub. On Codex it also trusts t3-pstack-science's session-start hook, once its hooks file is the one this release pins. Codex runs a plugin's hook only once it is trusted, and T3's Codex sessions never ask, so without this step the hook never runs. Run `update` after each release.
 
@@ -48,36 +48,36 @@ Use poteto-mode to fix the search filter resetting when I change pages.
 The session-start hook tells each new chat when to enter `poteto-mode` on its own: work that touches more than one file, a design choice, or a bug whose cause is unknown. `poteto-mode` matches the task to a playbook and opens the other skills from there. They ship as upstream ships them, invoked by `poteto-mode` or typed by you (`/t3-pstack-science:<name>` on Claude Code, `$t3-pstack-science:<name>` on Codex).
 
 The plugin carries 64 skill directories, 24 of them `principle-*` leaves, and 4 agents.
+A bug fix, feature, or refactoring change gets one `interrogate` review round before a PR, then one fix run and an artifact check, unless you ask for more review rounds.
+A failing artifact check gets another fix run and another check, with at most three fix runs and no re-review.
 
-## Muse mode
+## Model defaults
 
-Say "muse mode" in a chat and every helper that chat dispatches runs on the muse seats instead of the standard routes, for that chat only.
-Muse mode is the science column with Muse Wonder Full in every GPT seat, so it has no Codex target.
-It lasts across later tasks in the chat until "normal mode", "standard mode", or "turn off muse mode".
-A new chat starts in standard mode, and a quoted or discussed use of the phrase switches nothing.
-Muse mode needs the Muse, Claude, and OpenCode providers in T3.
-It moves helpers only, so the chat's own model stays your pick in the composer.
-To keep the whole run on Muse, pick a Muse model for the chat as well.
-Muse runs in contributor mode, so muse mode requests to Muse seats go to Meta under contributor terms.
+Routing has two columns, `general` and `science`.
+Use `science` for biology or other scientific work, and `general` for other tasks.
+Both columns use the defaults below.
+The science gate changes the brief for families that cannot read the domain terms.
+GPT, Muse, and DeepSeek read science terms, while Claude Opus gets a term-free brief.
+In `general`, every family can read the task's terms.
 
-| Job | Tier | Target |
-| --- | --- | --- |
-| Implementation, swarm workers | `code` | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |
-| Mechanical edits | `mechanical` | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |
-| Research | `explore` | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |
-| Judgment, writing, hardest tasks | `judgment` | `muse/muse-wonder-full-1.0 reasoningEffort=xhigh` |
-| Final review | `final` | `muse/muse-wonder-full-1.0 reasoningEffort=xhigh` |
-| Design candidates | `runners` | Wonder Full xhigh, Opus 5.5 xhigh, DeepSeek V4.1 Flash max |
-| Design judge | `judges` | Wonder Full xhigh, Opus 5.5 xhigh, DeepSeek V4.1 Flash max |
-| Review panel | `reviewers` | Wonder Full xhigh, Opus 5.5 xhigh, DeepSeek V4.1 Flash max |
+| Tier | Target in general and science |
+| --- | --- |
+| `code` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |
+| `explore` | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |
+| `mechanical` | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |
+| `judgment` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |
+| `final` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |
+| `runners` | GPT Sol xhigh, Claude Opus 5.5 xhigh, Muse Wonder Full 1.0 xhigh |
+| `judges` | GPT Astra xhigh, Muse Wonder Full 1.0 xhigh, Claude Opus 5.5 xhigh |
+| `reviewers` | DeepSeek V4.1 Flash max, GPT Sol xhigh |
 
-Wonder Full, Opus 5.5, and DeepSeek sit on every muse mode panel, so each panel spans three families.
-In the science column, DeepSeek writes and researches science code, GPT judges, and Wonder Full sits on the four-seat review panel with GPT, Opus, and DeepSeek.
-On a science task, an Opus panel seat gets a term-free brief, exactly as in the science route.
-Muse and DeepSeek seats read the science terms.
-Muse mode levels are fixed as listed, and a muse target this machine cannot run blocks that dispatch instead of falling back to a standard seat.
-`/setup-pstack` writes no muse lines by default.
-An optional `muse <role>:` sheet line overrides one muse seat, and `doctor` warns, without failing, when the catalog cannot run every muse target.
+Claude runs with `fastMode=false`, and GPT runs with `serviceTier=default`.
+Each helper's reasoning level is tuned per job, up to `xhigh` unless you ask for more or pick the `unlimited` budget.
+DeepSeek always stays at `max`.
+An unprefixed `<role>:` sheet line overrides the general column, and `science <role>:` overrides the science column.
+Existing explicit machine-sheet entries keep their targets until you change them.
+On a `/setup-pstack` re-run, choose `keep the current targets` or `adopt the current defaults`.
+Adopting starts from the current default table and reapplies only the overrides you name.
 
 ## Staying current
 
