@@ -20,7 +20,7 @@ npx -y github:huankoh/t3-pstack-science doctor
 
 `npx -y github:huankoh/t3-pstack-science` runs the installer from the latest commit on `main`.
 That is the rolling channel, the same one each home's marketplace auto-updates from.
-To run one release's installer, name its tag, as in `npx -y github:huankoh/t3-pstack-science#v2.0.0-rc.15-science.2 doctor`.
+To run one release's installer, name its tag, as in `npx -y github:huankoh/t3-pstack-science#v2.0.0-science.1 doctor`.
 
 `install` and `update` are the same command, and a second run changes nothing.
 With Node 20 or later, it installs or updates the `t3-pstack-science@t3-pstack-science` plugin in every Claude Code and Codex config home T3 can run: `~/.claude` and `~/.codex`, `$CLAUDE_CONFIG_DIR` and `$CODEX_HOME`, and the home of each `claudeAgent` and `codex` instance in T3's settings, disabled ones included.
@@ -130,7 +130,7 @@ The session-start hook tells each new chat when to enter `poteto-mode` on its ow
 `poteto-mode` matches the task to a playbook and opens the other skills from there.
 They ship as upstream ships them, invoked by `poteto-mode` or typed by you (`/t3-pstack-science:<name>` on Claude Code, `$t3-pstack-science:<name>` on Codex).
 
-The plugin carries 64 skill directories, 24 of them `principle-*` leaves, and 4 agents.
+The plugin carries 66 skill directories, 24 of them `principle-*` leaves, and 4 agents.
 A bug fix, feature, or refactoring change gets one `interrogate` review round before a PR, then one fix run and an artifact check, unless you ask for more review rounds.
 A failing artifact check gets another fix run and another check, with at most three fix runs and no re-review.
 
@@ -164,7 +164,7 @@ Adopting starts from the current default table and reapplies only the overrides 
 
 ## Staying current
 
-This repository syncs from Lauren's tree directly, synced against upstream `88d4751`.
+This repository syncs from Lauren's tree directly, synced against upstream `e73df47`.
 `tools/upstream.json` pins each component, `tools/substitutions.json` holds the rewrite rules and a denylist of Cursor terms, and `tools/forks.json` declares every file the port keeps in its own form and why.
 `bun tools/sync.mjs <component> <sha>` derives each upstream file through the rules, merges it three ways with the port's copy, and fails on an undeclared fork, a denylist hit, or a rule that no longer matches upstream.
 [CONTRIBUTING.md](CONTRIBUTING.md#the-sync-boundary) has the details.
