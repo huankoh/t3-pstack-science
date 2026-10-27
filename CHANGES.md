@@ -2,6 +2,16 @@
 
 This file is the release changelog, with one `## <version> - <title>` entry per release, newest first. The Cursor-to-T3 rewrite rules live in [`tools/substitutions.json`](tools/substitutions.json), and the [sync boundary](CONTRIBUTING.md#the-sync-boundary) in `CONTRIBUTING.md` defines how a change to upstream's skill content is declared.
 
+## 2.0.0-science.2 - Cheaper default routing: Astra at high, Muse for writing seats
+
+Codex logs for Oct 20 to 27 on both machines showed Astra at 87% of notional Codex spend, because Astra re-reads context at ten times Sol's rate and re-reading is 97% of tokens.
+The defaults now start every Astra seat at `high` (`hardest tasks`, `final review`, reflect's judgment seats, and the Astra judge).
+The new `prose` tier puts `judgment and prose`, `how explainer`, and `why synthesizer` on Muse Wonder Full at `high`.
+The new `designers` tier gives `architect runners` Astra high, Opus xhigh, and Wonder Full high, so a Sol chat gets a design from outside its own model, while `arena runners` keep Sol, Opus, and Wonder Full.
+Every Wonder Full seat now starts at `high`.
+Code, swarm workers, interrogate reviewers, explorers, and mechanical edits do not change, and neither hooks JSON file changes.
+A machine sheet with explicit lines keeps its targets until `/setup-pstack` adopts the new defaults.
+
 ## 2.0.0-science.1 - chhoumann's 2.0.0: Lauren's pstack at e73df47
 
 The fork now carries chhoumann's 2.0.0, which is rc.19 under its final version, with Lauren Tan's pstack at cursor/plugins `e73df47` (pstack 0.15.32).

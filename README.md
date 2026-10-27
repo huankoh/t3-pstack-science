@@ -20,7 +20,7 @@ npx -y github:huankoh/t3-pstack-science doctor
 
 `npx -y github:huankoh/t3-pstack-science` runs the installer from the latest commit on `main`.
 That is the rolling channel, the same one each home's marketplace auto-updates from.
-To run one release's installer, name its tag, as in `npx -y github:huankoh/t3-pstack-science#v2.0.0-science.1 doctor`.
+To run one release's installer, name its tag, as in `npx -y github:huankoh/t3-pstack-science#v2.0.0-science.2 doctor`.
 
 `install` and `update` are the same command, and a second run changes nothing.
 With Node 20 or later, it installs or updates the `t3-pstack-science@t3-pstack-science` plugin in every Claude Code and Codex config home T3 can run: `~/.claude` and `~/.codex`, `$CLAUDE_CONFIG_DIR` and `$CODEX_HOME`, and the home of each `claudeAgent` and `codex` instance in T3's settings, disabled ones included.
@@ -148,12 +148,17 @@ In `general`, every family can read the task's terms.
 | `code` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |
 | `explore` | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |
 | `mechanical` | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |
-| `judgment` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |
-| `final` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |
-| `runners` | GPT Sol xhigh, Claude Opus 5.5 xhigh, Muse Wonder Full 1.0 xhigh |
-| `judges` | GPT Astra xhigh, Muse Wonder Full 1.0 xhigh, Claude Opus 5.5 xhigh |
+| `judgment` | `codex/gpt-6-astra reasoningEffort=high serviceTier=default` |
+| `prose` | `muse/muse-wonder-full-1.0 reasoningEffort=high` |
+| `final` | `codex/gpt-6-astra reasoningEffort=high serviceTier=default` |
+| `runners` | GPT Sol xhigh, Claude Opus 5.5 xhigh, Muse Wonder Full 1.0 high |
+| `designers` | GPT Astra high, Claude Opus 5.5 xhigh, Muse Wonder Full 1.0 high |
+| `judges` | GPT Astra high, Muse Wonder Full 1.0 high, Claude Opus 5.5 xhigh |
 | `reviewers` | DeepSeek V4.1 Flash max, GPT Sol xhigh |
 
+`prose` covers judgment and prose, the how explainer, and the why synthesizer.
+`designers` are the architect runners, and `runners` are the arena runners.
+Astra starts at `high` because it re-reads context at ten times Sol's rate, and that re-reading is most of the token cost.
 Claude runs with `fastMode=false`, and GPT runs with `serviceTier=default`.
 Each helper's reasoning level is tuned per job, up to `xhigh` unless you ask for more or pick the `unlimited` budget.
 DeepSeek always stays at `max`.

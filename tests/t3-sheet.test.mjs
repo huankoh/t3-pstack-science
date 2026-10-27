@@ -121,8 +121,8 @@ describe("checkSheet against a catalog", () => {
     const noMuse = structuredClone(catalog);
     noMuse.providers = noMuse.providers.filter((p) => p.providerInstanceId !== "muse");
     expect(check("session hook: on", noMuse)).toEqual([
-      "arena runners", "arena cross-judge pool", "architect runners",
-      "science arena runners", "science arena cross-judge pool", "science architect runners",
+      "judgment and prose", "how explainer", "why synthesizer", "arena runners", "arena cross-judge pool", "architect runners",
+      "science judgment and prose", "science how explainer", "science why synthesizer", "science arena runners", "science arena cross-judge pool", "science architect runners",
     ].map((key) => `${key} (no line, tier default): muse/muse-wonder-full-1.0: no provider instance "muse" in this T3`));
   });
 

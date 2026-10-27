@@ -89,4 +89,4 @@ A line in the model sheet overrides each default. `<role>: <entry>` sets the gen
 | Role | general | science |
 | --- | --- | --- |
 | reflect tooling | `opencode/opencode-go/deepseek-v4.1-flash variant=max` | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |
-| reflect judgment, divergent, synthesizer | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |
+| reflect judgment, divergent, synthesizer | `codex/gpt-6-astra reasoningEffort=high serviceTier=default` | `codex/gpt-6-astra reasoningEffort=high serviceTier=default` |

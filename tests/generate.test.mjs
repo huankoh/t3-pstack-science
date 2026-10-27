@@ -155,7 +155,7 @@ describe("regions", () => {
     const policy = structuredClone(models);
     policy.domains.general.tiers.explore = null;
     expect(applyRegions("plugins/pstack/skills/how/SKILL.md", "## Models\n", policy)).toContain("| how explorer | none | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |");
-    expect(applyRegions("plugins/pstack/skills/arena/SKILL.md", "## Models\n", models)).toContain("| arena runners | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default`, `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false`, `muse/muse-wonder-full-1.0 reasoningEffort=xhigh` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default`, `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` (term-free brief), `muse/muse-wonder-full-1.0 reasoningEffort=xhigh` |");
+    expect(applyRegions("plugins/pstack/skills/arena/SKILL.md", "## Models\n", models)).toContain("| arena runners | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default`, `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false`, `muse/muse-wonder-full-1.0 reasoningEffort=high` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default`, `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` (term-free brief), `muse/muse-wonder-full-1.0 reasoningEffort=high` |");
   });
 
   test("applyRegions stamps in place and is idempotent", () => {
@@ -351,7 +351,7 @@ describe("deriveT3", () => {
     expect(out).toContain("When it is missing, use the defaults in the table below.");
     expect(out).not.toContain("t3-pstack-models.md");
     expect(out).toContain("It splits at its first `/`");
-    expect(out).toEndWith("| how explainer | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |\n");
+    expect(out).toEndWith("| how explainer | `muse/muse-wonder-full-1.0 reasoningEffort=high` | `muse/muse-wonder-full-1.0 reasoningEffort=high` |\n");
     expect(out).toContain("`<role>: <entry>` sets the general column, as in every sheet written before domains, and `science <role>: <entry>` sets the science column.");
     expect(out).toContain("For each task, before step 1 and before the first `delegate_task`");
     expect(out).toContain("term-free.mjs");
@@ -360,7 +360,7 @@ describe("deriveT3", () => {
 
   test("names the alias a released sheet may still use", () => {
     const out = deriveT3("plugins/pstack/skills/poteto-mode/SKILL.md", front("", "poteto-mode"), models);
-    expect(out).toContain("| hardest tasks (a `strongest judgment` line counts as this role) | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |");
+    expect(out).toContain("| hardest tasks (a `strongest judgment` line counts as this role) | `codex/gpt-6-astra reasoningEffort=high serviceTier=default` | `codex/gpt-6-astra reasoningEffort=high serviceTier=default` |");
   });
 
   test("a file no region names passes through", () => {

@@ -177,7 +177,7 @@ A line in the model sheet overrides each default. `<role>: <entry>` sets the gen
 | bug-fix | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |
 | perf-issue | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |
 | hillclimb | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |
-| judgment and prose | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |
-| hardest tasks (a `strongest judgment` line counts as this role) | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |
+| judgment and prose | `muse/muse-wonder-full-1.0 reasoningEffort=high` | `muse/muse-wonder-full-1.0 reasoningEffort=high` |
+| hardest tasks (a `strongest judgment` line counts as this role) | `codex/gpt-6-astra reasoningEffort=high serviceTier=default` | `codex/gpt-6-astra reasoningEffort=high serviceTier=default` |
 | mechanical code | `opencode/opencode-go/deepseek-v4.1-flash variant=max` | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |
-| final review | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |
+| final review | `codex/gpt-6-astra reasoningEffort=high serviceTier=default` | `codex/gpt-6-astra reasoningEffort=high serviceTier=default` |
