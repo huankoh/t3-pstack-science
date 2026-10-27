@@ -17,17 +17,23 @@ describe("two-column routing", () => {
     expect(tiers).toEqual({
       code: "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
       explore: "opencode/opencode-go/deepseek-v4.1-flash variant=max",
-      judgment: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
+      judgment: "codex/gpt-6-astra reasoningEffort=high serviceTier=default",
+      prose: "muse/muse-wonder-full-1.0 reasoningEffort=high",
       mechanical: "opencode/opencode-go/deepseek-v4.1-flash variant=max",
-      final: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
+      final: "codex/gpt-6-astra reasoningEffort=high serviceTier=default",
       runners: [
         "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
         "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-        "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
+        "muse/muse-wonder-full-1.0 reasoningEffort=high",
+      ],
+      designers: [
+        "codex/gpt-6-astra reasoningEffort=high serviceTier=default",
+        "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
+        "muse/muse-wonder-full-1.0 reasoningEffort=high",
       ],
       judges: [
-        "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
-        "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
+        "codex/gpt-6-astra reasoningEffort=high serviceTier=default",
+        "muse/muse-wonder-full-1.0 reasoningEffort=high",
         "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
       ],
       reviewers: [
@@ -35,7 +41,7 @@ describe("two-column routing", () => {
         "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
       ],
     });
-    for (const panel of [tiers.runners, tiers.judges, tiers.reviewers]) {
+    for (const panel of [tiers.runners, tiers.designers, tiers.judges, tiers.reviewers]) {
       expect(new Set(panel.map((entry) => family(parseEntry(entry).model))).size).toBeGreaterThanOrEqual(2);
     }
   });

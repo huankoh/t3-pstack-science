@@ -28,11 +28,11 @@ describe("committed models.json", () => {
     expect(raw.roles.find((r) => r.alias === "strongest judgment")?.role).toBe("hardest tasks");
   });
 
-  test("the domain policy promises 19 roles and eight tiers", () => {
+  test("the domain policy promises 19 roles and ten tiers", () => {
     expect(Object.keys(models.domains)).toEqual(["general", "science"]);
     expect(models.roles).toHaveLength(19);
-    expect(Object.keys(models.domains.general.tiers)).toEqual(["code", "explore", "judgment", "mechanical", "final", "runners", "judges", "reviewers"]);
-    expect(Object.keys(models.domains.science.tiers)).toEqual(["code", "explore", "judgment", "mechanical", "final", "runners", "judges", "reviewers"]);
+    expect(Object.keys(models.domains.general.tiers)).toEqual(["code", "explore", "judgment", "prose", "mechanical", "final", "runners", "designers", "judges", "reviewers"]);
+    expect(Object.keys(models.domains.science.tiers)).toEqual(["code", "explore", "judgment", "prose", "mechanical", "final", "runners", "designers", "judges", "reviewers"]);
   });
 
   test("science code uses Sol and research delegates use DeepSeek", () => {
@@ -42,16 +42,16 @@ describe("committed models.json", () => {
       ["bug-fix", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
       ["perf-issue", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
       ["hillclimb", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
-      ["judgment and prose", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
-      ["hardest tasks", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
+      ["judgment and prose", "muse/muse-wonder-full-1.0 reasoningEffort=high"],
+      ["hardest tasks", "codex/gpt-6-astra reasoningEffort=high serviceTier=default"],
       ["mechanical code", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
-      ["final review", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
+      ["final review", "codex/gpt-6-astra reasoningEffort=high serviceTier=default"],
       ["how explorer", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
-      ["how explainer", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
+      ["how explainer", "muse/muse-wonder-full-1.0 reasoningEffort=high"],
       ["why investigators", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
-      ["why synthesizer", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
+      ["why synthesizer", "muse/muse-wonder-full-1.0 reasoningEffort=high"],
       ["reflect tooling", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
-      ["reflect judgment, divergent, synthesizer", "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default"],
+      ["reflect judgment, divergent, synthesizer", "codex/gpt-6-astra reasoningEffort=high serviceTier=default"],
       ["swarm workers", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
     ]);
     expect(models.roles.filter((r) => r.tier === "explore").map((r) => r.role)).toEqual([
@@ -62,9 +62,9 @@ describe("committed models.json", () => {
   test("mechanical code promises its column default and final review promises the same default in both columns", () => {
     expect(sheet.seats(models).filter((s) => ["mechanical code", "final review"].includes(s.role)).map((s) => [s.key, s.defaults])).toEqual([
       ["mechanical code", [{ entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }]],
-      ["final review", [{ entry: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default", termFree: false }]],
+      ["final review", [{ entry: "codex/gpt-6-astra reasoningEffort=high serviceTier=default", termFree: false }]],
       ["science mechanical code", [{ entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }]],
-      ["science final review", [{ entry: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default", termFree: false }]],
+      ["science final review", [{ entry: "codex/gpt-6-astra reasoningEffort=high serviceTier=default", termFree: false }]],
     ]);
     expect(["mechanical code", "final review"].map((role) => models.roles.find((r) => r.role === role))).toEqual([
       { role: "mechanical code", tier: "mechanical", skill: "poteto-mode" },
@@ -82,14 +82,14 @@ describe("committed models.json", () => {
     [["feature, refactoring"], ["gpt"], { entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }],
     [["feature, refactoring", "hardest tasks"], ["gpt"], { entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }],
     [["mechanical code"], ["deepseek"], null],
-    [["feature, refactoring", "mechanical code"], ["deepseek", "gpt"], { entry: "muse/muse-wonder-full-1.0 reasoningEffort=xhigh", termFree: false }],
+    [["feature, refactoring", "mechanical code"], ["deepseek", "gpt"], { entry: "muse/muse-wonder-full-1.0 reasoningEffort=high", termFree: false }],
   ])("both columns select the handback reviewer for authors %j", (roles, expectedFamilies, expectedExtra) => {
     for (const domain of sheet.DOMAINS) {
       const column = sheet.seats(models).filter((seat) => seat.domain === domain);
       const authors = new Set(roles.map((role) => family(column.find((seat) => seat.role === role).defaults[0].entry)));
       expect([...authors].sort()).toEqual(expectedFamilies);
       const final = column.find((seat) => seat.role === "final review").defaults[0];
-      expect(final).toEqual({ entry: "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default", termFree: false });
+      expect(final).toEqual({ entry: "codex/gpt-6-astra reasoningEffort=high serviceTier=default", termFree: false });
       const extra = authors.has(family(final.entry)) ? independentReviewer(column, authors) : null;
       expect(extra).toEqual(expectedExtra);
       expect(independentReviewer(column, authors)).toEqual(expectedExtra ?? {
@@ -118,9 +118,9 @@ describe("committed models.json", () => {
   test("every default promises its pinned entry, with explicit standard speed where the provider lists a speed option", () => {
     expect([...new Set(sheet.seats(models).flatMap((s) => s.defaults.map((d) => d.entry)))].sort()).toEqual([
       "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-      "codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default",
+      "codex/gpt-6-astra reasoningEffort=high serviceTier=default",
       "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
-      "muse/muse-wonder-full-1.0 reasoningEffort=xhigh",
+      "muse/muse-wonder-full-1.0 reasoningEffort=high",
       "opencode/opencode-go/deepseek-v4.1-flash variant=max",
     ]);
   });

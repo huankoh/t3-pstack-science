@@ -108,4 +108,4 @@ A line in the model sheet overrides each default. `<role>: <entry>` sets the gen
 | Role | general | science |
 | --- | --- | --- |
 | why investigators | `opencode/opencode-go/deepseek-v4.1-flash variant=max` | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |
-| why synthesizer | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` | `codex/gpt-6-astra reasoningEffort=xhigh serviceTier=default` |
+| why synthesizer | `muse/muse-wonder-full-1.0 reasoningEffort=high` | `muse/muse-wonder-full-1.0 reasoningEffort=high` |
