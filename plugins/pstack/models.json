@@ -3,29 +3,27 @@
     "general": {
       "tiers": {
         "code": "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
-        "explore": "opencode/opencode-go/deepseek-v4.1-flash variant=max",
+        "explore": "codex/gpt-6.1-terra reasoningEffort=xhigh serviceTier=default",
         "judgment": "codex/gpt-6-astra reasoningEffort=high serviceTier=default",
-        "prose": "muse/muse-wonder-full-1.0 reasoningEffort=high",
-        "mechanical": "opencode/opencode-go/deepseek-v4.1-flash variant=max",
+        "prose": "codex/gpt-6.1-terra reasoningEffort=max serviceTier=default",
+        "mechanical": "codex/gpt-6.1-terra reasoningEffort=high serviceTier=default",
         "final": "codex/gpt-6-astra reasoningEffort=high serviceTier=default",
+        "workers": "codex/gpt-6.1-terra reasoningEffort=max serviceTier=default",
         "runners": [
           "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
-          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-          "muse/muse-wonder-full-1.0 reasoningEffort=high"
+          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false"
         ],
         "designers": [
           "codex/gpt-6-astra reasoningEffort=high serviceTier=default",
-          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-          "muse/muse-wonder-full-1.0 reasoningEffort=high"
+          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false"
         ],
         "judges": [
           "codex/gpt-6-astra reasoningEffort=high serviceTier=default",
-          "muse/muse-wonder-full-1.0 reasoningEffort=high",
           "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false"
         ],
         "reviewers": [
-          "opencode/opencode-go/deepseek-v4.1-flash variant=max",
-          "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"
+          "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
+          "codex/gpt-6-astra reasoningEffort=high serviceTier=default"
         ]
       }
     },
@@ -34,29 +32,27 @@
       "termReaders": ["gpt", "muse", "deepseek"],
       "tiers": {
         "code": "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
-        "explore": "opencode/opencode-go/deepseek-v4.1-flash variant=max",
+        "explore": "codex/gpt-6.1-terra reasoningEffort=xhigh serviceTier=default",
         "judgment": "codex/gpt-6-astra reasoningEffort=high serviceTier=default",
-        "prose": "muse/muse-wonder-full-1.0 reasoningEffort=high",
-        "mechanical": "opencode/opencode-go/deepseek-v4.1-flash variant=max",
+        "prose": "codex/gpt-6.1-terra reasoningEffort=max serviceTier=default",
+        "mechanical": "codex/gpt-6.1-terra reasoningEffort=high serviceTier=default",
         "final": "codex/gpt-6-astra reasoningEffort=high serviceTier=default",
+        "workers": "codex/gpt-6.1-terra reasoningEffort=max serviceTier=default",
         "runners": [
           "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
-          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-          "muse/muse-wonder-full-1.0 reasoningEffort=high"
+          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false"
         ],
         "designers": [
           "codex/gpt-6-astra reasoningEffort=high serviceTier=default",
-          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-          "muse/muse-wonder-full-1.0 reasoningEffort=high"
+          "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false"
         ],
         "judges": [
           "codex/gpt-6-astra reasoningEffort=high serviceTier=default",
-          "muse/muse-wonder-full-1.0 reasoningEffort=high",
           "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false"
         ],
         "reviewers": [
-          "opencode/opencode-go/deepseek-v4.1-flash variant=max",
-          "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"
+          "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
+          "codex/gpt-6-astra reasoningEffort=high serviceTier=default"
         ]
       }
     }
@@ -74,11 +70,11 @@
     { "role": "how explainer", "tier": "prose", "skill": "how" },
     { "role": "why investigators", "tier": "explore", "skill": "why" },
     { "role": "why synthesizer", "tier": "prose", "skill": "why" },
-    { "role": "reflect tooling", "tier": "explore", "skill": "reflect" },
+    { "role": "reflect tooling", "tier": "mechanical", "skill": "reflect" },
     { "role": "reflect judgment, divergent, synthesizer", "tier": "judgment", "skill": "reflect" },
     { "role": "arena runners", "tier": "runners", "skill": "arena" },
     { "role": "arena cross-judge pool", "tier": "judges", "skill": "arena" },
-    { "role": "swarm workers", "tier": "code", "skill": "swarm" },
+    { "role": "swarm workers", "tier": "workers", "skill": "swarm" },
     { "role": "architect runners", "tier": "designers", "skill": "architect" },
     { "role": "interrogate reviewers", "tier": "reviewers", "skill": "interrogate" }
   ]

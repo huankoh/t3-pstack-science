@@ -45,6 +45,9 @@ const STANDARD_SPEED = { fastMode: "false", serviceTier: "default" };
 
 const INHERIT = ["inherit-parent", "auto"];
 const HOOK_VALUES = ["on", "off"];
+// The review gates count independence by model, not family, so the reviewer
+// panel needs two models; the design and judging panels still need two families.
+const MODEL_PANEL = "interrogate reviewers";
 // Terra is fast but cuts corners when it thinks briefly, so a Terra entry runs
 // between high and max (poteto-mode's Subagents section).
 const TERRA = /^gpt-[0-9.]+-terra$/;
@@ -178,7 +181,12 @@ export function checkSheet(sheet, { models, catalog }) {
     }
     const targets = texts.map((t) => t.trim()).filter((t) => !INHERIT.includes(t));
     if (new Set(targets).size < targets.length) problems.push(`${key}: lists the same target twice`);
-    if (seat.panel) {
+    if (seat.panel && seat.role === MODEL_PANEL) {
+      const distinct = new Set(runnable.map((e) => e.model.split("/").pop()));
+      if (distinct.size < 2) {
+        problems.push(`${key}: a panel needs at least two models among its targets (inherit-parent does not count), got ${[...distinct].join(", ") || "none"}`);
+      }
+    } else if (seat.panel) {
       const families = panelFamilies(runnable);
       if (families.size < 2) {
         problems.push(

@@ -88,4 +88,4 @@ A line in the model sheet overrides each default. `<role>: <entry>` sets the gen
 
 | Role | general | science |
 | --- | --- | --- |
-| architect runners | `codex/gpt-6-astra reasoningEffort=high serviceTier=default`, `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false`, `muse/muse-wonder-full-1.0 reasoningEffort=high` | `codex/gpt-6-astra reasoningEffort=high serviceTier=default`, `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` (term-free brief), `muse/muse-wonder-full-1.0 reasoningEffort=high` |
+| architect runners | `codex/gpt-6-astra reasoningEffort=high serviceTier=default`, `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` | `codex/gpt-6-astra reasoningEffort=high serviceTier=default`, `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` (term-free brief) |

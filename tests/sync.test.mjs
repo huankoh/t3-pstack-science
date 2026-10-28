@@ -160,9 +160,9 @@ describe("applySubstitutions", () => {
     expect(shipping).toContain("and still performs this step's prescribed verification. Other verification stays on `swarm workers`.");
     const handback = readFileSync(new URL("../plugins/pstack/skills/show-me-your-work/SKILL.md", import.meta.url), "utf8");
     expect(handback).toContain('"The work" is the change being handed back.');
-    expect(handback).toContain("Count the chat's family when it edited the change itself and every delegate's family whose output is in the change.");
+    expect(handback).toContain("Count the chat's model when it edited the change itself and every delegate's model whose output is in the change.");
     expect(handback).toContain("The `final review` line always reviews");
-    expect(handback).toContain("When that line's family is among the work's families, also run an extra reviewer from outside them.");
+    expect(handback).toContain("When that line's model is among the work's models, also run an extra reviewer from outside them.");
     expect(handback).toContain("Both verdicts must pass.");
     expect(handback).toContain("In `general`, every family reads the terms.");
     expect(handback).toContain("If an extra reviewer is required and neither pool has a qualifying entry, record `BLOCKED: independent review` and keep the handback closed.");

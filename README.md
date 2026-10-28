@@ -20,7 +20,7 @@ npx -y github:huankoh/t3-pstack-science doctor
 
 `npx -y github:huankoh/t3-pstack-science` runs the installer from the latest commit on `main`.
 That is the rolling channel, the same one each home's marketplace auto-updates from.
-To run one release's installer, name its tag, as in `npx -y github:huankoh/t3-pstack-science#v2.0.0-science.3 doctor`.
+To run one release's installer, name its tag, as in `npx -y github:huankoh/t3-pstack-science#v2.0.0-science.4 doctor`.
 
 `install` and `update` are the same command, and a second run changes nothing.
 With Node 20 or later, it installs or updates the `t3-pstack-science@t3-pstack-science` plugin in every Claude Code and Codex config home T3 can run: `~/.claude` and `~/.codex`, `$CLAUDE_CONFIG_DIR` and `$CODEX_HOME`, and the home of each `claudeAgent` and `codex` instance in T3's settings, disabled ones included.
@@ -146,22 +146,29 @@ In `general`, every family can read the task's terms.
 | Tier | Target in general and science |
 | --- | --- |
 | `code` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |
-| `explore` | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |
-| `mechanical` | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |
+| `explore` | `codex/gpt-6.1-terra reasoningEffort=xhigh serviceTier=default` |
+| `mechanical` | `codex/gpt-6.1-terra reasoningEffort=high serviceTier=default` |
 | `judgment` | `codex/gpt-6-astra reasoningEffort=high serviceTier=default` |
-| `prose` | `muse/muse-wonder-full-1.0 reasoningEffort=high` |
+| `prose` | `codex/gpt-6.1-terra reasoningEffort=max serviceTier=default` |
 | `final` | `codex/gpt-6-astra reasoningEffort=high serviceTier=default` |
-| `runners` | GPT Sol xhigh, Claude Opus 5.5 xhigh, Muse Wonder Full 1.0 high |
-| `designers` | GPT Astra high, Claude Opus 5.5 xhigh, Muse Wonder Full 1.0 high |
-| `judges` | GPT Astra high, Muse Wonder Full 1.0 high, Claude Opus 5.5 xhigh |
-| `reviewers` | DeepSeek V4.1 Flash max, GPT Sol xhigh |
+| `workers` | `codex/gpt-6.1-terra reasoningEffort=max serviceTier=default` |
+| `runners` | GPT Sol xhigh, Claude Opus 5.5 xhigh |
+| `designers` | GPT Astra high, Claude Opus 5.5 xhigh |
+| `judges` | GPT Astra high, Claude Opus 5.5 xhigh |
+| `reviewers` | GPT Sol xhigh, GPT Astra high |
 
 `prose` covers judgment and prose, the how explainer, and the why synthesizer.
+`explore` covers the how explorer and the why investigators, and `mechanical` covers mechanical code and reflect tooling.
+`workers` are the swarm workers, which also run verification, browser and simulator checks included.
 `designers` are the architect runners, and `runners` are the arena runners.
+Sol writes code, Terra writes, searches, edits, and verifies, and Astra takes the hardest work, plans, and reviews last.
 Astra starts at `high` because it re-reads context at ten times Sol's rate, and that re-reading is most of the token cost.
+Terra runs between `high` and `max`, because it is fast but skips steps when it thinks briefly.
+The review gates count a reviewer on another model as independent, so Astra can review Sol's and Terra's work.
+A Claude child that refuses, stops on a safety check, or fails reruns once on the `hardest tasks` line.
 Claude runs with `fastMode=false`, and GPT runs with `serviceTier=default`.
-Each helper's reasoning level is tuned per job, up to `xhigh` unless you ask for more or pick the `unlimited` budget.
-DeepSeek always stays at `max`.
+Each helper's reasoning level is tuned per job, up to `xhigh` unless you ask for more or pick the `unlimited` budget, and a Terra entry keeps its listed level.
+A DeepSeek entry on a machine sheet always stays at `max`.
 An unprefixed `<role>:` sheet line overrides the general column, and `science <role>:` overrides the science column.
 Existing explicit machine-sheet entries keep their targets until you change them.
 On a `/setup-pstack` re-run, choose `keep the current targets` or `adopt the current defaults`.

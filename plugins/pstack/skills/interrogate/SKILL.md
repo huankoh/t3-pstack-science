@@ -28,14 +28,15 @@ Launch all reviewers in a single response with `delegate_task`, one per entry on
 
 | Subagent | Default model |
 |----------|---------------|
-| Reviewer A | general `opencode/opencode-go/deepseek-v4.1-flash variant=max`; science `opencode/opencode-go/deepseek-v4.1-flash variant=max` |
-| Reviewer B | general `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default`; science `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |
+| Reviewer A | general `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default`; science `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |
+| Reviewer B | general `codex/gpt-6-astra reasoningEffort=high serviceTier=default`; science `codex/gpt-6-astra reasoningEffort=high serviceTier=default` |
 
 Each reviewer gets `role: "review"`, a brief that says to inspect only and change no file, and `target` set from its configured entry, or from its table default when there is no configured line. Omit `target` for an `auto` or `inherit-parent` entry, so that reviewer runs on the parent model.
 
-For a required review, the work's families include the chat's family when it edited the change and every delegate's family whose output is in the change.
-Use the first entry of the same column's `interrogate reviewers` outside those families for the independent verdict.
-When no entry of the same column's `interrogate reviewers` has a family outside the work's families, use the first entry of that column's `arena cross-judge pool` whose family is outside them.
+For a required review, the work's models include the chat's model when it edited the change and every delegate's model whose output is in the change.
+A model is its ID's last `/` part, so `gpt-6-astra` and `gpt-6.1-sol` are two models of one family, and a reviewer on another model counts as independent.
+Use the first entry of the same column's `interrogate reviewers` whose model is outside those models for the independent verdict.
+When no entry of the same column's `interrogate reviewers` has a model outside the work's models, use the first entry of that column's `arena cross-judge pool` whose model is outside them.
 Add the independent reviewer to the panel if it comes from the judges pool.
 Give a reviewer whose family does not read the column's terms a term-free brief per [Models](#models).
 If neither pool has a qualifying reviewer, record `BLOCKED: independent review` and keep the gate closed.
@@ -90,4 +91,4 @@ A line in the model sheet overrides each default. `<role>: <entry>` sets the gen
 
 | Role | general | science |
 | --- | --- | --- |
-| interrogate reviewers | `opencode/opencode-go/deepseek-v4.1-flash variant=max`, `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` | `opencode/opencode-go/deepseek-v4.1-flash variant=max`, `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |
+| interrogate reviewers | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default`, `codex/gpt-6-astra reasoningEffort=high serviceTier=default` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default`, `codex/gpt-6-astra reasoningEffort=high serviceTier=default` |

@@ -18,7 +18,8 @@ const catalogPath = join(root, "tests/fixtures/t3-catalog.json");
 const catalog = JSON.parse(readFileSync(catalogPath, "utf8"));
 const models = loadModels();
 const check = (text, over = catalog) => checkSheet(parseSheet(text), { models, catalog: over });
-const PANEL = "interrogate reviewers";
+const PANEL = "architect runners";
+const REVIEWERS = "interrogate reviewers";
 const v2 = "# pstack model configuration (T3). One line per role. Delete a line to fall back to the skill default.\n# `inherit-parent` or `auto` as a value: the role runs on the parent chat's model (`delegate_task` omits `target`). Alias entries in a panel list still count toward its fan-out.\n# budget: large (xhigh)\nfeature, refactoring: claudeAgent/claude-opus-5-5 effort=xhigh\nbug-fix: claudeAgent/claude-fable-5-1 effort=xhigh\nperf-issue: claudeAgent/claude-fable-5-1 effort=xhigh\nhillclimb: claudeAgent/claude-fable-5-1 effort=xhigh\njudgment and prose: claudeAgent/claude-opus-5-5 effort=xhigh\nhardest tasks: claudeAgent/claude-fable-5-1 effort=xhigh\nhow explorer: claudeAgent/claude-opus-5-5 effort=xhigh\nhow explainer: claudeAgent/claude-opus-5-5 effort=xhigh\nwhy investigators: claudeAgent/claude-opus-5-5 effort=xhigh\nwhy synthesizer: claudeAgent/claude-opus-5-5 effort=xhigh\nreflect tooling: claudeAgent/claude-opus-5-5 effort=xhigh\nreflect judgment, divergent, synthesizer: claudeAgent/claude-opus-5-5 effort=xhigh\narena runners: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh\narena cross-judge pool: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh\nswarm workers: claudeAgent/claude-opus-5-5 effort=xhigh\narchitect runners: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh\ninterrogate reviewers: claudeAgent/claude-opus-5-5 effort=xhigh, codex/gpt-6.1-sol reasoningEffort=xhigh, grok/grok-4.7 reasoningEffort=xhigh\nsession hook: on\n";
 
 describe("parseEntry", () => {
@@ -120,10 +121,17 @@ describe("checkSheet against a catalog", () => {
   test("a missing line checks its column default on a machine without muse", () => {
     const noMuse = structuredClone(catalog);
     noMuse.providers = noMuse.providers.filter((p) => p.providerInstanceId !== "muse");
-    expect(check("session hook: on", noMuse)).toEqual([
-      "judgment and prose", "how explainer", "why synthesizer", "arena runners", "arena cross-judge pool", "architect runners",
-      "science judgment and prose", "science how explainer", "science why synthesizer", "science arena runners", "science arena cross-judge pool", "science architect runners",
-    ].map((key) => `${key} (no line, tier default): muse/muse-wonder-full-1.0: no provider instance "muse" in this T3`));
+    expect(check("session hook: on", noMuse)).toEqual([]);
+  });
+
+  test("the reviewer panel needs two models, so Sol and Astra pass and one model on two providers fails", () => {
+    expect(check(`${REVIEWERS}: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default, codex/gpt-6-astra reasoningEffort=high serviceTier=default`)).toEqual([]);
+    expect(check(`${REVIEWERS}: claudeAgent/claude-opus-5-5 fastMode=false, codex_pool/claude-opus-5-5`)).toEqual([
+      `${REVIEWERS}: a panel needs at least two models among its targets (inherit-parent does not count), got claude-opus-5-5`,
+    ]);
+    expect(check(`${REVIEWERS}: inherit-parent, grok/grok-4.7`)).toEqual([
+      `${REVIEWERS}: a panel needs at least two models among its targets (inherit-parent does not count), got grok-4.7`,
+    ]);
   });
 
   test("a panel on one family fails, whatever providers serve it", () => {
@@ -356,7 +364,7 @@ describe("domain sheet keys", () => {
       'architect runners: a panel needs at least two model families among its targets (inherit-parent does not count), got grok',
       'interrogate reviewers: claudeAgent/claude-opus-5-5: sets no fastMode; this router never runs fast, so write fastMode=false',
       'interrogate reviewers: codex/gpt-6.1-sol: sets no serviceTier; this router never runs fast, so write serviceTier=default',
-      'interrogate reviewers: a panel needs at least two model families among its targets (inherit-parent does not count), got grok',
+      'interrogate reviewers: a panel needs at least two models among its targets (inherit-parent does not count), got grok-4.7',
     ]);
   });
 
@@ -366,7 +374,7 @@ describe("domain sheet keys", () => {
     ["science strongest judgment: grok/grok-4.7", ['"science strongest judgment": write "science hardest tasks"; the old name counts only on an unprefixed line']],
     ["science session hook: on", ['"science session hook" is not a pstack role']],
     ["science swarm workers: grok/grok-4.7\nscience swarm workers: grok/grok-4.7", ['"science swarm workers" appears twice; only one line may set it']],
-    ["science interrogate reviewers: codex/gpt-6-astra serviceTier=default, codex/gpt-6.1-sol serviceTier=default", ['science interrogate reviewers: a panel needs at least two model families among its targets (inherit-parent does not count), got gpt']],
+    ["science architect runners: codex/gpt-6-astra serviceTier=default, codex/gpt-6.1-sol serviceTier=default", ['science architect runners: a panel needs at least two model families among its targets (inherit-parent does not count), got gpt']],
   ])("checks %s", (text, expected) => expect(check(text)).toEqual(expected));
 });
 

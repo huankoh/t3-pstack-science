@@ -65,12 +65,13 @@ Correct the log, not the story. The audit never edits or removes a row, even an 
 ## Cross-model review of the trail
 
 Before handing back, spawn a subagent on a different model family from the one that did the work.
+On T3, a different model counts, even in the same family, because the review gates compare models, and a model is its ID's last `/` part.
 "The work" is the change being handed back.
-Count the chat's family when it edited the change itself and every delegate's family whose output is in the change.
+Count the chat's model when it edited the change itself and every delegate's model whose output is in the change.
 The `final review` line always reviews (default in poteto-mode's [Models](../poteto-mode/SKILL.md#models)).
-When that line's family is among the work's families, also run an extra reviewer from outside them.
+When that line's model is among the work's models, also run an extra reviewer from outside them.
 For that extra review, select the first qualifying entry of the same column's `interrogate reviewers`.
-When no entry of the same column's `interrogate reviewers` has a family outside the work's families, use the first entry of that column's `arena cross-judge pool` whose family is outside them.
+When no entry of the same column's `interrogate reviewers` has a model outside the work's models, use the first entry of that column's `arena cross-judge pool` whose model is outside them.
 Both verdicts must pass.
 When that reviewer's family does not read the column's terms, give it a term-free brief, stage term-free copies of the diff, the trail, and the transcript excerpts it needs, and have it read only those copies in place of the trail and the run's transcript, per [Models](../poteto-mode/SKILL.md#models).
 In `general`, every family reads the terms.

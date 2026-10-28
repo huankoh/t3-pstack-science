@@ -12,38 +12,25 @@ const read = (path) => readFileSync(join(root, path), "utf8");
 const models = loadModels();
 
 describe("two-column routing", () => {
-  test.each(["general", "science"])("the %s defaults match the approved tiers and every panel spans families", (domain) => {
+  test.each(["general", "science"])("the %s defaults match the approved tiers, design and judge panels span families, and reviewers span models", (domain) => {
     const tiers = models.domains[domain].tiers;
     expect(tiers).toEqual({
       code: "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
-      explore: "opencode/opencode-go/deepseek-v4.1-flash variant=max",
+      explore: "codex/gpt-6.1-terra reasoningEffort=xhigh serviceTier=default",
       judgment: "codex/gpt-6-astra reasoningEffort=high serviceTier=default",
-      prose: "muse/muse-wonder-full-1.0 reasoningEffort=high",
-      mechanical: "opencode/opencode-go/deepseek-v4.1-flash variant=max",
+      prose: "codex/gpt-6.1-terra reasoningEffort=max serviceTier=default",
+      mechanical: "codex/gpt-6.1-terra reasoningEffort=high serviceTier=default",
       final: "codex/gpt-6-astra reasoningEffort=high serviceTier=default",
-      runners: [
-        "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
-        "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-        "muse/muse-wonder-full-1.0 reasoningEffort=high",
-      ],
-      designers: [
-        "codex/gpt-6-astra reasoningEffort=high serviceTier=default",
-        "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-        "muse/muse-wonder-full-1.0 reasoningEffort=high",
-      ],
-      judges: [
-        "codex/gpt-6-astra reasoningEffort=high serviceTier=default",
-        "muse/muse-wonder-full-1.0 reasoningEffort=high",
-        "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
-      ],
-      reviewers: [
-        "opencode/opencode-go/deepseek-v4.1-flash variant=max",
-        "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
-      ],
+      workers: "codex/gpt-6.1-terra reasoningEffort=max serviceTier=default",
+      runners: ["codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false"],
+      designers: ["codex/gpt-6-astra reasoningEffort=high serviceTier=default", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false"],
+      judges: ["codex/gpt-6-astra reasoningEffort=high serviceTier=default", "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false"],
+      reviewers: ["codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default", "codex/gpt-6-astra reasoningEffort=high serviceTier=default"],
     });
-    for (const panel of [tiers.runners, tiers.designers, tiers.judges, tiers.reviewers]) {
+    for (const panel of [tiers.runners, tiers.designers, tiers.judges]) {
       expect(new Set(panel.map((entry) => family(parseEntry(entry).model))).size).toBeGreaterThanOrEqual(2);
     }
+    expect(new Set(tiers.reviewers.map((entry) => parseEntry(entry).model)).size).toBe(2);
   });
 
   test("science term readers are GPT, Muse, and DeepSeek, and only science Opus seats are term-free", () => {
@@ -107,7 +94,7 @@ describe("two-column routing", () => {
   });
 
   test("both review gates and the required interrogate panel exhaust independent pools before blocking", () => {
-    const fallback = "When no entry of the same column's `interrogate reviewers` has a family outside the work's families, use the first entry of that column's `arena cross-judge pool` whose family is outside them.";
+    const fallback = "When no entry of the same column's `interrogate reviewers` has a model outside the work's models, use the first entry of that column's `arena cross-judge pool` whose model is outside them.";
     const substitutions = JSON.parse(read("tools/substitutions.json")).substitutions;
     for (const skill of ["show-me-your-work", "poteto-mode", "interrogate"]) {
       const text = read(`plugins/pstack/skills/${skill}/SKILL.md`);
@@ -170,6 +157,7 @@ describe("two-column routing", () => {
     expect(read("plugins/pstack/skills/setup-pstack/SKILL.md")).toContain("Leave an entry on the `deepseek` family at `max`, its listed level, whatever the budget.");
     expect(poteto).toContain("An entry on a Terra model (`gpt-*-terra`) starts at its listed level, `max` included");
     expect(poteto).toContain("Never run it below `high` or above `max`.");
+    expect(poteto).toContain("A child on the `claude` family that refuses its brief, stops on a safety check, or fails reruns once on the same column's `hardest tasks` line, and you say so. Never resend a refused brief to Claude.");
     expect(poteto).toContain("A fresh `swarm workers` delegate, not the one that wrote the fix, then runs the real artifact");
     expect(poteto).toContain("every `preview_*` browser session and every `device_*` simulator session included");
     expect(read("plugins/pstack/skills/setup-pstack/SKILL.md")).toContain("An entry on a Terra model (`gpt-*-terra`) goes to `max` under `unlimited` and `large`");
