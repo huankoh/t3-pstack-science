@@ -111,7 +111,7 @@ describe("regions", () => {
       expect(out).toContain("The chat picks the column, writes each brief, and dispatches each step a skill delegates.");
       expect(out).toContain("read `<role>:` under `domain: general` and `science <role>:` under `domain: science`.");
       expect(out).toContain("The column picks only the target.");
-      expect(out).toContain("never above `xhigh` unless the user asks for more in the chat or picked the `unlimited` budget in `/setup-pstack`, and an entry on the `deepseek` family always runs at `max`, its listed level.");
+      expect(out).toContain("never above `xhigh` unless the user asks for more in the chat or picked the `unlimited` budget in `/setup-pstack`, an entry on the `deepseek` family always runs at `max`, its listed level, and an entry on a Terra model (`gpt-*-terra`) starts at its listed level, `max` included, and never runs below `high`.");
       expect(out).not.toContain("`ultra`");
       expect(out).toContain("In `science`, only `gpt`, `muse`, and `deepseek` models read the domain's terms.");
       expect(out).toContain("A `science` dispatch to any other family carries a term-free brief. A default marked (term-free brief) gets one.");

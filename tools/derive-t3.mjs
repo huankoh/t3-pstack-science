@@ -98,7 +98,7 @@ function routerProse(models) {
     `When the task changes, pick the domain again. When unsure, pick \`${SCIENCE}\`. If the skill opens no todolist, record the domain in the first reply. ` +
     "The chat picks the column, writes each brief, and dispatches each step a skill delegates. " +
     `Every role resolves from that column, so wherever a skill names a role's line, read \`<role>:\` under \`domain: ${GENERAL}\` and \`${SCIENCE} <role>:\` under \`domain: ${SCIENCE}\`. ` +
-    "The column picks only the target. The reasoning level follows the **poteto-mode** skill's Subagents section in every column, never above `xhigh` unless the user asks for more in the chat or picked the `unlimited` budget in `/setup-pstack`, and an entry on the `deepseek` family always runs at `max`, its listed level.";
+    "The column picks only the target. The reasoning level follows the **poteto-mode** skill's Subagents section in every column, never above `xhigh` unless the user asks for more in the chat or picked the `unlimited` budget in `/setup-pstack`, an entry on the `deepseek` family always runs at `max`, its listed level, and an entry on a Terra model (`gpt-*-terra`) starts at its listed level, `max` included, and never runs below `high`.";
   const terms =
     `In \`${SCIENCE}\`, only ${families} models read the domain's terms. A \`${SCIENCE}\` dispatch to any other family carries a term-free brief. A default marked (term-free brief) gets one. ` +
     "Resolve an `inherit-parent` or `auto` seat's family from `orchestrator_capabilities`' `inheritedModel` before choosing its brief; an unknown family gets a term-free brief. " +

@@ -2,6 +2,16 @@
 
 This file is the release changelog, with one `## <version> - <title>` entry per release, newest first. The Cursor-to-T3 rewrite rules live in [`tools/substitutions.json`](tools/substitutions.json), and the [sync boundary](CONTRIBUTING.md#the-sync-boundary) in `CONTRIBUTING.md` defines how a change to upstream's skill content is declared.
 
+## 2.0.0-science.3 - Terra levels and verification on swarm workers
+
+A Terra entry (`gpt-*-terra`) now starts at its listed level, `max` included, whatever the xhigh cap says.
+Terra is fast but skips steps and reports done early when it thinks briefly, so the chat lowers it one step only for a fully specified job, such as a known edit across files, a script run, or a log pull, and never below `high`.
+`t3-sheet.mjs` rejects a Terra entry below `high` or at `ultra`, and `/setup-pstack` sets Terra to `max` under the `unlimited` and `large` budgets and to `high` under `medium` and `small`.
+After the interrogate fix run, a fresh `swarm workers` delegate, not the one that wrote the fix, runs the real artifact, where the chat used to send it to `feature, refactoring`.
+Every `preview_*` browser session and `device_*` simulator session used for verification also goes to `swarm workers`, so the Terra seat handles computer use.
+The independent verdict and the handback review stay on `final review`.
+The default model table does not change, and neither hooks JSON file changes.
+
 ## 2.0.0-science.2 - Cheaper default routing: Astra at high, Muse for writing seats
 
 Codex logs for Oct 20 to 27 on both machines showed Astra at 87% of notional Codex spend, because Astra re-reads context at ten times Sol's rate and re-reading is 97% of tokens.
