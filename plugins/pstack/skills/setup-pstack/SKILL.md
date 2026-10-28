@@ -46,6 +46,7 @@ Use the option ID that provider lists.
 If the provider does not offer that value, use its highest value at or below the target, else mark the role as needing a choice.
 Leave an entry on the `deepseek` family at `max`, its listed level, whatever the budget.
 For example, `small` sets Muse to `medium` and leaves DeepSeek at `max`.
+An entry on a Terra model (`gpt-*-terra`) goes to `max` under `unlimited` and `large`, and to `high` under `medium` and `small`, since Terra skips steps below `high`.
 `inherit-parent` and `auto` do not change.
 
 **(c) Show the roles and confirm.** Show every role with its entry, marking any target not in the detected set as needing a choice. Also list each line step 2 dropped. Ask whether to accept as-is or change specific roles, offering the detected targets plus `inherit-parent` and `auto` (both mean: this role runs on the parent chat's model) as the options for a role line. For panel roles (`arena runners`, `architect runners`, `interrogate reviewers`) the value is a list, and one subagent runs per entry, alias entries included, so the list length sets the count. A panel needs at least two model families among its targets. A model's family is the first segment of its ID's last `/` part, such as `claude`, `gpt`, `muse`, or `deepseek`. `arena cross-judge pool` is also a list, but Arena selects one value from it whose model ran no candidate and whose family differs from the parent's when possible. `swarm workers` is the default target for every worker unless a race or comparison assigns another per arm.

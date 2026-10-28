@@ -45,6 +45,11 @@ const STANDARD_SPEED = { fastMode: "false", serviceTier: "default" };
 
 const INHERIT = ["inherit-parent", "auto"];
 const HOOK_VALUES = ["on", "off"];
+// Terra is fast but cuts corners when it thinks briefly, so a Terra entry runs
+// between high and max (poteto-mode's Subagents section).
+const TERRA = /^gpt-[0-9.]+-terra$/;
+const TERRA_LEVELS = ["high", "xhigh", "max"];
+const REASONING = ["reasoningEffort", "reasoning", "reasoning_effort", "effort", "thinking", "variant"];
 
 // Throws on a malformed entry; returns null for an inherit alias.
 export function parseEntry(text) {
@@ -237,6 +242,13 @@ function entryProblems(target, catalog) {
   for (const option of known ?? []) {
     if (Object.hasOwn(STANDARD_SPEED, option.id) && !Object.hasOwn(options, option.id)) {
       problems.push(`${at}: sets no ${option.id}; this router never runs fast, so write ${option.id}=${STANDARD_SPEED[option.id]}`);
+    }
+  }
+  if (TERRA.test(model.split("/").pop())) {
+    for (const id of REASONING.filter((id) => Object.hasOwn(options, id))) {
+      if (!TERRA_LEVELS.includes(options[id])) {
+        problems.push(`${at}: ${id}=${options[id]}; Terra skips steps below high, so use ${TERRA_LEVELS.join(", ")}`);
+      }
     }
   }
   if (unavailable) problems.push(unavailable);

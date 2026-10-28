@@ -161,6 +161,20 @@ describe("checkSheet against a catalog", () => {
     ]);
   });
 
+  test("a Terra entry runs between high and max, on any provider's reasoning option", () => {
+    expect(check("swarm workers: codex/gpt-6.1-terra reasoningEffort=max serviceTier=default", null)).toEqual([]);
+    expect(check("mechanical code: codex/gpt-6.1-terra reasoningEffort=high serviceTier=default", null)).toEqual([]);
+    expect(check("swarm workers: codex/gpt-6.1-terra reasoningEffort=medium serviceTier=default", null)).toEqual([
+      "swarm workers: codex/gpt-6.1-terra: reasoningEffort=medium; Terra skips steps below high, so use high, xhigh, max",
+    ]);
+    expect(check("how explorer: codex/gpt-6.1-terra reasoningEffort=ultra serviceTier=default", null)).toEqual([
+      "how explorer: codex/gpt-6.1-terra: reasoningEffort=ultra; Terra skips steps below high, so use high, xhigh, max",
+    ]);
+    expect(check("how explorer: pi/opencode/gpt-5.6-terra thinking=low", null)).toEqual([
+      "how explorer: pi/opencode/gpt-5.6-terra: thinking=low; Terra skips steps below high, so use high, xhigh, max",
+    ]);
+  });
+
   test("only a panel role takes a list", () => {
     expect(check("bug-fix: claudeAgent/claude-fable-5-1, grok/grok-4.7")).toEqual(["bug-fix: takes one entry, not a list"]);
   });

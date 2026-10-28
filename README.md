@@ -20,7 +20,7 @@ npx -y github:huankoh/t3-pstack-science doctor
 
 `npx -y github:huankoh/t3-pstack-science` runs the installer from the latest commit on `main`.
 That is the rolling channel, the same one each home's marketplace auto-updates from.
-To run one release's installer, name its tag, as in `npx -y github:huankoh/t3-pstack-science#v2.0.0-science.2 doctor`.
+To run one release's installer, name its tag, as in `npx -y github:huankoh/t3-pstack-science#v2.0.0-science.3 doctor`.
 
 `install` and `update` are the same command, and a second run changes nothing.
 With Node 20 or later, it installs or updates the `t3-pstack-science@t3-pstack-science` plugin in every Claude Code and Codex config home T3 can run: `~/.claude` and `~/.codex`, `$CLAUDE_CONFIG_DIR` and `$CODEX_HOME`, and the home of each `claudeAgent` and `codex` instance in T3's settings, disabled ones included.

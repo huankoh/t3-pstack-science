@@ -168,10 +168,16 @@ describe("two-column routing", () => {
     expect(poteto).toContain("The fix is not re-reviewed unless the user asks for more rounds.");
     expect(poteto).toContain("A `fail` gets another fix run and another artifact check, not another review, with at most three fix runs in all.");
     expect(read("plugins/pstack/skills/setup-pstack/SKILL.md")).toContain("Leave an entry on the `deepseek` family at `max`, its listed level, whatever the budget.");
+    expect(poteto).toContain("An entry on a Terra model (`gpt-*-terra`) starts at its listed level, `max` included");
+    expect(poteto).toContain("Never run it below `high` or above `max`.");
+    expect(poteto).toContain("A fresh `swarm workers` delegate, not the one that wrote the fix, then runs the real artifact");
+    expect(poteto).toContain("every `preview_*` browser session and every `device_*` simulator session included");
+    expect(read("plugins/pstack/skills/setup-pstack/SKILL.md")).toContain("An entry on a Terra model (`gpt-*-terra`) goes to `max` under `unlimited` and `large`");
     for (const skill of new Set(models.roles.map((r) => r.skill))) {
       const out = applyRegions(`plugins/pstack/skills/${skill}/SKILL.md`, "## Models\n", models);
       expect(out).toContain("never above `xhigh` unless the user asks for more in the chat or picked the `unlimited` budget");
       expect(out).toContain("an entry on the `deepseek` family always runs at `max`");
+      expect(out).toContain("an entry on a Terra model (`gpt-*-terra`) starts at its listed level, `max` included, and never runs below `high`");
     }
   });
 });
