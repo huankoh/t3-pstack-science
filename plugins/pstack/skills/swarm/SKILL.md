@@ -50,4 +50,4 @@ A line in the model sheet overrides each default. `<role>: <entry>` sets the gen
 
 | Role | general | science |
 | --- | --- | --- |
-| swarm workers | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |
+| swarm workers | `codex/gpt-6.1-terra reasoningEffort=max serviceTier=default` | `codex/gpt-6.1-terra reasoningEffort=max serviceTier=default` |

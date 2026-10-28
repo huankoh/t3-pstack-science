@@ -28,42 +28,41 @@ describe("committed models.json", () => {
     expect(raw.roles.find((r) => r.alias === "strongest judgment")?.role).toBe("hardest tasks");
   });
 
-  test("the domain policy promises 19 roles and ten tiers", () => {
+  test("the domain policy promises 19 roles and eleven tiers", () => {
     expect(Object.keys(models.domains)).toEqual(["general", "science"]);
     expect(models.roles).toHaveLength(19);
-    expect(Object.keys(models.domains.general.tiers)).toEqual(["code", "explore", "judgment", "prose", "mechanical", "final", "runners", "designers", "judges", "reviewers"]);
-    expect(Object.keys(models.domains.science.tiers)).toEqual(["code", "explore", "judgment", "prose", "mechanical", "final", "runners", "designers", "judges", "reviewers"]);
+    expect(Object.keys(models.domains.general.tiers)).toEqual(["code", "explore", "judgment", "prose", "mechanical", "final", "workers", "runners", "designers", "judges", "reviewers"]);
+    expect(Object.keys(models.domains.science.tiers)).toEqual(["code", "explore", "judgment", "prose", "mechanical", "final", "workers", "runners", "designers", "judges", "reviewers"]);
   });
 
-  test("science code uses Sol and research delegates use DeepSeek", () => {
+  test("science code uses Sol, Terra writes, searches, edits, and verifies, and Astra judges", () => {
     const science = sheet.seats(models).filter((s) => s.domain === "science" && !s.panel);
     expect(science.map((s) => [s.role, s.defaults[0].entry])).toEqual([
       ["feature, refactoring", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
       ["bug-fix", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
       ["perf-issue", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
       ["hillclimb", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
-      ["judgment and prose", "muse/muse-wonder-full-1.0 reasoningEffort=high"],
+      ["judgment and prose", "codex/gpt-6.1-terra reasoningEffort=max serviceTier=default"],
       ["hardest tasks", "codex/gpt-6-astra reasoningEffort=high serviceTier=default"],
-      ["mechanical code", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
+      ["mechanical code", "codex/gpt-6.1-terra reasoningEffort=high serviceTier=default"],
       ["final review", "codex/gpt-6-astra reasoningEffort=high serviceTier=default"],
-      ["how explorer", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
-      ["how explainer", "muse/muse-wonder-full-1.0 reasoningEffort=high"],
-      ["why investigators", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
-      ["why synthesizer", "muse/muse-wonder-full-1.0 reasoningEffort=high"],
-      ["reflect tooling", "opencode/opencode-go/deepseek-v4.1-flash variant=max"],
+      ["how explorer", "codex/gpt-6.1-terra reasoningEffort=xhigh serviceTier=default"],
+      ["how explainer", "codex/gpt-6.1-terra reasoningEffort=max serviceTier=default"],
+      ["why investigators", "codex/gpt-6.1-terra reasoningEffort=xhigh serviceTier=default"],
+      ["why synthesizer", "codex/gpt-6.1-terra reasoningEffort=max serviceTier=default"],
+      ["reflect tooling", "codex/gpt-6.1-terra reasoningEffort=high serviceTier=default"],
       ["reflect judgment, divergent, synthesizer", "codex/gpt-6-astra reasoningEffort=high serviceTier=default"],
-      ["swarm workers", "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default"],
+      ["swarm workers", "codex/gpt-6.1-terra reasoningEffort=max serviceTier=default"],
     ]);
-    expect(models.roles.filter((r) => r.tier === "explore").map((r) => r.role)).toEqual([
-      "how explorer", "why investigators", "reflect tooling",
-    ]);
+    expect(models.roles.filter((r) => r.tier === "explore").map((r) => r.role)).toEqual(["how explorer", "why investigators"]);
+    expect(models.roles.filter((r) => r.tier === "mechanical").map((r) => r.role)).toEqual(["mechanical code", "reflect tooling"]);
   });
 
   test("mechanical code promises its column default and final review promises the same default in both columns", () => {
     expect(sheet.seats(models).filter((s) => ["mechanical code", "final review"].includes(s.role)).map((s) => [s.key, s.defaults])).toEqual([
-      ["mechanical code", [{ entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }]],
+      ["mechanical code", [{ entry: "codex/gpt-6.1-terra reasoningEffort=high serviceTier=default", termFree: false }]],
       ["final review", [{ entry: "codex/gpt-6-astra reasoningEffort=high serviceTier=default", termFree: false }]],
-      ["science mechanical code", [{ entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }]],
+      ["science mechanical code", [{ entry: "codex/gpt-6.1-terra reasoningEffort=high serviceTier=default", termFree: false }]],
       ["science final review", [{ entry: "codex/gpt-6-astra reasoningEffort=high serviceTier=default", termFree: false }]],
     ]);
     expect(["mechanical code", "final review"].map((role) => models.roles.find((r) => r.role === role))).toEqual([
@@ -73,37 +72,40 @@ describe("committed models.json", () => {
     expect(models.roles.map((r) => r.role)).not.toContain("term-free code");
   });
 
-  const family = (entry) => sheet.family(sheet.parseEntry(entry).model);
+  // The review gates count independence by model: a model is its ID's last `/` part.
+  const model = (entry) => sheet.parseEntry(entry).model.split("/").pop();
   const independentReviewer = (column, authors) => ["interrogate reviewers", "arena cross-judge pool"]
     .flatMap((role) => column.find((seat) => seat.role === role).defaults)
-    .find((entry) => !authors.has(family(entry.entry))) ?? "BLOCKED: independent review";
+    .find((entry) => !authors.has(model(entry.entry))) ?? "BLOCKED: independent review";
+  const ASTRA = { entry: "codex/gpt-6-astra reasoningEffort=high serviceTier=default", termFree: false };
+  const SOL = { entry: "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default", termFree: false };
 
   test.each([
-    [["feature, refactoring"], ["gpt"], { entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }],
-    [["feature, refactoring", "hardest tasks"], ["gpt"], { entry: "opencode/opencode-go/deepseek-v4.1-flash variant=max", termFree: false }],
-    [["mechanical code"], ["deepseek"], null],
-    [["feature, refactoring", "mechanical code"], ["deepseek", "gpt"], { entry: "muse/muse-wonder-full-1.0 reasoningEffort=high", termFree: false }],
-  ])("both columns select the handback reviewer for authors %j", (roles, expectedFamilies, expectedExtra) => {
+    [["feature, refactoring"], ["gpt-6.1-sol"], null, ASTRA],
+    [["feature, refactoring", "hardest tasks"], ["gpt-6-astra", "gpt-6.1-sol"], "opus", "opus"],
+    [["mechanical code"], ["gpt-6.1-terra"], null, SOL],
+    [["feature, refactoring", "mechanical code"], ["gpt-6.1-sol", "gpt-6.1-terra"], null, ASTRA],
+  ])("both columns select the handback reviewer for authors %j", (roles, expectedModels, expectedExtra, expectedReviewer) => {
     for (const domain of sheet.DOMAINS) {
+      const opus = { entry: "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", termFree: domain === "science" };
+      const pick = (want) => (want === "opus" ? opus : want);
       const column = sheet.seats(models).filter((seat) => seat.domain === domain);
-      const authors = new Set(roles.map((role) => family(column.find((seat) => seat.role === role).defaults[0].entry)));
-      expect([...authors].sort()).toEqual(expectedFamilies);
+      const authors = new Set(roles.map((role) => model(column.find((seat) => seat.role === role).defaults[0].entry)));
+      expect([...authors].sort()).toEqual(expectedModels);
       const final = column.find((seat) => seat.role === "final review").defaults[0];
-      expect(final).toEqual({ entry: "codex/gpt-6-astra reasoningEffort=high serviceTier=default", termFree: false });
-      const extra = authors.has(family(final.entry)) ? independentReviewer(column, authors) : null;
-      expect(extra).toEqual(expectedExtra);
-      expect(independentReviewer(column, authors)).toEqual(expectedExtra ?? {
-        entry: "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default", termFree: false,
-      });
+      expect(final).toEqual(ASTRA);
+      const extra = authors.has(model(final.entry)) ? independentReviewer(column, authors) : null;
+      expect(extra).toEqual(pick(expectedExtra));
+      expect(independentReviewer(column, authors)).toEqual(pick(expectedReviewer));
     }
   });
 
-  test.each(sheet.DOMAINS)("the %s judges pool preserves family exclusion and term-free briefs before blocking", (domain) => {
+  test.each(sheet.DOMAINS)("the %s judges pool reaches Opus, with a term-free brief in science, before blocking", (domain) => {
     const column = sheet.seats(models).filter((seat) => seat.domain === domain);
-    expect(independentReviewer(column, new Set(["gpt", "deepseek", "muse"]))).toEqual({
+    expect(independentReviewer(column, new Set(["gpt-6.1-sol", "gpt-6-astra", "gpt-6.1-terra"]))).toEqual({
       entry: "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false", termFree: domain === "science",
     });
-    const authors = new Set(column.flatMap((seat) => seat.defaults.map((entry) => family(entry.entry))));
+    const authors = new Set(column.flatMap((seat) => seat.defaults.map((entry) => model(entry.entry))));
     expect(independentReviewer(column, authors)).toBe("BLOCKED: independent review");
   });
 
@@ -120,19 +122,18 @@ describe("committed models.json", () => {
       "claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false",
       "codex/gpt-6-astra reasoningEffort=high serviceTier=default",
       "codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
-      "muse/muse-wonder-full-1.0 reasoningEffort=high",
-      "opencode/opencode-go/deepseek-v4.1-flash variant=max",
+      "codex/gpt-6.1-terra reasoningEffort=high serviceTier=default",
+      "codex/gpt-6.1-terra reasoningEffort=max serviceTier=default",
+      "codex/gpt-6.1-terra reasoningEffort=xhigh serviceTier=default",
     ]);
   });
 
-  test("every DeepSeek entry is variant=max with no speed option", () => {
+  test("no default names DeepSeek or Muse, and every Terra default runs between high and max", () => {
     const tierEntries = Object.values(raw.domains).flatMap((domain) => Object.values(domain.tiers).flat());
-    const deepseek = tierEntries.filter((e) => sheet.family(sheet.parseEntry(e).model) === "deepseek");
-    expect(deepseek).toHaveLength(6);
-    for (const entry of deepseek) {
-      expect(entry).toBe("opencode/opencode-go/deepseek-v4.1-flash variant=max");
-      expect(sheet.parseEntry(entry).options).toEqual({ variant: "max" });
-    }
+    expect(tierEntries.filter((e) => ["deepseek", "muse"].includes(sheet.family(sheet.parseEntry(e).model)))).toEqual([]);
+    const terra = tierEntries.filter((e) => sheet.parseEntry(e).model === "gpt-6.1-terra");
+    expect(terra).toHaveLength(8);
+    for (const entry of terra) expect(["high", "xhigh", "max"]).toContain(sheet.parseEntry(entry).options.reasoningEffort);
     expect(raw.domains.science.termReaders).toEqual(["gpt", "muse", "deepseek"]);
   });
 

@@ -241,7 +241,7 @@ function parseDomains(raw) {
   return raw.domains;
 }
 
-function parseTier(value, where) {
+function parseTier(value, where, tier) {
   if (value === null) return;
   if (typeof value !== "string" && !Array.isArray(value)) failModels(`${where} must be one entry, a list, or null`);
   const list = [value].flat();
@@ -261,7 +261,11 @@ function parseTier(value, where) {
     if (speed.length) failModels(`${where}: ${speed[0]}`);
     return target;
   });
-  if (Array.isArray(value) && panelFamilies(parsed).size < 2) failModels(`${where}: the panel needs at least two model families`);
+  // The reviewers tier feeds interrogate, whose gates count independence by model.
+  if (Array.isArray(value) && tier === "reviewers" && new Set(parsed.map((t) => t.model.split("/").pop())).size < 2) {
+    failModels(`${where}: the panel needs at least two models`);
+  }
+  if (Array.isArray(value) && tier !== "reviewers" && panelFamilies(parsed).size < 2) failModels(`${where}: the panel needs at least two model families`);
 }
 
 function parseTiers(domains) {
@@ -284,7 +288,7 @@ function parseTiers(domains) {
   }
   for (const domain of DOMAINS) {
     for (const [tier, value] of Object.entries(domains[domain].tiers)) {
-      parseTier(value, `domain "${domain}" tier "${tier}"`);
+      parseTier(value, `domain "${domain}" tier "${tier}"`, tier);
     }
   }
   return tierNames;

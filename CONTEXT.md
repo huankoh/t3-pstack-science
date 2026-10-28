@@ -12,9 +12,9 @@ Names for the concepts this repo's design discussions keep reaching for. Archite
 - **Domain** - the task's routing column, `general` or `science`.
   Both columns use the same default targets.
   The science gate requires a term-free brief for families outside `termReaders`, which lists GPT, Muse, and DeepSeek.
-  Claude Opus is the only default family outside that list.
+  Claude Opus is the only default family outside that list. A Claude child that refuses, stops on a safety check, or fails reruns once on the `hardest tasks` line.
 - **Role** - a named unit of delegated work with its own model choice (`arena runners`, `how explorer`, `swarm workers`). The role vocabulary lives in `models.json`.
-- **Panel** - a role whose value is a list (`arena runners`, `architect runners`, `interrogate reviewers`, `arena cross-judge pool`). A panel spans at least two model families; a family is the first segment of a model ID's last `/` part.
+- **Panel** - a role whose value is a list (`arena runners`, `architect runners`, `interrogate reviewers`, `arena cross-judge pool`). A panel spans at least two model families, except `interrogate reviewers`, which spans at least two models; a model is a model ID's last `/` part, and its family is that part's first segment. The review gates count a reviewer on another model as independent.
 - **Substitution** - a rule in `tools/substitutions.json` that rewrites one upstream sentence or token into its T3 form. An anchored insert is a substitution that keeps the upstream sentence and appends T3 text.
 - **Fork** - a file the port keeps in its own form, declared in `tools/forks.json` with its reason. Every upstream change to it needs a person.
 - **Port-only file** - a file under a component's local path that upstream does not carry, such as the manifests, the hooks, `models.json`, and `settle.ts`.

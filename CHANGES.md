@@ -2,6 +2,18 @@
 
 This file is the release changelog, with one `## <version> - <title>` entry per release, newest first. The Cursor-to-T3 rewrite rules live in [`tools/substitutions.json`](tools/substitutions.json), and the [sync boundary](CONTRIBUTING.md#the-sync-boundary) in `CONTRIBUTING.md` defines how a change to upstream's skill content is declared.
 
+## 2.0.0-science.4 - Defaults match the Sol, Terra, Astra routing; Astra reviews
+
+The default table now matches the machine sheets.
+Sol keeps code at `xhigh`, Terra takes `prose` and the new `workers` tier at `max`, `explore` at `xhigh`, and `mechanical` at `high`, and Astra keeps `judgment` and `final` at `high`.
+`reflect tooling` moves to the `mechanical` tier, and `swarm workers` moves to `workers`.
+`interrogate reviewers` are Sol xhigh and Astra high, `designers` and `judges` are Astra high and Opus xhigh, and `runners` are Sol xhigh and Opus xhigh.
+No default names DeepSeek or Muse.
+The review gates and the show-me-your-work handback count independence by model, not family, so Astra can review work that Sol and Terra wrote and no Opus reviewer is pulled in.
+`t3-sheet.mjs` asks `interrogate reviewers` for two models instead of two families, and the other panels still need two families.
+A Claude child that refuses its brief, stops on a safety check, or fails reruns once on the same column's `hardest tasks` line, and its refused brief is never resent to Claude.
+Neither hooks JSON file changes.
+
 ## 2.0.0-science.3 - Terra levels and verification on swarm workers
 
 A Terra entry (`gpt-*-terra`) now starts at its listed level, `max` included, whatever the xhigh cap says.

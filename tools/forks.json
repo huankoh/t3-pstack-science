@@ -2,7 +2,7 @@
   "pstack": {
     "plugins/pstack/skills/poteto-mode/SKILL.md": {
       "kind": "policy",
-      "why": "Carries four rules from Michael Denyer's pstack-claude in T3 wording: load a managed platform's skill before deploying, stop an abandoned agent whose writes could overlap its replacement's with task_cancel and confirm with task_status that it stopped, which Autopilot-full's immediate replacement of a stuck agent overrides, keep a review gate closed while no independent reviewer can run, and keep the todolist in .audit/<task-slug>.todo.md when the session has no task tool. It also keeps a Terra entry between high and max, since Terra cuts corners at low levels, and sends the post-fix artifact check and every preview_ and device_ verification session to a swarm workers delegate.",
+      "why": "Carries four rules from Michael Denyer's pstack-claude in T3 wording: load a managed platform's skill before deploying, stop an abandoned agent whose writes could overlap its replacement's with task_cancel and confirm with task_status that it stopped, which Autopilot-full's immediate replacement of a stuck agent overrides, keep a review gate closed while no independent reviewer can run, and keep the todolist in .audit/<task-slug>.todo.md when the session has no task tool. It also keeps a Terra entry between high and max, since Terra cuts corners at low levels, and sends the post-fix artifact check and every preview_ and device_ verification session to a swarm workers delegate. Its review gate counts independence by model rather than family, and a Claude child that refuses, stops on a safety check, or fails reruns once on the hardest tasks line.",
       "since": "2.0.0-rc.2",
       "upstream": "not-proposed"
     },

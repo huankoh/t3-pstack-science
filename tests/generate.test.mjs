@@ -92,9 +92,9 @@ describe("regions", () => {
     expect(block[1]).toBe("# `<role>:` sets the general column, as in every sheet before domains. `science <role>:` sets the science column.");
     expect(block[4]).toBe("feature, refactoring: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default");
     expect(block[23]).toBe("science feature, refactoring: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default");
-    expect(block).toContain("science how explorer: opencode/opencode-go/deepseek-v4.1-flash variant=max");
-    expect(block).toContain("science why investigators: opencode/opencode-go/deepseek-v4.1-flash variant=max");
-    expect(block).toContain("science reflect tooling: opencode/opencode-go/deepseek-v4.1-flash variant=max");
+    expect(block).toContain("science how explorer: codex/gpt-6.1-terra reasoningEffort=xhigh serviceTier=default");
+    expect(block).toContain("science why investigators: codex/gpt-6.1-terra reasoningEffort=xhigh serviceTier=default");
+    expect(block).toContain("science reflect tooling: codex/gpt-6.1-terra reasoningEffort=high serviceTier=default");
     expect(block.at(-1)).toBe("session hook: on");
     expect(block).toHaveLength(43);
   });
@@ -154,8 +154,8 @@ describe("regions", () => {
   test("a missing seat renders none and panels mark term-free defaults", () => {
     const policy = structuredClone(models);
     policy.domains.general.tiers.explore = null;
-    expect(applyRegions("plugins/pstack/skills/how/SKILL.md", "## Models\n", policy)).toContain("| how explorer | none | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |");
-    expect(applyRegions("plugins/pstack/skills/arena/SKILL.md", "## Models\n", models)).toContain("| arena runners | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default`, `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false`, `muse/muse-wonder-full-1.0 reasoningEffort=high` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default`, `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` (term-free brief), `muse/muse-wonder-full-1.0 reasoningEffort=high` |");
+    expect(applyRegions("plugins/pstack/skills/how/SKILL.md", "## Models\n", policy)).toContain("| how explorer | none | `codex/gpt-6.1-terra reasoningEffort=xhigh serviceTier=default` |");
+    expect(applyRegions("plugins/pstack/skills/arena/SKILL.md", "## Models\n", models)).toContain("| arena runners | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default`, `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` | `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default`, `claudeAgent/claude-opus-5-5 effort=xhigh fastMode=false` (term-free brief) |");
   });
 
   test("applyRegions stamps in place and is idempotent", () => {
@@ -164,7 +164,7 @@ describe("regions", () => {
     const once = applyRegions(file, text, models, { strict: true });
     expect(once).not.toContain("stale");
     expect(once).toContain("## After\nkeep\n");
-    expect(once).toContain("| how explorer | `opencode/opencode-go/deepseek-v4.1-flash variant=max` | `opencode/opencode-go/deepseek-v4.1-flash variant=max` |");
+    expect(once).toContain("| how explorer | `codex/gpt-6.1-terra reasoningEffort=xhigh serviceTier=default` | `codex/gpt-6.1-terra reasoningEffort=xhigh serviceTier=default` |");
     expect(applyRegions(file, once, models, { strict: true })).toBe(once);
   });
 
@@ -181,8 +181,8 @@ describe("regions", () => {
     const stamped = applyRegions("plugins/pstack/skills/interrogate/SKILL.md", text, models);
     expect(stamped).toContain(
       [
-        "| Reviewer A | general `opencode/opencode-go/deepseek-v4.1-flash variant=max`; science `opencode/opencode-go/deepseek-v4.1-flash variant=max` |",
-        "| Reviewer B | general `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default`; science `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |",
+        "| Reviewer A | general `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default`; science `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |",
+        "| Reviewer B | general `codex/gpt-6-astra reasoningEffort=high serviceTier=default`; science `codex/gpt-6-astra reasoningEffort=high serviceTier=default` |",
       ].join("\n"),
     );
   });
@@ -351,7 +351,7 @@ describe("deriveT3", () => {
     expect(out).toContain("When it is missing, use the defaults in the table below.");
     expect(out).not.toContain("t3-pstack-models.md");
     expect(out).toContain("It splits at its first `/`");
-    expect(out).toEndWith("| how explainer | `muse/muse-wonder-full-1.0 reasoningEffort=high` | `muse/muse-wonder-full-1.0 reasoningEffort=high` |\n");
+    expect(out).toEndWith("| how explainer | `codex/gpt-6.1-terra reasoningEffort=max serviceTier=default` | `codex/gpt-6.1-terra reasoningEffort=max serviceTier=default` |\n");
     expect(out).toContain("`<role>: <entry>` sets the general column, as in every sheet written before domains, and `science <role>: <entry>` sets the science column.");
     expect(out).toContain("For each task, before step 1 and before the first `delegate_task`");
     expect(out).toContain("term-free.mjs");

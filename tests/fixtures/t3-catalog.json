@@ -14,6 +14,13 @@
           ]
         },
         {
+          "id": "gpt-6.1-terra",
+          "options": [
+            { "id": "reasoningEffort", "type": "select", "options": [{ "id": "low" }, { "id": "medium" }, { "id": "high" }, { "id": "xhigh" }, { "id": "max" }, { "id": "ultra" }] },
+            { "id": "serviceTier", "type": "select", "options": [{ "id": "default" }, { "id": "priority" }] }
+          ]
+        },
+        {
           "id": "gpt-6-astra",
           "options": [
             { "id": "reasoningEffort", "type": "select", "options": [{ "id": "low" }, { "id": "medium" }, { "id": "high" }, { "id": "xhigh" }, { "id": "max" }, { "id": "ultra" }] },
