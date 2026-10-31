@@ -65,6 +65,7 @@ export const PORTABLE_ASSETS = [
   { source: "LICENSE", target: "LICENSE" },
   { source: "LICENSE-cursor-team-kit", target: "LICENSE-cursor-team-kit" },
   { source: "LICENSE-thermos", target: "LICENSE-thermos" },
+  { source: "LICENSE-mattpocock-skills", target: "LICENSE-mattpocock-skills" },
   { source: "NOTICE-skills.md", target: "NOTICE.md" },
 ];
 
