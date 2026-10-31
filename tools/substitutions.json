@@ -1017,6 +1017,24 @@
       "replacement": "hourly schedule_task",
       "rationale": "the plan arms a schedule_task; the checker's marker moves with the template",
       "files": "^skills/poteto-mode/scripts/check-plan\\.(?:mjs|test\\.ts)$"
+    },
+    {
+      "pattern": "| Check that the agent understood their goal and the problem before it starts | [`/in-your-own-words`](../in-your-own-words/SKILL.md) |\n",
+      "replacement": "| Check that the agent understood their goal and the problem before it starts | [`/in-your-own-words`](../in-your-own-words/SKILL.md) |\n| Be interviewed in rounds until every decision in a plan or design is settled | [`/grill-me`](../grill-me/SKILL.md) |\n",
+      "rationale": "names the skills ported from mattpocock/skills, which upstream does not carry",
+      "files": "^skills/poteto-help/SKILL\\.md$"
+    },
+    {
+      "pattern": "| Settle types and module shape before code that crosses a function boundary | [`/architect`](../architect/SKILL.md) |\n",
+      "replacement": "| Settle types and module shape before code that crosses a function boundary | [`/architect`](../architect/SKILL.md) |\n| Design a module's interface with the deep-module vocabulary: module, interface, seam, adapter, depth | [`/codebase-design`](../codebase-design/SKILL.md) |\n| Survey the codebase for deepening opportunities as a visual report, then grill through the one they pick | [`/improve-codebase-architecture`](../improve-codebase-architecture/SKILL.md) |\n| Keep the project's glossary and ADRs current while they design | [`/domain-modeling`](../domain-modeling/SKILL.md) |\n",
+      "rationale": "names the skills ported from mattpocock/skills, which upstream does not carry",
+      "files": "^skills/poteto-help/SKILL\\.md$"
+    },
+    {
+      "pattern": "| Hear the last reply again in plain words | [`/bro`](../bro/SKILL.md) |\n",
+      "replacement": "| Hear the last reply again in plain words | [`/bro`](../bro/SKILL.md) |\n| Get a bash script that walks them through steps only a human can do, such as credentials, CI secrets, or a third-party dashboard | [`/wizard`](../wizard/SKILL.md) |\n",
+      "rationale": "names the skills ported from mattpocock/skills, which upstream does not carry",
+      "files": "^skills/poteto-help/SKILL\\.md$"
     }
   ],
   "denylist": [

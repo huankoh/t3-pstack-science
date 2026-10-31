@@ -2,6 +2,19 @@
 
 This file is the release changelog, with one `## <version> - <title>` entry per release, newest first. The Cursor-to-T3 rewrite rules live in [`tools/substitutions.json`](tools/substitutions.json), and the [sync boundary](CONTRIBUTING.md#the-sync-boundary) in `CONTRIBUTING.md` defines how a change to upstream's skill content is declared.
 
+## 2.0.0-science.5 - Five skills from mattpocock/skills
+
+Five skills from Matt Pocock's [skills](https://github.com/mattpocock/skills) at `a496f55` join the plugin, adapted for T3.
+`/grill-me` interviews the user in rounds of numbered questions, each with a recommended answer, until every decision in a plan is settled.
+It runs only when the user types it, so it never overrides Never Block on the Human, and its fact lookups go to a delegate on the `how explorer` line.
+It folds in Matt's `grilling` and `grill-with-docs`, and keeps the glossary current through `domain-modeling` when the plan touches the project's terms.
+`domain-modeling` keeps a project's `GLOSSARY.md` and ADRs current, and reads `CONTEXT.md` in a repo that uses that older name.
+`codebase-design` holds the deep-module vocabulary, and its design-it-twice step dispatches its parallel designs on the `architect runners` line.
+`/improve-codebase-architecture` surveys recent hot spots through a `how explorer` delegate, shows the candidates as an HTML report through `html_preview` and `html_render`, then grills through the one the user picks.
+`wizard` writes a bash script that walks a person through steps only they can do, such as credentials, CI secrets, or a third-party dashboard.
+`/poteto-help` lists all five, and `LICENSE-mattpocock-skills` travels with the plugin.
+The model defaults do not change, and neither hooks JSON file changes.
+
 ## 2.0.0-science.4 - Defaults match the Sol, Terra, Astra routing; Astra reviews
 
 The default table now matches the machine sheets.
