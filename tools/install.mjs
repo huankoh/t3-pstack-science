@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // t3-pstack-science's installer. `install`, or `update`, the same command, brings
 // every Claude Code and Codex home T3 can run to this package's version of
-// t3-pstack-science, trusts the Codex session-start hook, and checks this fork's
+// t3-pstack-science, pins each Codex marketplace to the release tag, trusts
+// the Codex session-start hook, and checks this fork's
 // machine sheet. Each step converges, so a second run changes
 // nothing. `doctor` checks the same homes and writes nothing itself, though
 // the Codex app-server it starts refreshes a Git marketplace, as any T3 Codex
@@ -10,7 +11,16 @@
 // Each home's t3-pstack-science marketplace must come from huankoh/t3-pstack-science or from
 // this run's --source. A home whose marketplace has another source, such as a
 // local --source from an earlier run, gets nothing installed and no hook
-// trusted, and doctor fails it with that source.
+// trusted, and doctor fails it with that source. A run never switches a
+// home's source: one from huankoh/t3-pstack-science stays on it under another
+// --source, and doctor warns with the commands that switch it.
+//
+// The pin is the `ref` of a Codex home's Git marketplace, the tag v<version>.
+// Codex's own auto-upgrade leaves a lightweight tag, as each release's is,
+// where it is, so a release reaches the home only through this installer,
+// which trusts the hook again. A local
+// directory has no tag and stays unpinned. Claude Code homes still auto-update
+// from their marketplace's default branch.
 //
 //   npx -y github:huankoh/t3-pstack-science <install|update|doctor|uninstall>
 //     --source <owner/repo|git URL|dir>   marketplace source, default huankoh/t3-pstack-science
@@ -28,15 +38,15 @@ import { parseArgs } from "node:util";
 import { doctorClaude, installClaude } from "./install/claude.mjs";
 import { doctorCodex, installCodex } from "./install/codex.mjs";
 import { CURSOR_INSTALL_HINT, CURSOR_UNINSTALL_HINT, doctorCursor, installCursor, uninstallCursor } from "./install/cursor.mjs";
-import { check, hasCli, HOME_REPO, INSTALL_HINT, MARKETPLACE, parseSource, PLUGIN_ID, readJson } from "./install/common.mjs";
+import { check, hasCli, HOME_REPO, installHint, MARKETPLACE, parseSource, PLUGIN_ID, readJson } from "./install/common.mjs";
 import { MUSE_INSTALL_HINT, MUSE_UNINSTALL_HINT, doctorMuse, installMuse, uninstallMuse } from "./install/muse.mjs";
 import { cursorHome, discoverHomes, museHome } from "./install/homes.mjs";
 import { doctorSheet, sessionHookOff, sheetPath } from "./install/sheet.mjs";
 import { FROZEN_HOOKS } from "./plugin.mjs";
 
 const HARNESSES = {
-  claude: { name: "Claude Code", install: installClaude, doctor: doctorClaude, fix: INSTALL_HINT },
-  codex: { name: "Codex", install: installCodex, doctor: doctorCodex, fix: INSTALL_HINT },
+  claude: { name: "Claude Code", install: installClaude, doctor: doctorClaude },
+  codex: { name: "Codex", install: installCodex, doctor: doctorCodex },
   muse: { name: "Muse Code", install: installMuse, doctor: doctorMuse, fix: MUSE_INSTALL_HINT },
   cursor: { name: "Cursor", install: installCursor, doctor: doctorCursor, fix: CURSOR_INSTALL_HINT },
 };
@@ -122,11 +132,13 @@ async function run(argv, env, home) {
   });
   const { settings } = discovered;
   const homes = [...discovered.homes, ...(values.cursor ? [cursorHome({ env, home })] : []), ...(values.muse ? [museHome({ env, home })] : [])];
+  const hint = installHint(source);
   const catalog = values.catalog ? readJson(values.catalog) : null;
 
   const report = { command, version: facts.version, source: source.arg, settings, homes: [] };
   for (const target of homes) {
     const harness = HARNESSES[target.harness];
+    const fix = harness.fix ?? hint;
     const row = { harness: target.harness, dir: target.dir, from: target.from, steps: [], checks: [] };
     report.homes.push(row);
     if (target.bin !== null && !hasCli(target.bin)) {
@@ -134,14 +146,14 @@ async function run(argv, env, home) {
       continue;
     }
     if (command === "doctor" && target.harness !== "muse" && !existsSync(target.dir)) {
-      row.checks.push(check("installed", false, "the home does not exist", harness.fix));
+      row.checks.push(check("installed", false, "the home does not exist", fix));
       continue;
     }
     try {
       if (command !== "doctor") row.steps = await harness.install(target, context);
       row.checks.push(...(await harness.doctor(target, context)));
     } catch (err) {
-      row.checks.push(check(command === "doctor" ? "doctor" : "install", false, err.message, err.fix ?? harness.fix));
+      row.checks.push(check(command === "doctor" ? "doctor" : "install", false, err.message, err.fix ?? fix));
     }
   }
   const sheet = sheetPath(env, home);

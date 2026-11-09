@@ -108,6 +108,29 @@ describe("checkSheet against a catalog", () => {
     ]);
   });
 
+  test("a catalog that lists each option's values as a plain array, as orchestrator_capabilities returns, checks values", () => {
+    const values = JSON.parse(readFileSync(join(root, "tests/fixtures/t3-catalog-values.json"), "utf8"));
+    const codex = values.providers.find((p) => p.providerInstanceId === "codex");
+    for (const id of ["gpt-6.1-terra", "gpt-6-astra"]) codex.models.push({ ...codex.models[0], id });
+    const problems = (lines) => check(lines.join("\n"), values);
+    const valid = [
+      "bug-fix: claudeAgent/claude-opus-5-5 effort=high fastMode=false",
+      "feature, refactoring: codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default",
+      "how explorer: cursor/grok-4.7 reasoning_effort=high fastMode=false contextWindow=256k",
+    ];
+    expect(problems(valid)).toEqual([]);
+    const invalid = [
+      "bug-fix: claudeAgent/claude-opus-5-5 effort=extreme fastMode=false",
+      "hillclimb: claudeAgent/claude-opus-5-5 fastMode=yes",
+      "why synthesizer: grok/grok-4.7 reasoningEffort=high",
+    ];
+    expect(problems(invalid)).toEqual([
+      "bug-fix: claudeAgent/claude-opus-5-5: effort=extreme is not one of low, medium, high, xhigh, max, ultracode, ultrathink",
+      "hillclimb: claudeAgent/claude-opus-5-5: fastMode=yes is not standard speed, and this router never runs fast; write fastMode=false",
+      'why synthesizer: grok/grok-4.7: "grok" cannot run child tasks (Provider instance is disabled.)',
+    ]);
+  });
+
   test("a model whose options are omitted or null reports the option instead of crashing", () => {
     for (const options of [undefined, null]) {
       const bare = structuredClone(catalog);

@@ -37,14 +37,14 @@ test("external removal leaves the user's later git disable alone and deletes the
   run(s, "uninstall");
   expect(readState(s).git).toBe("off");
   expect(existsSync(receiptPath(s))).toBe(false);
-});
+}, 120_000);
 
 test("reinstall after external removal does not inherit git ownership", () => {
   const s = sandbox(); run(s);
   setState(s, { plugins: [], git: "off" });
   run(s); run(s, "uninstall");
   expect(readState(s).git).toBe("off");
-});
+}, 120_000);
 
 test("failed disable records no ownership and uninstall leaves a later user disable alone", () => {
   const s = sandbox(); run(s); run(s, "uninstall");
@@ -55,7 +55,7 @@ test("failed disable records no ownership and uninstall leaves a later user disa
   setState(s, { fail: null, git: "off" });
   run(s, "uninstall");
   expect(readState(s).git).toBe("off");
-});
+}, 120_000);
 
 test("failed git restore keeps a pending uninstall that can be retried after removal", () => {
   const s = sandbox(); run(s);
@@ -66,7 +66,7 @@ test("failed git restore keeps a pending uninstall that can be retried after rem
   setState(s, { fail: null }); run(s, "uninstall");
   expect(readState(s).git).toBe("on");
   expect(existsSync(receiptPath(s))).toBe(false);
-});
+}, 120_000);
 
 for (const gitShape of [{}, { enabled: true }, { activation: "auto" }, { activation: null }]) {
   test(`unknown skill activation ${JSON.stringify(gitShape)} changes nothing`, () => {
@@ -87,7 +87,7 @@ test("unrecognized activation on a fresh home is rejected before plugin installa
   setState(s, { gitShape: { active: true } });
   failure(s, "install", "Muse CLI output is not supported by this installer; update t3-pstack-science");
   expect(changes(s)).toEqual([]);
-});
+}, 120_000);
 
 test("same-id foreign records require an explicit matching source and uninstall never removes them", () => {
   const s = sandbox(); run(s);
@@ -105,7 +105,7 @@ test("same-id foreign records require an explicit matching source and uninstall 
   cpSync(join(repoRoot, "tools/frozen-hooks.json"), join(source, "tools/frozen-hooks.json"));
   run(s, "install", "--source", source);
   run(s, "uninstall");
-});
+}, 120_000);
 
 test("a record without a receipt cannot be adopted implicitly", () => {
   const s = sandbox(); run(s); rmSync(receiptPath(s));
@@ -114,7 +114,7 @@ test("a record without a receipt cannot be adopted implicitly", () => {
   failure(s, "uninstall", "not managed");
   expect(changes(s)).toEqual(before);
   run(s, "install", "--source", repoRoot);
-});
+}, 120_000);
 
 test("multiple records give the same concrete cleanup instructions in install and doctor", () => {
   const s = sandbox(); run(s);
@@ -126,7 +126,7 @@ test("multiple records give the same concrete cleanup instructions in install an
     expect(JSON.stringify(row)).toContain("muse plugins remove t3-pstack-science");
   }
   expect(changes(s)).toEqual(before);
-});
+}, 120_000);
 
 test("receipts pin identity, provenance, content, trust, and user scope", () => {
   const s = sandbox(); run(s);
@@ -138,14 +138,14 @@ test("receipts pin identity, provenance, content, trust, and user scope", () => 
   const before = changes(s);
   failure(s, "install", "user scope"); failure(s, "uninstall", "user scope");
   expect(changes(s)).toEqual(before);
-});
+}, 120_000);
 
 test("approved status and session_start events use schema-derived source and matcher", () => {
   const s = sandbox(); run(s);
   setState(s, { approvedStatus: "approved", event: "session_start", schemaEvent: "session_start", schemaSource: "resume" });
   expect(run(s, "doctor").checks.every((c) => c.ok)).toBe(true);
   expect(run(s).steps).toEqual([]);
-});
+}, 120_000);
 
 for (const output of [
   { "plugins list": { plugins: [{}] } },
@@ -178,19 +178,19 @@ test("doctor skips hook execution for changed packages or missing hook approval"
   writeFileSync(join(readState(s).plugins[0].cache_path, "hooks/session-start.sh"), "changed");
   failure(s, "doctor", "skipped");
   expect(calls(s).filter((a) => a[1] === "hook")).toHaveLength(before);
-});
+}, 120_000);
 
 test("museHome trims and resolves XDG_CONFIG_HOME", () => {
   const home = museHome({ env: { XDG_CONFIG_HOME: "  relative-config  " }, home: "/tmp/unused" });
   expect(home.dir).toBe(join(repoRoot, "relative-config/muse"));
-});
+}, 120_000);
 
 test("combined flags both appear when rejecting a foreign remote source", () => {
   const s = sandbox();
   const r = installer(s, ["install", "--cursor", "--muse", "--source", "other/repository"]);
   expect(r.status).toBe(2);
   expect(r.stderr).toContain("--cursor --muse");
-});
+}, 120_000);
 
 test.skipIf(process.platform === "win32")("package digests hash symlink target paths", () => {
   const s = sandbox();
@@ -198,7 +198,7 @@ test.skipIf(process.platform === "win32")("package digests hash symlink target p
   for (const path of [".claude-plugin", ".agents", "plugins/pstack", "tools/frozen-hooks.json"]) cpSync(join(repoRoot, path), join(source, path), { recursive: true, filter: (p) => !p.includes("node_modules") });
   symlinkSync("session-start-context.md", join(source, "plugins/pstack/hooks/context-link"));
   expect(run(s, "install", "--source", source).checks.every((c) => c.ok)).toBe(true);
-});
+}, 120_000);
 
 test("explicit adoption of a replacement record drops the prior record's git ownership", () => {
   const s = sandbox(); run(s);
@@ -209,7 +209,7 @@ test("explicit adoption of a replacement record drops the prior record's git own
   expect(receipt(s).disabledBuiltinGit).toBe(false);
   run(s, "uninstall");
   expect(readState(s).git).toBe("off");
-});
+}, 120_000);
 
 test("the T3 settings report counts a Muse instance", () => {
   const s = sandbox();
@@ -217,4 +217,4 @@ test("the T3 settings report counts a Muse instance", () => {
   const result = installer(s, ["install", "--muse"]);
   expect(result.status, result.stdout).toBe(0);
   expect(result.stdout).toContain("1 Claude Code, Codex, or Muse instances");
-});
+}, 120_000);

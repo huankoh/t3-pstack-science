@@ -243,7 +243,7 @@ function entryProblems(target, catalog) {
     } else if (isFastSpeed(id, value)) {
       problems.push(`${at}: ${speedProblem(id, value)}${known ? "" : `, or delete ${id} if the model lists no such option`}`);
     } else if (option) {
-      const allowed = option.type === "boolean" ? ["true", "false"] : (option.options ?? []).map((o) => o.id);
+      const allowed = allowedValues(option);
       if (!allowed.includes(value)) problems.push(`${at}: ${id}=${value} is not one of ${allowed.join(", ")}`);
     }
   }
@@ -261,6 +261,15 @@ function entryProblems(target, catalog) {
   }
   if (unavailable) problems.push(unavailable);
   return problems;
+}
+
+// orchestrator_capabilities lists an option's values as a plain array, with
+// booleans as JSON booleans. The `type` and `options: [{ id }]` shape is
+// still read for catalogs saved in that form.
+function allowedValues(option) {
+  if (Array.isArray(option?.values)) return option.values.map(String);
+  if (option?.type === "boolean") return ["true", "false"];
+  return (option?.options ?? []).map((o) => o.id);
 }
 
 const invoked = process.argv[1] && existsSync(process.argv[1]) ? realpathSync(process.argv[1]) : null;

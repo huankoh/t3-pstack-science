@@ -19,11 +19,11 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { doctorClaude, installClaude, syncScopedRecords } from "../tools/install/claude.mjs";
-import { AppServer, doctorCodex } from "../tools/install/codex.mjs";
+import { AppServer, doctorCodex, pinCheck } from "../tools/install/codex.mjs";
 import { parseSource, writeAtomic } from "../tools/install/common.mjs";
 import { cursorHome, discoverHomes } from "../tools/install/homes.mjs";
 import { doctorSheet } from "../tools/install/sheet.mjs";
@@ -472,7 +472,7 @@ describe("--source", () => {
       : staleEntry ? { name: "t3-pstack-science", plugins: [{ name: legacy.name }] } : { name: found });
     const home = tmp();
     const claude = fakeClaude();
-    const r = spawnSync(process.execPath, [join(repoRoot, "tools/install.mjs"), "install", "--source", source], {
+    const r = spawnSync(Bun.which("node"), [join(repoRoot, "tools/install.mjs"), "install", "--source", source], {
       cwd: repoRoot,
       env: { HOME: home, TMPDIR: process.env.TMPDIR, PATH: dirname(claude.bin) },
       encoding: "utf8",
@@ -501,6 +501,53 @@ describe("--source", () => {
     expect(parseSource("https://github.com/huankoh/t3-pstack-science", "/home/u").key).toBe(github.key);
     expect(() => parseSource("./missing", cwd)).toThrow("--source ./missing: not owner/repo, a Git URL, or an existing directory");
   });
+
+  test("is in every fix doctor prints, and a GitHub --source runs that repository's installer", () => {
+    const claude = fakeClaude();
+    const doctor = (source) => {
+      const r = spawnSync(process.execPath, [join(repoRoot, "tools/install.mjs"), "doctor", "--source", source, "--json"], {
+        env: { HOME: tmp(), PATH: join(claude.bin, "..") },
+        encoding: "utf8",
+      });
+      return JSON.parse(r.stdout).homes.find((row) => row.harness === "claude").checks;
+    };
+    expect(doctor("someone/t3-pstack")).toEqual([
+      {
+        name: "installed",
+        ok: false,
+        detail: "the home does not exist",
+        fix: "rerun `npx -y github:someone/t3-pstack install --source someone/t3-pstack`",
+      },
+    ]);
+    const local = resolve(repoRoot);
+    expect(doctor(local)[0].fix).toBe(`rerun \`npx -y github:huankoh/t3-pstack-science install --source ${local}\``);
+
+    const fork = parseSource("someone/t3-pstack", "/home/u");
+    const home = { harness: "claude", dir: tmp(), from: ["default"], bin: "claude" };
+    const fixes = doctorClaude(home, { ...context, source: fork, trusted: new Set([github.key, fork.key]) })
+      .filter((c) => !c.ok)
+      .map((c) => c.fix);
+    expect(fixes).toEqual(Array(4).fill("rerun `npx -y github:someone/t3-pstack install --source someone/t3-pstack`"));
+  });
+
+  test("leaves a home on huankoh/t3-pstack-science where it is, and doctor warns with the commands that switch it", () => {
+    const { dir } = claudeHome();
+    syncScopedRecords(dir);
+    const fork = parseSource("someone/t3-pstack", "/home/u");
+    const forked = { ...context, source: fork, trusted: new Set([github.key, fork.key]) };
+    const claude = fakeClaude();
+    const home = { harness: "claude", dir, from: ["default"], bin: claude.bin };
+    expect(installClaude(home, forked)).toEqual(["turned on marketplace auto-update"]);
+    expect(doctorClaude(home, forked)[0]).toEqual({
+      name: "marketplace",
+      ok: false,
+      warn: true,
+      detail: "huankoh/t3-pstack-science, not --source someone/t3-pstack",
+      fix:
+        `to install from someone/t3-pstack, remove it with \`CLAUDE_CONFIG_DIR=${dir} claude plugin marketplace remove t3-pstack-science\`, ` +
+        "then rerun `npx -y github:someone/t3-pstack install --source someone/t3-pstack`",
+    });
+  });
 });
 
 describe("files the installer replaces", () => {
@@ -519,6 +566,27 @@ describe("codex app-server output that is not JSON-RPC", () => {
     writeFileSync(bin, "#!/bin/sh\necho 'token sk-live-123 expired'\nexec cat >/dev/null\n");
     chmodSync(bin, 0o755);
     await expect(AppServer.start({ dir, bin })).rejects.toThrow(new Error("codex app-server printed a line that is not JSON-RPC"));
+  });
+});
+
+describe("doctor's check of a Codex marketplace's pin", () => {
+  test("passes on this release's tag, and on a local directory, which has no tag", () => {
+    const git = { source_type: "git", source: "https://github.com/huankoh/t3-pstack-science.git" };
+    const pin = (marketplace) => pinCheck(marketplace, "v2.2.5", FIX);
+    expect(pin({ ...git, ref: "v2.2.5" })).toEqual({ name: "marketplace pin", ok: true, detail: "v2.2.5" });
+    expect(pin({ source_type: "local", source: "/src/t3-pstack" })).toEqual({
+      name: "marketplace pin",
+      ok: true,
+      detail: "none, since a local directory has no tag",
+    });
+    expect([git, { ...git, ref: "v2.2.3" }, { ...git, ref: "main" }, undefined].map(pin)).toEqual(
+      ["none, expected v2.2.5", "v2.2.3, expected v2.2.5", "main, expected v2.2.5", "no marketplace"].map((detail) => ({
+        name: "marketplace pin",
+        ok: false,
+        detail,
+        fix: FIX,
+      })),
+    );
   });
 });
 

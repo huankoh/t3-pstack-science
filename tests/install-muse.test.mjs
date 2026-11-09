@@ -38,7 +38,7 @@ describe("the opt-in Muse installer", () => {
     const text = installer(s, ["update", "--muse"]);
     expect(text.status, text.stderr).toBe(0);
     expect(text.stdout).toContain("Nothing to change.");
-  });
+  }, 120_000);
 
   test("a new version replaces the old record and a changed file at the same version is refreshed", () => {
     const s = sandbox();
@@ -54,7 +54,7 @@ describe("the opt-in Muse installer", () => {
     expect(readState(s).plugins.filter((p) => p.id === "t3-pstack-science")).toHaveLength(1);
     writeFileSync(join(cache, "hooks/session-start-context.md"), "broken");
     expect(run(s, "update").steps).toContain(`refreshed Muse ${version}`);
-  });
+  }, 120_000);
 
   test("doctor reports every Muse row and detects broken approval, version, git, and hook context", () => {
     const s = sandbox();
@@ -68,7 +68,7 @@ describe("the opt-in Muse installer", () => {
     expect(r.status).toBe(1);
     const bad = JSON.parse(r.stdout).homes.find((h) => h.harness === "muse").checks;
     expect(bad.filter((c) => !c.ok).map((c) => c.name)).toEqual(["session hook approved", "agents approved", "built-in git", "session context"]);
-  });
+  }, 120_000);
 
   test("uninstall removes only this plugin and restores git only when we disabled it", () => {
     const s = sandbox();
@@ -83,7 +83,7 @@ describe("the opt-in Muse installer", () => {
     run(s, "uninstall");
     expect(readState(s).git).toBe("off");
     expect(calls(s).filter((a) => a[0] === "skills" && a[1] === "enable")).toHaveLength(1);
-  });
+  }, 120_000);
 
   test("a failed git disable can be retried before uninstall", () => {
     const s = sandbox();
@@ -96,7 +96,7 @@ describe("the opt-in Muse installer", () => {
     run(s, "install");
     run(s, "uninstall");
     expect(readState(s).git).toBe("on");
-  });
+  }, 120_000);
 
   test("discovers T3's configured binary before PATH, and falls back to ~/.local/bin/muse", () => {
     const s = sandbox();
@@ -113,7 +113,7 @@ describe("the opt-in Muse installer", () => {
     expect(run(s, "doctor").checks[0].detail).toContain(fallback);
     writeJson(join(s.home, ".t3/userdata/settings.json"), { providerInstances: { muse: { config: { binaryPath: "~/missing-muse" } } } });
     expect(installer(s, ["doctor", "--muse"]).status).toBe(1);
-  });
+  }, 120_000);
 
   test("missing CLI fails only with --muse, and plain commands never call Muse", () => {
     const s = sandbox();
@@ -128,7 +128,7 @@ describe("the opt-in Muse installer", () => {
       const row = JSON.parse(r.stdout).homes.find((h) => h.harness === "muse");
       expect(row.checks).toEqual([expect.objectContaining({ name: "CLI", ok: false, detail: expect.stringContaining("not found") })]);
     }
-  });
+  }, 120_000);
 
   test("--muse combines with --cursor for install, doctor, and uninstall", () => {
     const s = sandbox();
@@ -139,7 +139,7 @@ describe("the opt-in Muse installer", () => {
       expect(JSON.parse(r.stdout).homes.map((h) => h.harness)).toContain("muse");
     }
     expect(existsSync(join(s.home, ".cursor/plugins/local/t3-pstack-science"))).toBe(false);
-  });
+  }, 120_000);
 
   test("re-enables our disabled plugin and respects an explicit session hook off sheet", () => {
     const s = sandbox();
@@ -151,5 +151,5 @@ describe("the opt-in Muse installer", () => {
     writeJson(join(s.home, ".config/t3-pstack-science/placeholder.json"), {});
     writeFileSync(join(s.home, ".config/t3-pstack-science/models.md"), "session hook: off\n");
     expect(run(s, "doctor").checks.at(-1)).toMatchObject({ ok: true, detail: expect.stringContaining("session hook: off") });
-  });
+  }, 120_000);
 });

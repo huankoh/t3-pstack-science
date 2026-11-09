@@ -20,7 +20,7 @@ import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { applyRegions, deriveT3, fenceUnder, section, sheetBlock, tableRows, t3Regions } from "../tools/derive-t3.mjs";
+import { applyRegions, deriveT3, fenceUnder, section, sheetBlock, t3Regions } from "../tools/derive-t3.mjs";
 import {
   apply,
   assertChangesHeading,
@@ -65,12 +65,6 @@ describe("locators", () => {
     expect(spanned(fenceUnder("Write the sheet", "yaml"), doc)).toBeNull();
     expect(spanned(fenceUnder("Write", "markdown"), doc)).toBeNull();
     expect(spanned(fenceUnder("Write the sheet", "markdown"), unclosed)).toBeNull();
-  });
-
-  test("tableRows spans the consecutive rows with the prefix after the separator", () => {
-    const doc = lines("| Subagent | Default model |\n| --- | --- |\n| Reviewer A | x |\n| Reviewer B | y |\n\ntext");
-    expect(spanned(tableRows("| Subagent | Default model |", "| Reviewer "), doc)).toEqual(["| Reviewer A | x |", "| Reviewer B | y |"]);
-    expect(spanned(tableRows("| Other |", "|"), doc)).toBeNull();
   });
 });
 
@@ -176,16 +170,6 @@ describe("regions", () => {
     expect(applyRegions("plugins/pstack/skills/setup-pstack/SKILL.md", text, models)).toBe(text);
   });
 
-  test("interrogate's reviewer table gets one row per panel entry", () => {
-    const text = "| Subagent | Default model |\n| --- | --- |\n| Reviewer A | `old` |\n";
-    const stamped = applyRegions("plugins/pstack/skills/interrogate/SKILL.md", text, models);
-    expect(stamped).toContain(
-      [
-        "| Reviewer A | general `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default`; science `codex/gpt-6.1-sol reasoningEffort=xhigh serviceTier=default` |",
-        "| Reviewer B | general `codex/gpt-6-astra reasoningEffort=high serviceTier=default`; science `codex/gpt-6-astra reasoningEffort=high serviceTier=default` |",
-      ].join("\n"),
-    );
-  });
 
   test("applyRegions leaves a file no region names untouched", () => {
     const text = "# other\n\n## Models\n\nprose\n";
