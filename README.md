@@ -19,19 +19,24 @@ npx -y github:huankoh/t3-pstack-science doctor
 ```
 
 `npx -y github:huankoh/t3-pstack-science` runs the installer from the latest commit on `main`.
-That is the rolling channel, the same one each home's marketplace auto-updates from.
-To run one release's installer, name its tag, as in `npx -y github:huankoh/t3-pstack-science#v2.0.0-science.5 doctor`.
+Each Claude Code home's marketplace auto-updates from main, and each Codex home's marketplace stays on the release tag the installer pinned.
+To run one release's installer, name its tag, as in `npx -y github:huankoh/t3-pstack-science#v2.2.8-science.1 doctor`.
 
 `install` and `update` are the same command, and a second run changes nothing.
 With Node 20 or later, it installs or updates the `t3-pstack-science@t3-pstack-science` plugin in every Claude Code and Codex config home T3 can run: `~/.claude` and `~/.codex`, `$CLAUDE_CONFIG_DIR` and `$CODEX_HOME`, and the home of each `claudeAgent` and `codex` instance in T3's settings, disabled ones included.
 Name any other home with `--claude-home <dir>` or `--codex-home <dir>`.
 Each home's `t3-pstack-science` marketplace must come from `huankoh/t3-pstack-science`, or from `--source <owner/repo|git URL|dir>` on the same run, and a home whose marketplace has another source is left as it is.
+A run never switches a home's source.
+A home already on `huankoh/t3-pstack-science` stays on it under another `--source`, and `doctor` warns and prints the commands that move it.
 A local directory needs a path such as `./t3-pstack-science`, since `owner/repo` always means GitHub.
 On Codex it also trusts t3-pstack-science's session-start hook, once its hooks file is the one this release pins.
 Codex runs a plugin's hook only once it is trusted, and T3's Codex sessions never ask, so without this step the hook never runs.
+Codex 0.164 and later tie hook trust to every file in the installed plugin.
+The installer pins each Codex Git marketplace to the release tag, such as `v2.2.8-science.1`, so a release reaches that home through `update`, which trusts the hook again.
+A local directory has no tag and stays unpinned.
 Run `update` after each release.
 
-`doctor` reports on the same homes and changes nothing itself: each marketplace's source, the installed version, whether its files are all there, whether it is enabled, the Codex hook's trust, Claude Code records that pin an old version, plain copies of the plugin's skills, and the model sheet.
+`doctor` reports on the same homes and changes nothing itself: each marketplace's source, each Codex marketplace's pin, the installed version, whether its files are all there, whether it is enabled, the Codex hook's trust, Claude Code records that pin an old version, plain copies of the plugin's skills, and the model sheet.
 It exits 1 on a failed check and prints a fix for each.
 It warns when chhoumann's plugin is enabled in the same home and its session hook runs.
 On Codex, that hook must be trusted.
@@ -177,7 +182,7 @@ Adopting starts from the current default table and reapplies only the overrides 
 
 ## Staying current
 
-This repository syncs from Lauren's tree directly, synced against upstream `e73df47`.
+This repository syncs from Lauren's tree directly, synced against upstream `c742dd6`.
 `tools/upstream.json` pins each component, `tools/substitutions.json` holds the rewrite rules and a denylist of Cursor terms, and `tools/forks.json` declares every file the port keeps in its own form and why.
 `bun tools/sync.mjs <component> <sha>` derives each upstream file through the rules, merges it three ways with the port's copy, and fails on an undeclared fork, a denylist hit, or a rule that no longer matches upstream.
 [CONTRIBUTING.md](CONTRIBUTING.md#the-sync-boundary) has the details.

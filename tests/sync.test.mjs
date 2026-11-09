@@ -20,6 +20,7 @@ import { deriveT3 } from "../tools/derive-t3.mjs";
 import { loadModels } from "../tools/generate.mjs";
 import {
   applySubstitutions,
+  bootstrapComponent,
   changedLines,
   classify,
   denylistHits,
@@ -177,7 +178,7 @@ describe("applySubstitutions", () => {
     expect(handback).toContain("The subagent reads the audit trail and the run's transcript, then flags what the user should pay attention to.");
   });
 
-  test.each(["how", "why", "arena", "interrogate", "swarm", "reflect", "show-me-your-work", "automate-me", "figure-it-out", "no-comments", "recall"])("%s keeps the upstream reasoning wording exactly", (skill) => {
+  test.each(["how", "why", "arena", "swarm", "reflect", "show-me-your-work", "automate-me", "figure-it-out", "no-comments", "recall"])("%s keeps the upstream reasoning wording exactly", (skill) => {
     const rel = `skills/${skill}/SKILL.md`;
     const upstream = "Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.";
     const derived = upstream;
@@ -247,14 +248,20 @@ describe("applySubstitutions", () => {
     ],
     [
       "skills/poteto-mode/playbooks/autopilot-stack.md",
-      "Each tick re-reads both playbooks from trunk, and this one wins where they differ.",
-      "Each tick re-reads both playbooks from disk, and this one wins where they differ.",
+      "Every loop tick prompt names this file, so each tick sees the no-merge rule.",
+      "Every `schedule_task` prompt names this file, so each tick sees the no-merge rule.",
     ],
     [
       "skills/ketchup/SKILL.md",
       "a Mermaid diagram for states, flows, and structures, and a `/visualize` chart for numbers.",
       "a Mermaid diagram for states, flows, and structures, and an `html_render` chart for numbers.",
     ],
+    [
+      "skills/poteto-mode/SKILL.md",
+      "If the Task tool rejects that too, continue with the calling skill's fallback. A slug counts as rejected once a Task error says that the model is not valid, or leaves the slug out of its list of valid slugs. Never pass a rejected slug, and skip any fallback whose slug is already rejected. When the calling skill has no fallback, use the closest valid slug of the role's family from the error's list of valid slugs, or omit `model` so the subagent runs on the parent model when the list has none. When the calling skill's fallback runs out of slugs without saying what to do next, omit `model` too. Say so in both cases.",
+      "If `delegate_task` rejects that too, continue with the calling skill's fallback. An entry counts as rejected once `delegate_task` fails on it with `model_unavailable` or `provider_unavailable`, or rejects its options. Never pass a rejected entry, and skip any fallback whose entry is already rejected. When the calling skill has no fallback, use the closest target of the role's family that `orchestrator_capabilities` lists, or omit `target` so the subagent runs on the parent model when it lists none. When the calling skill's fallback runs out of entries without saying what to do next, omit `target` too. Say so in both cases.",
+    ],
+
   ])("%s: an upstream sentence takes the port's one form", (rel, upstream, port) => {
     const { text } = applySubstitutions(upstream, RULES.substitutions, rel);
     expect(text).toBe(port);
@@ -263,11 +270,10 @@ describe("applySubstitutions", () => {
 
   // The T3 behavior the port adds on an upstream anchor: each must survive.
   test.each([
-    ["skills/poteto-mode/SKILL.md", "Interrupt-chained resumes silently drop directives, so fire a fresh subagent with consolidated scope rather than trusting a \"done\" summary.", ["**Dispatch on T3.**", "dispatch ledger", "`BLOCKED: independent review`", "`clientRequestId`"]],
-    ["skills/poteto-mode/SKILL.md", "- Contested design → the **interrogate** skill (multi-model adversarial) before shipping.", ["before Opening a PR", "at most three fix runs in all"]],
-    ["skills/arena/SKILL.md", "Prefer a different model family from the parent's.", ["no model scores its own work"]],
+    ["skills/poteto-mode/SKILL.md", "Interrupt-chained resumes silently drop directives, so fire a fresh subagent with consolidated scope rather than trusting a \"done\" summary.", ["**Dispatch on T3.**", "dispatch ledger", "`BLOCKED: independent review`", "`clientRequestId`", "you are a leaf", "`isolation: \"worktree\"`", "`Unable to resolve the parent checkout commit`"]],
+    ["skills/arena/SKILL.md", "With the default pool, a Claude parent gets `grok-4.7-xhigh-fast`. A parent from any other family gets `claude-opus-5-5-xhigh` first.", ["no model scores its own work"]],
     ["skills/poteto-mode/playbooks/babysit.md", "Run `drive` and `background` under `/loop` in dynamic mode.", ["--timeout 540", "watch_pull_request", "--settle"]],
-    ["skills/poteto-mode/playbooks/autopilot-full.md", "Each owner is a Cursor cloud agent that builds, opens its PR", ["t3_thread_launch", "t3_thread_send"]],
+    ["skills/poteto-mode/playbooks/autopilot-full.md", "Each owner is a Cursor cloud agent that builds, opens its PR", ["`delegate_task` child", "`isolation: \"worktree\"`", "t3_thread_send"]],
     ["skills/no-comments/SKILL.md", '1. Spawn `Task` with `subagent_type: "comment-sicko"`. Pass the scope.', ["<plugin root>/agents/comment-sicko.md", "no worktree"]],
   ])("%s keeps its T3 insert", (rel, upstream, needles) => {
     const { text } = applySubstitutions(upstream, RULES.substitutions, rel);
@@ -1522,6 +1528,22 @@ describe("syncComponent", () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("s.md: git merge-file reported conflicts (exit 1) but printed no markers");
     expect(readFileSync(join(localDir, "s.md"), "utf8")).toBe("port\n");
+  });
+});
+
+describe("bootstrapComponent", () => {
+  test("a local symlink at a directory above upstream paths is reported at the link, and nothing is written through it", () => {
+    const outside = tree({ "arena/SKILL.md": "outside\n" });
+    const newDir = tree({ "skills/arena/SKILL.md": "upstream\n", "skills/arena/ref.md": "ref\n", "skills/how/SKILL.md": "how\n" });
+    const localDir = tree({ "skills/how/SKILL.md": "old\n" });
+    symlinkSync(join(outside, "arena"), join(localDir, "skills/arena"));
+
+    const report = bootstrapComponent({ newDir, localDir, rules: [] });
+
+    expect(report.symlinks).toEqual(["skills/arena"]);
+    expect(readdirSync(join(outside, "arena"))).toEqual(["SKILL.md"]);
+    expect(readFileSync(join(outside, "arena/SKILL.md"), "utf8")).toBe("outside\n");
+    expect(readFileSync(join(localDir, "skills/how/SKILL.md"), "utf8")).toBe("old\n");
   });
 });
 

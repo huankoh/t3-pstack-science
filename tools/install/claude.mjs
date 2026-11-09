@@ -7,7 +7,7 @@ import {
   claudeSource,
   coexistingHooks,
   FOREIGN_PLUGIN_ID,
-  INSTALL_HINT,
+  installHint,
   isPlainCopy,
   MARKETPLACE,
   marketplaceCheck,
@@ -15,6 +15,7 @@ import {
   pluginIntact,
   readJson,
   runCli,
+  trustedOnly,
   updated,
   writeAtomic,
 } from "./common.mjs";
@@ -60,7 +61,7 @@ export function installClaude(home, { source, trusted, version, skills }) {
   }
   // Nothing installs from a marketplace of another source; doctor names it.
   let state = read(home.dir);
-  if (!marketplaceCheck(state.sources, trusted).ok) return steps;
+  if (!trustedOnly(state.sources, trusted)) return steps;
   if (!state.user) {
     plugin("install", PLUGIN_ID, "--scope", "user");
     steps.push(`installed ${read(home.dir).user?.version}`);
@@ -118,7 +119,8 @@ export function syncScopedRecords(dir) {
   return [...steps, `backed up ${RECORDS} to ${backup}`];
 }
 
-export function doctorClaude(home, { version, skills, trusted }) {
+export function doctorClaude(home, { source, trusted, version, skills }) {
+  const hint = installHint(source);
   const state = read(home.dir);
   const installed = state.user?.version;
   const whole = intact(state, skills);
@@ -127,7 +129,7 @@ export function doctorClaude(home, { version, skills, trusted }) {
     ? readdirSync(skillsDir).filter((name) => isPlainCopy(name, join(skillsDir, name, "SKILL.md"), skills))
     : [];
   return [
-    marketplaceCheck(state.sources, trusted, `remove it with \`CLAUDE_CONFIG_DIR=${home.dir} claude plugin marketplace remove ${MARKETPLACE}\``),
+    marketplaceCheck(state.sources, { source, trusted }, `remove it with \`CLAUDE_CONFIG_DIR=${home.dir} claude plugin marketplace remove ${MARKETPLACE}\``),
     check(
       "installed",
       installed === version && whole,
@@ -138,16 +140,16 @@ export function doctorClaude(home, { version, skills, trusted }) {
           : whole
             ? installed
             : `${installed}, but its files at ${state.user.installPath} are missing`,
-      INSTALL_HINT,
+      hint,
     ),
-    check("enabled", state.enabled, state.enabled ? "yes" : "no", INSTALL_HINT),
+    check("enabled", state.enabled, state.enabled ? "yes" : "no", hint),
     ...coexistingHooks(state.enabled && state.foreignEnabled),
-    check("marketplace auto-update", autoUpdates(state.marketplace), state.marketplace ? String(autoUpdates(state.marketplace)) : "no marketplace", INSTALL_HINT),
+    check("marketplace auto-update", autoUpdates(state.marketplace), state.marketplace ? String(autoUpdates(state.marketplace)) : "no marketplace", hint),
     check(
       "other-scope records",
       state.stale.length === 0,
       state.stale.length ? state.stale.map((r) => `${r.scope} ${r.projectPath} at ${r.version}`).join("; ") : "none stale",
-      INSTALL_HINT,
+      hint,
     ),
     check(
       "no plain copies of plugin skills",

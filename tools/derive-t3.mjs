@@ -55,16 +55,6 @@ export const section = (title) => (lines) => {
   return [start + 1, end];
 };
 
-// The rows under a markdown table header (header line, separator, then every
-// consecutive line starting with rowPrefix).
-export const tableRows = (header, rowPrefix) => (lines) => {
-  const start = lines.indexOf(header);
-  if (start === -1) return null;
-  let end = start + 2;
-  while (end < lines.length && lines[end].startsWith(rowPrefix)) end++;
-  return [start + 2, end];
-};
-
 // The inside of the first ```<lang> fence after the `### N. <title>` step
 // heading. The ordinal is not part of the anchor.
 export const fenceUnder = (title, lang) => (lines) => {
@@ -127,14 +117,6 @@ export function modelsSection(models, roles) {
   return `Role defaults on T3, stamped from \`plugins/pstack/models.json\`, one column per domain. ${routerProse(models)}\n\n${header}\n${rows.join("\n")}`;
 }
 
-export function reviewerRows(models) {
-  const reviewers = seats(models).filter((s) => s.role === "interrogate reviewers");
-  const count = Math.max(...reviewers.map((s) => s.defaults.length));
-  return Array.from({ length: count }, (_, i) =>
-    `| Reviewer ${String.fromCharCode(65 + i)} | ${DOMAINS.map((domain) => `${domain} ${defaultCell(reviewers.find((s) => s.domain === domain)?.defaults[i])}`).join("; ")} |`,
-  );
-}
-
 export function sheetBlock(models) {
   return [
     "# pstack model configuration (T3). One line per role and column. Delete a line to fall back to the skill default.",
@@ -161,12 +143,6 @@ export function t3Regions(models) {
       appendHeading: "## Models",
       render: () => padded(modelsSection(models, roles)),
     })),
-    {
-      file: skillFile("interrogate"),
-      name: "reviewer table",
-      locate: tableRows("| Subagent | Default model |", "| Reviewer "),
-      render: () => reviewerRows(models),
-    },
     {
       file: skillFile("setup-pstack"),
       name: "sheet block",

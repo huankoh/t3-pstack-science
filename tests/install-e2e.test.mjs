@@ -24,7 +24,7 @@ import { delimiter, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { AppServer } from "../tools/install/codex.mjs";
-import { resolveCli } from "../tools/install/common.mjs";
+import { HOME_REPO, PLUGIN_ID, resolveCli } from "../tools/install/common.mjs";
 import { hookDigest } from "../tools/plugin.mjs";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
@@ -35,7 +35,7 @@ const SHEET = "# budget: large (xhigh)\nbug-fix: inherit-parent\nsession hook: o
 let root;
 let home;
 const saved = {};
-const ISOLATED = ["HOME", "CODEX_HOME", "CLAUDE_CONFIG_DIR", "T3CODE_HOME", "XDG_CONFIG_HOME", "GIT_CONFIG_GLOBAL"];
+const ISOLATED = ["HOME", "CODEX_HOME", "CLAUDE_CONFIG_DIR", "T3CODE_HOME", "XDG_CONFIG_HOME", "XDG_CACHE_HOME", "GIT_CONFIG_GLOBAL"];
 
 function sh(bin, args, env = {}) {
   const r = spawnSync(bin, args, { cwd: root, env: { ...process.env, ...env }, encoding: "utf8" });
@@ -44,8 +44,8 @@ function sh(bin, args, env = {}) {
 }
 
 // `source` null runs with no --source, as a user does.
-function installer(command, source = repoRoot) {
-  const r = spawnSync("node", [join(repoRoot, "tools/install.mjs"), command, ...(source ? ["--source", source] : []), "--json"], {
+function installer(command, source = repoRoot, ...args) {
+  const r = spawnSync("node", [join(repoRoot, "tools/install.mjs"), command, ...(source ? ["--source", source] : []), ...args, "--json"], {
     cwd: root,
     env: process.env,
     encoding: "utf8",
@@ -65,6 +65,8 @@ function pluginCopy(dir) {
   return dir;
 }
 const edit = (path, from, to) => writeFileSync(path, readFileSync(path, "utf8").replace(from, to));
+const MANIFESTS = [".claude-plugin/marketplace.json", "plugins/pstack/.claude-plugin/plugin.json", "plugins/pstack/.codex-plugin/plugin.json"];
+const bump = (dir, from, to) => MANIFESTS.forEach((file) => edit(join(dir, file), `"version": "${from}"`, `"version": "${to}"`));
 
 async function until(done, ms) {
   for (const deadline = Date.now() + ms; Date.now() < deadline; await new Promise((r) => setTimeout(r, 200))) {
@@ -336,15 +338,22 @@ describe.skipIf(!enabled)("the installer, end to end", () => {
     rmSync(poolRecord.installPath, { recursive: true });
     edit(join(home, ".codex-work/config.toml"), /(\[plugins\."t3-pstack-science@t3-pstack-science"\]\s*enabled = )true/, "$1false");
 
+    // Codex trusts the hook with a hash of every file in the plugin, so the
+    // deleted skill takes the trust with it until the files are back.
     const doctor = installer("doctor").report;
-    expect(failing(row(doctor, ".codex").checks)).toEqual([`installed: its files in ${codexCache} are missing`]);
+    expect(failing(row(doctor, ".codex").checks)).toEqual([
+      `installed: its files in ${codexCache} are missing`,
+      `session-start hook trusted: ${HOOK} modified`,
+    ]);
     expect(failing(row(doctor, ".claude-pool").checks)).toEqual([
       `installed: ${version}, but its files at ${poolRecord.installPath} are missing`,
     ]);
     expect(failing(row(doctor, ".codex-work").checks)).toEqual(["enabled: no", "session-start hook trusted: no t3-pstack-science hook listed"]);
 
     const { status, report } = installer("install");
-    expect(row(report, ".codex").steps).toEqual([`reinstalled ${version}, whose files were missing`]);
+    const repaired = row(report, ".codex").steps;
+    expect(repaired[0]).toBe(`reinstalled ${version}, whose files were missing`);
+    expect(repaired.slice(1)).toEqual(repaired.length === 1 ? [] : [`trusted hook ${HOOK} (was modified)`]);
     expect(row(report, ".claude-pool").steps).toEqual([`reinstalled ${version}, whose files were missing`]);
     expect(row(report, ".codex-work").steps).toEqual(["enabled it"]);
     expect(status).toBe(0);
@@ -359,6 +368,21 @@ describe.skipIf(!enabled)("the installer, end to end", () => {
     expect(failing(row(report, ".codex").checks)).toEqual([`no plain copies of plugin skills: ${join(home, ".agents/skills/why/SKILL.md")}`]);
     expect(status).toBe(1);
     rmSync(join(home, ".agents/skills/why"), { recursive: true });
+    expect(installer("doctor").status).toBe(0);
+  }, 300_000);
+
+  test("a poteto-mode script leaves the installed plugin as released, so the hook still routes", async () => {
+    const plugin = join(home, ".codex/plugins/cache/t3-pstack-science/t3-pstack-science", version);
+    const files = () => readdirSync(plugin, { recursive: true }).sort();
+    const before = files();
+    const watch = spawnSync(join(plugin, "skills/poteto-mode/scripts/watch-pr/watch-pr"), ["--help"], { cwd: root, encoding: "utf8" });
+    expect(watch.status, watch.stderr).toBe(0);
+    expect(watch.stdout).toStartWith("Usage: watch-pr");
+    expect(files()).toEqual(before);
+
+    const after = await probe(join(home, ".codex"));
+    expect(after.hookEvents).toEqual(["hook/started", "hook/completed"]);
+    expect(after.routedMessages).toBe(1);
     expect(installer("doctor").status).toBe(0);
   }, 300_000);
 });
@@ -422,10 +446,7 @@ describe.skipIf(!enabled)("the installer, on a release that changes the hook ent
     expect(installer("install", source).status).toBe(0);
 
     const next = "9.9.9";
-    for (const file of [".claude-plugin/marketplace.json", "plugins/pstack/.claude-plugin/plugin.json", "plugins/pstack/.codex-plugin/plugin.json"]) {
-      const path = join(source, file);
-      writeFileSync(path, readFileSync(path, "utf8").replace(`"version": "${version}"`, `"version": "${next}"`));
-    }
+    bump(source, version, next);
     const hooks = join(source, "plugins/pstack/hooks/codex-hooks.json");
     edit(hooks, "startup|resume|clear|compact", "startup|resume|compact|clear");
 
@@ -449,6 +470,185 @@ describe.skipIf(!enabled)("the installer, on a release that changes the hook ent
     expect(row(report, ".codex").steps).toEqual([`trusted hook ${HOOK} (was modified)`]);
     const after = await probe(join(home, ".codex"));
     expect(after.hookEvents).toEqual(["hook/started", "hook/completed"]);
+    expect(after.routedMessages).toBe(1);
+  }, 300_000);
+});
+
+// Git marketplaces, served from repositories in the throwaway root: the global
+// Git config sends each source's URL there. `claude` is off PATH, because
+// Claude Code fetches a GitHub marketplace without that config and would reach
+// github.com.
+describe.skipIf(!enabled)("the installer, on Git marketplaces", () => {
+  isolate({
+    codex: { driver: "codex", enabled: true, config: { binaryPath: "codex", homePath: "" } },
+    codex_unpinned: { driver: "codex", enabled: true, config: { homePath: "~/.codex-unpinned" } },
+    codex_old: { driver: "codex", enabled: true, config: { homePath: "~/.codex-old" } },
+  });
+  const path = process.env.PATH;
+  const tag = `v${version}`;
+  const PINNED = [".codex", ".codex-unpinned", ".codex-old"];
+  let origin;
+  const git = (...args) => sh("git", ["-C", origin, "-c", "user.name=t3-pstack", "-c", "user.email=t3-pstack@example.test", ...args]);
+  const codex = (dir, ...args) => sh("codex", args, { CODEX_HOME: join(home, dir) });
+  const marketplace = (dir) => readFileSync(join(home, dir, "config.toml"), "utf8").match(/\[marketplaces\.t3-pstack-science\]\n[^[]*/)?.[0].trimEnd();
+  const pinned = (source) => `[marketplaces.t3-pstack-science]\nsource_type = "git"\nsource = "${source}"\nref = "${tag}"`;
+  const cached = (dir) => readdirSync(join(home, dir, "plugins/cache/t3-pstack-science/t3-pstack-science")).filter((name) => !name.startsWith("."));
+  const pin = (report, dir) => row(report, dir).checks.find((c) => c.name === "marketplace pin");
+
+  beforeAll(() => {
+    const bin = join(root, "bin");
+    mkdirSync(bin);
+    for (const tool of ["codex", "node", "git"]) symlinkSync(resolveCli(tool), join(bin, tool));
+    process.env.PATH = [bin, "/usr/bin", "/bin"].join(delimiter);
+
+    origin = pluginCopy(join(root, "origin"));
+    bump(origin, version, "0.0.1");
+    git("init", "-q", "-b", "main");
+    git("add", "-A");
+    git("commit", "-qm", "0.0.1");
+    git("tag", "v0.0.1");
+    bump(origin, "0.0.1", version);
+    git("commit", "-qam", version);
+    git("tag", tag);
+    const untagged = join(root, "untagged");
+    sh("git", ["clone", "-q", "--no-tags", origin, untagged]);
+    const urls = [
+      [origin, `https://github.com/${HOME_REPO}.git`],
+      [origin, "https://github.com/someone/t3-pstack.git"],
+      [origin, "https://git.example.test/t3-pstack.git"],
+      [untagged, "https://github.com/someone/untagged.git"],
+    ];
+    writeFileSync(join(root, "gitconfig"), urls.map(([dir, url]) => `[url "file://${dir}"]\n\tinsteadOf = ${url}\n`).join(""));
+    process.env.GIT_CONFIG_GLOBAL = join(root, "gitconfig");
+
+    // Homes Codex's own CLI set up: one on main, as every earlier release left
+    // it, and one pinned to an older tag.
+    for (const [dir, ...ref] of [[".codex-unpinned"], [".codex-old", "--ref", "v0.0.1"]]) {
+      mkdirSync(join(home, dir), { recursive: true });
+      codex(dir, "plugin", "marketplace", "add", HOME_REPO, ...ref);
+      codex(dir, "plugin", "add", PLUGIN_ID);
+    }
+  });
+
+  afterAll(() => {
+    process.env.PATH = path;
+  });
+
+  test("doctor fails a Codex home that is not pinned to this release's tag", () => {
+    const { status, report } = installer("doctor", null);
+    expect(status).toBe(1);
+    expect(failing(row(report, ".codex-unpinned").checks)).toEqual([
+      `marketplace pin: none, expected ${tag}`,
+      `session-start hook trusted: ${HOOK} untrusted`,
+    ]);
+    expect(failing(row(report, ".codex-old").checks)).toEqual([
+      `marketplace pin: v0.0.1, expected ${tag}`,
+      `installed: 0.0.1, expected ${version}`,
+      `session-start hook trusted: ${HOOK} untrusted`,
+    ]);
+    expect(pin(report, ".codex-unpinned").fix).toBe("rerun `npx -y github:huankoh/t3-pstack-science install`");
+  }, 300_000);
+
+  test("install pins every Codex home to the release tag, and the hook routes", async () => {
+    const { status, report } = installer("install", null);
+    console.log("pin:", JSON.stringify(report.homes.map(({ dir, steps }) => ({ dir: relative(home, dir), steps }))));
+    expect(failing(report.homes.flatMap((h) => h.checks))).toEqual([]);
+    expect(status).toBe(0);
+    const trustedHook = `trusted hook ${HOOK} (was untrusted)`;
+    expect(row(report, ".codex").steps).toEqual([
+      `added the t3-pstack-science marketplace from ${HOME_REPO}`,
+      `pinned the marketplace to ${tag} (was unpinned)`,
+      `installed ${version}`,
+      trustedHook,
+    ]);
+    expect(row(report, ".codex-unpinned").steps).toEqual([`pinned the marketplace to ${tag} (was unpinned)`, trustedHook]);
+    expect(row(report, ".codex-old").steps).toEqual([`pinned the marketplace to ${tag} (was v0.0.1)`, `updated 0.0.1 to ${version}`, trustedHook]);
+    for (const dir of PINNED) expect(marketplace(dir)).toBe(pinned(`https://github.com/${HOME_REPO}.git`));
+    expect(pin(report, ".codex")).toEqual({ name: "marketplace pin", ok: true, detail: tag });
+
+    const after = await probe(join(home, ".codex"));
+    expect(after.hookEvents).toEqual(["hook/started", "hook/completed"]);
+    expect(after.routedMessages).toBe(1);
+  }, 300_000);
+
+  test("a second install changes nothing", () => {
+    const before = snapshot();
+    const { status, report } = installer("update", null);
+    expect(status).toBe(0);
+    expect(report.homes.flatMap((h) => h.steps)).toEqual([]);
+    expect(snapshot()).toEqual(before);
+  }, 300_000);
+
+  test("pins a GitHub or Git URL --source too, leaves a local directory unpinned, and leaves a source without the tag as it was", () => {
+    const run = (source, dir) => installer("install", source, "--codex-home", join(home, dir));
+    for (const [source, dir, url] of [
+      ["someone/t3-pstack", ".codex-fork", "https://github.com/someone/t3-pstack.git"],
+      ["https://git.example.test/t3-pstack.git", ".codex-url", "https://git.example.test/t3-pstack.git"],
+    ]) {
+      const { status, report } = run(source, dir);
+      expect(status).toBe(0);
+      expect(row(report, dir).steps).toEqual([
+        `added the t3-pstack-science marketplace from ${source}`,
+        `pinned the marketplace to ${tag} (was unpinned)`,
+        `installed ${version}`,
+        `trusted hook ${HOOK} (was untrusted)`,
+      ]);
+      expect(marketplace(dir)).toBe(pinned(url));
+      expect(row(report, ".codex").steps).toEqual([]);
+    }
+
+    const local = pluginCopy(join(root, "local"));
+    const fromDir = run(local, ".codex-local");
+    expect(fromDir.status).toBe(0);
+    expect(row(fromDir.report, ".codex-local").steps).toEqual([`added the t3-pstack-science marketplace from ${local}`, `installed ${version}`, `trusted hook ${HOOK} (was untrusted)`]);
+    expect(pin(fromDir.report, ".codex-local")).toEqual({ name: "marketplace pin", ok: true, detail: "none, since a local directory has no tag" });
+    expect(marketplace(".codex-local")).toBe(`[marketplaces.t3-pstack-science]\nsource_type = "local"\nsource = "${local}"`);
+
+    const untagged = run("someone/untagged", ".codex-untagged");
+    expect(untagged.status).toBe(1);
+    const steps = row(untagged.report, ".codex-untagged").steps;
+    expect(steps[1]).toStartWith(`Codex could not fetch ${tag}, so the marketplace stays unpinned (`);
+    expect(steps.filter((_, i) => i !== 1)).toEqual([
+      "added the t3-pstack-science marketplace from someone/untagged",
+      `installed ${version}`,
+      `trusted hook ${HOOK} (was untrusted)`,
+    ]);
+    expect(failing(row(untagged.report, ".codex-untagged").checks)).toEqual([`marketplace pin: none, expected ${tag}`]);
+    expect(marketplace(".codex-untagged")).toBe('[marketplaces.t3-pstack-science]\nsource_type = "git"\nsource = "https://github.com/someone/untagged.git"');
+  }, 300_000);
+
+  test("a newer commit on main reaches only a home without the pin, through Codex's own upgrade", async () => {
+    // As every earlier release left a home: the hook trusted, the marketplace on main.
+    edit(join(home, ".codex-unpinned/config.toml"), `ref = "${tag}"\n`, "");
+    bump(origin, version, "9.9.9");
+    git("commit", "-qam", "9.9.9");
+
+    for (const dir of PINNED) codex(dir, "plugin", "marketplace", "upgrade");
+    for (const dir of [".codex", ".codex-old"]) {
+      // Each app-server start also runs Codex's background marketplace upgrade.
+      const after = await probe(join(home, dir));
+      expect(after.hookEvents).toEqual(["hook/started", "hook/completed"]);
+      expect(after.routedMessages).toBe(1);
+      expect(cached(dir)).toEqual([version]);
+    }
+    expect(cached(".codex-unpinned")).toEqual(["9.9.9"]);
+
+    const doctor = installer("doctor", null);
+    expect(doctor.status).toBe(1);
+    expect(failing(doctor.report.homes.flatMap((h) => h.checks))).toEqual([
+      `marketplace pin: none, expected ${tag}`,
+      `installed: 9.9.9, expected ${version}`,
+      `session-start hook trusted: ${HOOK} modified`,
+    ]);
+
+    const { status, report } = installer("update", null);
+    expect(status).toBe(0);
+    expect(row(report, ".codex-unpinned").steps).toEqual([
+      `pinned the marketplace to ${tag} (was unpinned)`,
+      `updated 9.9.9 to ${version}`,
+    ]);
+    expect(row(report, ".codex").steps).toEqual([]);
+    const after = await probe(join(home, ".codex-unpinned"));
     expect(after.routedMessages).toBe(1);
   }, 300_000);
 });
@@ -511,7 +711,8 @@ describe.skipIf(!enabled)("the installer, on a Codex home that changes while it 
     expect(status).toBe(1);
     expect(row(report, ".codex").steps).toEqual([]);
     expect(failing(row(report, ".codex").checks)).toEqual([
-      `session-start hook trusted: ${HOOK} untrusted, not from the hooks/codex-hooks.json this release pins`,
+      `session-start hook trusted: no t3-pstack-science hook listed; Codex: skipping plugin hook in ${hooksFile()}: ` +
+        `failed to fingerprint plugin contents: unsupported plugin entry type: ${hooksFile()}`,
     ]);
     expect(await trustState()).toBe(null);
   }, 300_000);
